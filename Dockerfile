@@ -42,6 +42,7 @@ COPY mqtt_rvc_set.pl /coachproxy/rv-c/
 COPY MESSAGE.pl /coachproxy/rv-c/
 COPY MESSAGE.sh /coachproxy/rv-c/
 COPY process_message.sh /coachproxy/rv-c/
+COPY healthcheck.pl /coachproxy/rv-c
 COPY dc_dimmer.pl /coachproxy/rv-c/
 COPY rvc-spec.yml /coachproxy/etc/
 
