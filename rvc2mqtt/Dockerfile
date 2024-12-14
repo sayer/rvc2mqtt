@@ -18,6 +18,8 @@ RUN apt-get update && \
     zlib1g-dev \
     ca-certificates \
     cpanminus \
+    net-tools \
+    kmod \
     && rm -rf /var/lib/apt/lists/*
 
 # Install required Perl mcdules
