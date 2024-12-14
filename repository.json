@@ -1,0 +1,10 @@
+{
+  "name": "GPS Add-ons",
+  "url": "https://github.com/sayer/gpsd/tree/main",
+  "maintainer": "sayer",
+  "addons": [
+    {
+      "slug": "gpsd"
+    }
+  ]
+}
