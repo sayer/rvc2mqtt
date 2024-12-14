@@ -1,7 +1,6 @@
 #!/bin/bash
 
 echo "install net tools"
-apk add --no-cache net-tools kmod
 
 # Ensure CAN interface is up
 echo "ip link set can0 up "
