@@ -13,8 +13,10 @@ HEALTHCHECK_PID=$!
 echo "starting rvc2mqtt..."
 /coachproxy/rv-c/rvc2mqtt.pl &
 
+sleep 5
+
 #Start mqtt_rvc_set in the foreground
-echo "starting mqtt)rvc_set..."
+echo "starting mqtt_rvc_set..."
 /coachproxy/rv-c/mqtt_rvc_set.pl
 
 # Function to clean up processes
