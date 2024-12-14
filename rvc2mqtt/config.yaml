@@ -33,9 +33,3 @@ host_dbus: true
 apparmor: false
 # Add capabilities for network and device access
 full_access: true
-# Add host's /sys filesystem access
-map:
-  sys_class_net:
-    - /sys/class/net:/sys/class/net:ro
-  sys_devices:
-    - /sys/devices:/sys/devices:ro
