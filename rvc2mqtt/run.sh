@@ -2,11 +2,15 @@
 
 # Ensure CAN interface is up
 echo "ip link set can0 up "
-ip link set can0 up 2>/dev/null || true
+#ip link set can0 up 2>/dev/null || true
+ip link set can0 up type can bitrate 500000
 
 echo "is can up?"
 ip link show can0
 echo
+lsmod
+ifconfig -a | grep can0
+ip link | grep can0
 sleep 5
 
 # Start healthcheck in the background
