@@ -4,6 +4,11 @@
 echo "ip link set can0 up "
 ip link set can0 up 2>/dev/null || true
 
+echo "is can up?"
+ip link show can0
+echo
+sleep 5
+
 # Start healthcheck in the background
 echo "starting health check..."
 /coachproxy/rv-c/healthcheck.pl &

@@ -1,6 +1,6 @@
 name: "RVC to MQTT Bridge"
 description: "Bridging RVC CAN bus data to MQTT for Home Assistant."
-version: "0.1.5"
+version: "0.1.6"
 slug: "rvc2mqtt"
 init: false
 arch:
@@ -19,4 +19,9 @@ schema:
 volumes:
     - 'share:/share'
 host_network: true
+devices:
+    - /dev/can0
 full_access: true
+privileged:
+  - NET_ADMIN
+  - SYS_ADMIN
