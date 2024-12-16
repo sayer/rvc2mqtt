@@ -22,7 +22,7 @@ HEALTHCHECK_PID=$!
 
 # Start rvc2mqtt in the background
 echo "starting rvc2mqtt..."
-/coachproxy/rv-c/rvc2mqtt.pl &
+/coachproxy/rv-c/rvc2mqtt.pl -debug &
 
 sleep 5
 
