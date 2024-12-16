@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use IO::Socket::INET;
 
-my $port = 8123;  # Health check port
+my $port = 80;  # Health check port
 my $server = IO::Socket::INET->new(
     LocalPort => $port,
     Proto => 'tcp',

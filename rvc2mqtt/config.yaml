@@ -1,6 +1,6 @@
 name: "RVC to MQTT Bridge"
 description: "Bridging RVC CAN bus data to MQTT for Home Assistant."
-version: "0.1.11"
+version: "0.1.12"
 slug: "rvc2mqtt"
 init: false
 arch:
@@ -9,7 +9,7 @@ arch:
   - armv7
   - i386
 ports:
-  5000/tcp: 5000
+  80/tcp: 80
 options:
   mqtt_user: "your_mqtt_user"
   mqtt_password: "your_mqtt_password"
@@ -30,6 +30,11 @@ privileged:
 devices:
   - /dev/net/can
 host_dbus: true
-apparmor: false
+#apparmor: false
 # Add capabilities for network and device access
 #full_access: true
+healthcheck:
+  test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
