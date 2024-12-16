@@ -8,7 +8,7 @@ arch:
   - amd64
   - armv7
   - i386
-#ports:
+ports:
   5000/tcp: 5000
 options:
   mqtt_user: "your_mqtt_user"
