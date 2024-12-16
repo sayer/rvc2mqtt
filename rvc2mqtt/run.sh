@@ -25,6 +25,7 @@ echo "starting rvc2mqtt..."
 /coachproxy/rv-c/rvc2mqtt.pl -debug &
 
 sleep 5
+jobs
 
 #Start mqtt_rvc_set in the foreground
 echo "starting mqtt_rvc_set..."
