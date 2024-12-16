@@ -10,7 +10,6 @@ ip link set can0 up type can bitrate 500000
 echo "is can up?"
 ip link show can0
 echo
-lsmod
 ifconfig -a | grep can0
 ip link | grep can0
 sleep 5
