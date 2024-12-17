@@ -1,13 +1,9 @@
 #!/bin/bash
 
-echo "install net tools"
-
 # Ensure CAN interface is up
-echo "ip link set can0 up "
+echo "\nChecking if can0 is available and up\n"
 #ip link set can0 up 2>/dev/null || true
 ip link set can0 up type can bitrate 500000
-
-echo "is can up?"
 ip link show can0
 echo
 ifconfig -a | grep can0

@@ -1,6 +1,11 @@
 ARG BUILD_FROM
 FROM $BUILD_FROM
 
+# 
+# Docker container which pulls data off the RV-C CAN bus formats and publishes on MQTT
+# Also listens for SVRSET Topics on MQTT. Executes commands to push packets onto the CAN bus
+#
+
 # Set noninteractive mode
 ARG DEBIAN_FRONTEND=noninteractive
 
