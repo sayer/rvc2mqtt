@@ -1,6 +1,6 @@
 {
-  "name": "GPS Add-ons",
-  "url": "https://github.com/sayer/gpsd/tree/main",
+  "name": "rvc2mqtt",
+  "url": "https://github.com/sayer/rvc2mqtt/tree/main",
   "maintainer": "sayer",
   "addons": [
     {
