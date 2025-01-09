@@ -26,7 +26,7 @@ my $subscription = $mqtt->subscribe(
         my ($topic, $message) = @_;
         print "Received message: $message on topic $topic\n";
         my @topics = split('/', $topic);
-        my $script = "./$topics[1].sh";
+        my $script = "/coachproxy/rv-c/$topics[1].sh";
         my $exit_code = system($script, $topic, $message);
         if ($exit_code != 0) {
           print "Script execution failed with exit code $exit_code.\n";
