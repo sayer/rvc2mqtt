@@ -52,6 +52,9 @@ COPY process_message.sh /coachproxy/rv-c/
 COPY healthcheck.pl /coachproxy/rv-c
 COPY dc_dimmer.pl /coachproxy/rv-c/
 COPY rvc-spec.yml /coachproxy/etc/
+COPY DC_DIMMER_STATUS_3.sh /coachproxy/rv-c/
+COPY THERMOSTAT_COMMAND_1_MODE.sh /coachproxy/rv-c/
+COPY THERMOSTAT_COMMAND_1_TEMP.sh /coachproxy/rv-c/
 
 # Set execute permissions
 RUN chmod +x /coachproxy/rv-c/*.pl /coachproxy/rv-c/*.sh && \
