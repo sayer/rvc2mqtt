@@ -10,6 +10,11 @@ ifconfig -a | grep can0
 ip link | grep can0
 sleep 5
 
+echo "set baud rate"
+ip link set can0 down
+ip link set can0 type can bitrate 250000
+ip link set can0 up
+
 # Start healthcheck in the background
 echo "starting health check..."
 /coachproxy/rv-c/healthcheck.pl &
