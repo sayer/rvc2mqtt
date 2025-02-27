@@ -234,8 +234,14 @@ sub hex2bin() {
 
 # Convert a temperature from C to F, rounded to tenths of a degree.
 sub tempC2F() {
-	my ($tempC) = @_;
-	return int((($tempC * 9 / 5) + 32) * 10) / 10;
+    my ($tempC) = @_;
+
+    if ($tempC eq "n/a") {
+        return "n/a";  # Return "n/a" directly if input is "n/a"
+    } else {
+        # Proceed with the calculation only if it's not "n/a"
+        return int((($tempC * 9 / 5) + 32) * 10) / 10;
+    }
 }
 
 
