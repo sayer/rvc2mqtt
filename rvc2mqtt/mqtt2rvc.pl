@@ -76,62 +76,69 @@ mqtt_loop($mqtt);
 # --------------------------------------------------------------
 # MQTT Callback - Process incoming SET commands
 # --------------------------------------------------------------
+# Define callback subroutines outside of the loop
+sub message_handler_simple {
+  my ($topic, $message) = @_;
+  
+  # Skip if not a set topic
+  return unless $topic =~ m|^RVC/(.+?)/set$|;
+  
+  my $dgn_name = $1;
+  my $instance;
+  
+  # Check if topic includes an instance
+  if ($dgn_name =~ m|^(.+?)/(\d+)$|) {
+    $dgn_name = $1;
+    $instance = $2;
+  }
+  
+  # Process the message
+  eval {
+    process_mqtt_message($dgn_name, $instance, $message);
+  };
+  
+  if ($@) {
+    print "Error processing message: $@\n";
+  }
+}
+
+sub message_handler_with_instance {
+  my ($topic, $message) = @_;
+  
+  # Skip if not a set topic
+  return unless $topic =~ m|^RVC/(.+?)/(.+?)/set$|;
+  
+  my $dgn_name = $1;
+  my $instance = $2;
+  
+  # Process the message
+  eval {
+    process_mqtt_message($dgn_name, $instance, $message);
+  };
+  
+  if ($@) {
+    print "Error processing message: $@\n";
+  }
+}
+
 sub mqtt_loop {
   my ($mqtt) = @_;
   
-  # Set up subscription callback
-  $mqtt->subscribe("RVC/+/set", sub {
-    my ($topic, $message) = @_;
-    
-    # Skip if not a set topic
-    return unless $topic =~ m|^RVC/(.+?)/set$|;
-    
-    my $dgn_name = $1;
-    my $instance;
-    
-    # Check if topic includes an instance
-    if ($dgn_name =~ m|^(.+?)/(\d+)$|) {
-      $dgn_name = $1;
-      $instance = $2;
-    }
-    
-    # Process the message
-    eval {
-      process_mqtt_message($dgn_name, $instance, $message);
-    };
-    
-    if ($@) {
-      print "Error processing message: $@\n";
-    }
-  });
+  print "Setting up MQTT subscriptions...\n" if $debug;
   
-  $mqtt->subscribe("RVC/+/+/set", sub {
-    my ($topic, $message) = @_;
-    
-    # Skip if not a set topic
-    return unless $topic =~ m|^RVC/(.+?)/(.+?)/set$|;
-    
-    my $dgn_name = $1;
-    my $instance = $2;
-    
-    # Process the message
-    eval {
-      process_mqtt_message($dgn_name, $instance, $message);
-    };
-    
-    if ($@) {
-      print "Error processing message: $@\n";
-    }
-  });
+  # Set up subscription callbacks
+  $mqtt->subscribe("RVC/+/set" => \&message_handler_simple);
+  $mqtt->subscribe("RVC/+/+/set" => \&message_handler_with_instance);
   
-  # Start the event loop
-  $mqtt->tick();
+  print "Entering MQTT event loop...\n" if $debug;
   
   # Keep the event loop running
   while (1) {
-    $mqtt->tick();
-    # Sleep a bit to avoid burning CPU
-    select(undef, undef, undef, 0.01);
+    # Process messages
+    $mqtt->tick(1);  # Process for 1 second
+    
+    # Add debug output to verify the loop is running
+    print "." if $debug && rand() < 0.01;  # Occasionally print a dot in debug mode
   }
 }
 

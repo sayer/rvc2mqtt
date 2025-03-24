@@ -1,6 +1,6 @@
 # RV-C Integration for Home Assistant
 
-This example demonstrates how to integrate RV-C data into Home Assistant using MQTT.
+integrate RV-C data into Home Assistant using MQTT.
 
 ## Overview
 
