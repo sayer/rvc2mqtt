@@ -78,32 +78,54 @@ mqtt_loop($mqtt);
 # --------------------------------------------------------------
 sub mqtt_loop {
   my ($mqtt) = @_;
-  $mqtt->run_client(
-    on_publish => sub {
-      my ($topic, $message) = @_;
-      
-      # Skip if not a set topic
-      return unless $topic =~ m|^RVC/(.+?)/set$|;
-      
-      my $dgn_name = $1;
-      my $instance;
-      
-      # Check if topic includes an instance
-      if ($dgn_name =~ m|^(.+?)/(\d+)$|) {
-        $dgn_name = $1;
-        $instance = $2;
-      }
-      
-      # Process the message
-      eval {
-        process_mqtt_message($dgn_name, $instance, $message);
-      };
-      
-      if ($@) {
-        print "Error processing message: $@\n";
-      }
+  
+  # Set up subscription callback
+  $mqtt->subscribe("RVC/+/set" => sub {
+    my ($topic, $message) = @_;
+    
+    # Skip if not a set topic
+    return unless $topic =~ m|^RVC/(.+?)/set$|;
+    
+    my $dgn_name = $1;
+    my $instance;
+    
+    # Check if topic includes an instance
+    if ($dgn_name =~ m|^(.+?)/(\d+)$|) {
+      $dgn_name = $1;
+      $instance = $2;
     }
-  );
+    
+    # Process the message
+    eval {
+      process_mqtt_message($dgn_name, $instance, $message);
+    };
+    
+    if ($@) {
+      print "Error processing message: $@\n";
+    }
+  });
+  
+  $mqtt->subscribe("RVC/+/+/set" => sub {
+    my ($topic, $message) = @_;
+    
+    # Skip if not a set topic
+    return unless $topic =~ m|^RVC/(.+?)/(.+?)/set$|;
+    
+    my $dgn_name = $1;
+    my $instance = $2;
+    
+    # Process the message
+    eval {
+      process_mqtt_message($dgn_name, $instance, $message);
+    };
+    
+    if ($@) {
+      print "Error processing message: $@\n";
+    }
+  });
+  
+  # Start the event loop
+  $mqtt->run();
 }
 
 # --------------------------------------------------------------
