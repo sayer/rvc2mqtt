@@ -26,14 +26,10 @@ echo "starting rvc2mqtt..."
 MQTT_USER=$(jq --raw-output ".mqtt_user // empty" /data/options.json 2>/dev/null || echo "")
 MQTT_PASSWORD=$(jq --raw-output ".mqtt_password // empty" /data/options.json 2>/dev/null || echo "")
 
-# Use credentials if they're available
-if [ -n "$MQTT_USER" ] && [ -n "$MQTT_PASSWORD" ]; then
-  echo "Using MQTT authentication"
-  /coachproxy/rv-c/mqtt2rvc.pl --user="$MQTT_USER" --password="$MQTT_PASSWORD" &
-else
-  echo "No MQTT credentials found, connecting without authentication"
-  /coachproxy/rv-c/mqtt2rvc.pl &
-fi
+# Start mqtt2rvc without authentication since Net::MQTT::Simple doesn't support
+# password authentication on non-TLS connections
+echo "Starting mqtt2rvc without authentication (Net::MQTT::Simple limitation)"
+/coachproxy/rv-c/mqtt2rvc.pl &
 
 sleep 5
 jobs
