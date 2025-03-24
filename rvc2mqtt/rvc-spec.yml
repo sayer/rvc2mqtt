@@ -485,6 +485,31 @@ API_VERSION: 1
 1FFF6:
   name: WATERHEATER_COMMAND
   alias: 1FFF7
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      name: operating modes
+      type: uint8
+      values:
+        0: off
+        1: combustion
+        2: electric
+        3: gas electric
+        4: automatic
+        5: test combustion
+        6: test electric
+    - byte: 2-3
+      name: set point temperature
+      type: uint16
+      unit: Deg C
+    - byte: 6
+      bit: 0-3
+      name: electric element level
+      type: uint4
+      values:
+        1: Desired Level # (1 to 13). Must be less than or equal to the maximum level available. Does not change the operating mode.
 
 1FFF5:
   name: GAS_SENSOR_STATUS
@@ -606,6 +631,32 @@ API_VERSION: 1
         131: forward 6
         132: forward 7
         251: park
+
+1FEFD:
+  name: CHASSIS_MOBILITY_STATUS_2
+  parameters:
+    - byte: 0-1
+      name: Steering Wheel Angle
+      type: uint16
+      unit: rad
+      comment: "Precision = 1/1024 radian. Offset = -31.374 radian. Value Range = -31.374 to +31.374 radian. 65534 – Error. 65535 – Unknown. Positive values indicate turning to the left (counter-clockwise)."
+    - byte: 2
+      bit: 0-1
+      name: Headlight Switch
+      type: uint2
+      values:
+        00: "Headlight Switch Off"
+        01: "Headlight Switch On"
+    - byte: 3
+      name: Fuel Level Percent
+      type: uint8
+      unit: "%"
+      comment: "The amount of fuel in the tank relative to capacity (see Table 5.3)"
+    - byte: 4-7
+      name: Odometer
+      type: uint32
+      unit: m
+      comment: "Precision = 5m. 0 = 0m. Value Range = 0m to 21,474,836,465m. Scaling is identical to SAE J1939 Total Vehicle Distance (High Resolution)."
 
 1FFF3:
   name: CHASSIS_MOBILITY_COMMAND
@@ -922,681 +973,350 @@ API_VERSION: 1
       name: tag axle left right spring
       type: uint8
 
+
 1FFEE:
   name: LEVELING_CONTROL_COMMAND
   parameters:
     - byte: 0
       bit: 0-1
-      name: leveling mode command
-      type: bit2
+      name: jack retracting -or- air spring dumping - left rear
+      type: uint2
       values:
-        00: manual
-        01: automatic
-        10: inactive
-        11: store
-      comment: Command to set the operating mode of the leveling system
+        00: Off
+        01: On
     - byte: 0
       bit: 2-3
-      name: all jack retract
-      type: bit2
+      name: jack extending -or- air spring filling - left rear
+      type: uint2
       values:
-        00: no action
-        01: retract all jacks
-        10: reserved
-        11: unavailable
-      comment: Command to retract all jacks simultaneously
+        00: Off
+        01: On
     - byte: 0
       bit: 4-5
-      name: front jack extend
+      name: jack retracting -or- air spring dumping - right front - n/a (three point)
       type: bit2
       values:
-        00: no action
-        01: extend
-        10: reserved
-        11: unavailable
-      comment: Command to extend front jacks (manual mode)
+        00: Off
+        01: On
     - byte: 0
       bit: 6-7
-      name: front jack retract
+      name: jack extending -or- air spring filling - right front - n/a (three point)
       type: bit2
       values:
-        00: no action
-        01: retract
-        10: reserved
-        11: unavailable
-      comment: Command to retract front jacks (manual mode)
+        00: Off
+        01: On
     - byte: 1
       bit: 0-1
-      name: left front jack extend
+      name: jack retracting -or- air spring dumping - right rear
       type: bit2
       values:
-        00: no action
-        01: extend
-        10: reserved
-        11: unavailable
-      comment: Command to extend left front jack (manual mode)
+        00: Off
+        01: On
     - byte: 1
       bit: 2-3
-      name: left front jack retract
+      name: jack extending -or- air spring filling - right rear
       type: bit2
       values:
-        00: no action
-        01: retract
-        10: reserved
-        11: unavailable
-      comment: Command to retract left front jack (manual mode)
+        00: Off
+        01: On
     - byte: 1
       bit: 4-5
-      name: right front jack extend
+      name: jack retracting -or- air spring dumping - left front - front (three point)
       type: bit2
       values:
-        00: no action
-        01: extend
-        10: reserved
-        11: unavailable
-      comment: Command to extend right front jack (manual mode)
+        00: Off
+        01: On
     - byte: 1
       bit: 6-7
-      name: right front jack retract
+      name: jack extending -or- air spring filling - left front - front (three point)
       type: bit2
       values:
-        00: no action
-        01: retract
-        10: reserved
-        11: unavailable
-      comment: Command to retract right front jack (manual mode)
+        00: Off
+        01: On
     - byte: 2
       bit: 0-1
-      name: rear jack extend
+      name: jack retracting -or- air spring dumping -left middle
       type: bit2
       values:
-        00: no action
-        01: extend
-        10: reserved
-        11: unavailable
-      comment: Command to extend rear jacks (manual mode)
+        00: Off
+        01: On
     - byte: 2
       bit: 2-3
-      name: rear jack retract
+      name: jack extending -or- air spring filling - left middle
       type: bit2
       values:
-        00: no action
-        01: retract
-        10: reserved
-        11: unavailable
-      comment: Command to retract rear jacks (manual mode)
+        00: Off
+        01: On
     - byte: 2
       bit: 4-5
-      name: left rear jack extend
+      name: jack retracting -or- air spring dumping - right middle
       type: bit2
       values:
-        00: no action
-        01: extend
-        10: reserved
-        11: unavailable
-      comment: Command to extend left rear jack (manual mode)
+        00: Off
+        01: On
     - byte: 2
       bit: 6-7
-      name: left rear jack retract
+      name: jack extending -or- air spring filling - right middle
       type: bit2
       values:
-        00: no action
-        01: retract
-        10: reserved
-        11: unavailable
-      comment: Command to retract left rear jack (manual mode)
+        00: Off
+        01: On
     - byte: 3
       bit: 0-1
-      name: right rear jack extend
+      name: jack retracting - tongue (multi point)
       type: bit2
       values:
-        00: no action
-        01: extend
-        10: reserved
-        11: unavailable
-      comment: Command to extend right rear jack (manual mode)
+        00: Off
+        01: On
     - byte: 3
       bit: 2-3
-      name: right rear jack retract
+      name: jack extending - tongue (multi point)
       type: bit2
       values:
-        00: no action
-        01: retract
-        10: reserved
-        11: unavailable
-      comment: Command to retract right rear jack (manual mode)
+        00: Off
+        01: On
 
-1FFED:
-  name: LEVELING_CONTROL_STATUS
-  parameters:
-    - byte: 0
-      bit: 0-1
-      name: leveling mode status
-      type: bit2
-      values:
-        00: manual
-        01: automatic
-        10: inactive
-        11: store
-      comment: Current operating mode of the leveling system
-    - byte: 0
-      bit: 2-3
-      name: leveling status
-      type: bit2
-      values:
-        00: not level
-        01: level
-        10: error
-        11: unknown
-      comment: Current leveling status
-    - byte: 0
-      bit: 4-5
-      name: retract all status
-      type: bit2
-      values:
-        00: not retracting
-        01: retracting all
-        10: error
-        11: unknown
-      comment: Status of the retract all operation
-    - byte: 0
-      bit: 6-7
-      name: jacks down status
-      type: bit2
-      values:
-        00: all jacks up
-        01: at least one jack down
-        10: error
-        11: unknown
-      comment: Indicates if any jacks are extended
-    - byte: 1
-      bit: 0-1
-      name: front jacks status
-      type: bit2
-      values:
-        00: fully retracted
-        01: fully extended
-        10: moving
-        11: unknown/partial
-      comment: Status of front jacks
-    - byte: 1
-      bit: 2-3
-      name: left front jack status
-      type: bit2
-      values:
-        00: fully retracted
-        01: fully extended
-        10: moving
-        11: unknown/partial
-      comment: Status of left front jack
-    - byte: 1
-      bit: 4-5
-      name: right front jack status
-      type: bit2
-      values:
-        00: fully retracted
-        01: fully extended
-        10: moving
-        11: unknown/partial
-      comment: Status of right front jack
-    - byte: 2
-      bit: 0-1
-      name: rear jacks status
-      type: bit2
-      values:
-        00: fully retracted
-        01: fully extended
-        10: moving
-        11: unknown/partial
-      comment: Status of rear jacks
-    - byte: 2
-      bit: 2-3
-      name: left rear jack status
-      type: bit2
-      values:
-        00: fully retracted
-        01: fully extended
-        10: moving
-        11: unknown/partial
-      comment: Status of left rear jack
-    - byte: 2
-      bit: 4-5
-      name: right rear jack status
-      type: bit2
-      values:
-        00: fully retracted
-        01: fully extended
-        10: moving
-        11: unknown/partial
-      comment: Status of right rear jack
-    - byte: 3
-      bit: 0-1
-      name: lockout enabled
-      type: bit2
-      values:
-        00: not enabled
-        01: lockout enabled
-        10: reserved
-        11: unavailable
-      comment: Indicates if the vehicle movement lockout is enabled
-    - byte: 3
-      bit: 2-3
-      name: manual unlock status
-      type: bit2
-      values:
-        00: locked
-        01: manually unlocked
-        10: reserved
-        11: unavailable
-      comment: Indicates if the manual unlock is active
-    - byte: 3
-      bit: 4-7
-      name: fault code
-      type: uint4
-      values:
-        0000: no fault
-        0001: low voltage
-        0010: high voltage
-        0011: pump overtemp
-        0100: timeout error
-        0101: calibration error
-        0110: excessive angle
-        0111: jack fault
-        1000: communication error
-        1111: unknown fault
-      comment: System fault codes
-
-1FFEC:
-  name: LEVELING_JACK_STATUS
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      values:
-        0: left front
-        1: right front
-        2: left rear
-        3: right rear
-        4: front
-        5: rear
-        6: left middle
-        7: right middle
-      comment: Identifies the specific jack
-    - byte: 1
-      bit: 0-1
-      name: jack position
-      type: bit2
-      values:
-        00: fully retracted
-        01: fully extended
-        10: moving
-        11: partially extended
-      comment: Current position of the jack
-    - byte: 1
-      bit: 2-3
-      name: jack pressure
-      type: bit2
-      values:
-        00: no pressure
-        01: low pressure
-        10: normal pressure
-        11: high pressure
-      comment: Current pressure status of the jack
-    - byte: 1
-      bit: 4-5
-      name: jack load
-      type: bit2
-      values:
-        00: no load
-        01: normal load
-        10: overload
-        11: unknown
-      comment: Load status on the jack
-    - byte: 1
-      bit: 6-7
-      name: fault status
-      type: bit2
-      values:
-        00: no fault
-        01: communication fault
-        10: sensor fault
-        11: mechanical fault
-      comment: Fault status of the jack
-    - byte: 2
-      name: jack extension
-      type: uint8
-      unit: pct
-      comment: Percentage of jack extension (0-100%)
-    - byte: 3-4
-      name: jack pressure
-      type: uint16
-      unit: kPa
-      comment: Measured pressure in the jack hydraulic system
-    - byte: 5-6
-      name: jack position analog
-      type: uint16
-      comment: Analog position of the jack (raw sensor value)
-    - byte: 7
-      name: fault code
-      type: uint8
-      values:
-        0: no fault
-        1: timeout
-        2: position error
-        3: pressure error
-        4: current overload
-        5: mechanical obstruction
-        255: unknown fault
-      comment: Detailed jack fault code
 
 1FFEB:
   name: LEVELING_SENSOR_STATUS
   parameters:
     - byte: 0
-      name: side-to-side angle
+      bit: 0-1
+      name: left front sensor status low ride
       type: uint8
-      unit: Deg
-      comment: Angle of vehicle side-to-side (roll), 0-255 degrees with 128 as level
+      values:
+        0: under set point
+        1: over set point
+    - byte: 0
+      bit: 2-3
+      name: left front sensor status medium ride
+      type: uint8
+      values:
+        0: under set point
+        1: over set point
+    - byte: 0
+      bit: 4-5
+      name: left front sensor status high ride
+      type: uint8
+      values:
+        0: under set point
+        1: over set point
+    - byte: 0
+      bit: 6-7
+      name: left front sensor transition
+      type: uint8
+      values:
+        0: no transition
+        1: transition was made
     - byte: 1
-      name: front-to-back angle
+      bit: 0-1
+      name: left front quadrature encoder status channel A
       type: uint8
-      unit: Deg
-      comment: Angle of vehicle front-to-back (pitch), 0-255 degrees with 128 as level
+    - byte: 1
+      bit: 2-3
+      name: left front quadrature encoder status channel B
+      type: uint8
     - byte: 2
       bit: 0-1
-      name: side-to-side level status
-      type: bit2
+      name: right front sensor status low ride
+      type: uint8
       values:
-        00: too low on right
-        01: level
-        10: too low on left
-        11: unknown
-      comment: Current side-to-side level status
+        0: under set point
+        1: over set point
     - byte: 2
       bit: 2-3
-      name: front-to-back level status
-      type: bit2
+      name: right front sensor status medium ride
+      type: uint8
       values:
-        00: too low on rear
-        01: level
-        10: too low on front
-        11: unknown
-      comment: Current front-to-back level status
+        0: under set point
+        1: over set point
     - byte: 2
       bit: 4-5
-      name: sensor calibration status
-      type: bit2
+      name: right front sensor status high ride
+      type: uint8
       values:
-        00: not calibrated
-        01: calibrated
-        10: calibration error
-        11: unknown
-      comment: Calibration status of the leveling sensors
-    - byte: 3-4
-      name: side-to-side angle raw
-      type: uint16
-      comment: Raw sensor reading for side-to-side angle
-    - byte: 5-6
-      name: front-to-back angle raw
-      type: uint16
-      comment: Raw sensor reading for front-to-back angle
+        0: under set point
+        1: over set point
+    - byte: 2
+      bit: 6-7
+      name: right front sensor transition
+      type: uint8
+      values:
+        0: no transition
+        1: transition was made
+    - byte: 3
+      bit: 0-1
+      name: right front quadrature encoder status channel A
+      type: uint8
+    - byte: 3
+      bit: 2-3
+      name: right front quadrature encoder status channel B
+      type: uint8
+    - byte: 3
+      bit: 4-5
+      name: steering sensor quadrature encoder status channel A
+      type: uint8
+    - byte: 3
+      bit: 6-7
+      name: steering sensor quadrature encoder status channel B
+      type: uint8
+    - byte: 4
+      bit: 0-1
+      name: left rear sensor status low ride
+      type: uint8
+      values:
+        0: under set point
+        1: over set point
+    - byte: 4
+      bit: 2-3
+      name: left rear sensor status medium ride
+      type: uint8
+      values:
+        0: under set point
+        1: over set point
+    - byte: 4
+      bit: 4-5
+      name: left rear sensor status high ride
+      type: uint8
+      values:
+        0: under set point
+        1: over set point
+    - byte: 4
+      bit: 6-7
+      name: left rear sensor transition
+      type: uint8
+      values:
+        0: no transition
+        1: transition was made
+    - byte: 5
+      bit: 0-1
+      name: left rear quadrature encoder status channel A
+      type: uint8
+    - byte: 5
+      bit: 2-3
+      name: left rear quadrature encoder status channel B
+      type: uint8
+    - byte: 6
+      bit: 0-1
+      name: right rear sensor status low ride
+      type: uint8
+      values:
+        0: under set point
+        1: over set point
+    - byte: 6
+      bit: 2-3
+      name: right rear sensor status medium ride
+      type: uint8
+      values:
+        0: under set point
+        1: over set point
+    - byte: 6
+      bit: 4-5
+      name: right rear sensor status high ride
+      type: uint8
+      values:
+        0: under set point
+        1: over set point
+    - byte: 6
+      bit: 6-7
+      name: right rear sensor transition
+      type: uint8
+      values:
+        0: no transition
+        1: transition was made
     - byte: 7
       bit: 0-1
-      name: sensor fault
-      type: bit2
-      values:
-        00: no fault
-        01: communication error
-        10: sensor error
-        11: power error
-      comment: Sensor fault status
+      name: right rear quadrature encoder status channel A
+      type: uint8
+    - byte: 7
+      bit: 2-3
+      name: right rear quadrature encoder status channel B
+      type: uint8
 
 1FFEA:
   name: HYDRAULIC_PUMP_STATUS
   parameters:
     - byte: 0
-      bit: 0-1
-      name: pump operating status
-      type: bit2
-      values:
-        00: off
-        01: on
-        10: error
-        11: unknown
-      comment: Current operational status of the hydraulic pump
-    - byte: 0
-      bit: 2-3
-      name: direction
-      type: bit2
-      values:
-        00: stopped
-        01: extend
-        10: retract
-        11: unknown
-      comment: Current direction of hydraulic flow
-    - byte: 0
-      bit: 4-5
-      name: valve state
-      type: bit2
-      values:
-        00: closed
-        01: open
-        10: error
-        11: unknown
-      comment: Current valve state
-    - byte: 0
-      bit: 6-7
-      name: thermal status
-      type: bit2
-      values:
-        00: normal
-        01: high temperature
-        10: overtemperature shutdown
-        11: unknown
-      comment: Temperature status of the pump
-    - byte: 1
-      name: fluid level
+      name: instance
       type: uint8
-      unit: pct
-      comment: Hydraulic fluid level as percentage
-    - byte: 2-3
+    - byte: 1-2
       name: pump pressure
       type: uint16
-      unit: kPa
-      comment: Current hydraulic system pressure
-    - byte: 4-5
-      name: pump temperature
+      unit: Pa
+    - byte: 3-4
+      name: regulator pressure setting
       type: uint16
-      unit: Deg C
-      comment: Current pump temperature
-    - byte: 6
-      name: pump current
-      type: uint8
-      unit: A
-      comment: Current drawn by the pump motor
-    - byte: 7
-      name: fault code
-      type: uint8
-      values:
-        0: no fault
-        1: low fluid
-        2: high temperature
-        3: pressure fault
-        4: current overload
-        5: mechanical fault
-        6: valve fault
-        255: unknown fault
-      comment: Detailed pump fault code
+      unit: Pa
+    - byte: 5-6
+      name: frequency
+      type: uint16
+      unit: Hz
 
 1FEBC:
   name: HYDRAULIC_PUMP_COMMAND
   parameters:
     - byte: 0
-      bit: 0-1
-      name: pump command
-      type: bit2
-      values:
-        00: no change
-        01: pump on
-        10: pump off
-        11: reserved
-      comment: Command to control pump operation
-    - byte: 0
-      bit: 2-3
-      name: direction command
-      type: bit2
-      values:
-        00: no change
-        01: extend
-        10: retract
-        11: reserved
-      comment: Command to set pump direction
-    - byte: 0
-      bit: 4-5
-      name: valve command
-      type: bit2
-      values:
-        00: no change
-        01: open valve
-        10: close valve
-        11: reserved
-      comment: Command to control valve state
+      name: instance
+      type: uint8
     - byte: 1
-      name: target pressure
-      type: uint8
-      unit: pct
-      comment: Target pressure as a percentage of maximum
-    - byte: 2
-      name: maximum runtime
-      type: uint8
-      unit: sec
-      comment: Maximum allowed run time in seconds
-    - byte: 3
       bit: 0-1
-      name: reset fault
-      type: bit2
+      name: command
+      type: uint2
       values:
-        00: no action
-        01: reset fault
-        10: reserved
-        11: reserved
-      comment: Command to reset fault condition
+        0: disable pump
+        1: enable pump
+    - byte: 1-2
+      name: pump pressure setting
+      type: uint16
+      unit: Pa
+    - byte: 3-4
+      name: regulator pressure setting
+      type: uint16
+      unit: Pa
 
 1FFE9:
   name: LEVELING_AIR_STATUS
   parameters:
     - byte: 0
       bit: 0-1
-      name: operating mode
+      name: aas operating status
       type: bit2
       values:
-        00: inactive
-        01: auto level
-        10: manual
-        11: travel mode
-      comment: Current operating mode of air leveling system
+        00: off
+        01: on
     - byte: 0
-      bit: 2-3
-      name: level status
-      type: bit2
+      bit: 2-5
+      name: aas mode
+      type: bit4
       values:
-        00: not level
-        01: level
-        10: leveling in progress
-        11: unknown
-      comment: Current leveling status
-    - byte: 0
-      bit: 4-5
-      name: dump status
-      type: bit2
-      values:
-        00: not dumped
-        01: dumped
-        10: dumping in progress
-        11: unknown
-      comment: Air suspension dump status
+        0000: normal
+        0001: fly mode
+        0010: reset
+        1110: error
+        1111: na
     - byte: 1
-      name: front left pressure
+      name: left front sensor mode
       type: uint8
-      unit: pct
-      comment: Front left air pressure as percentage
+      unit: Pct
     - byte: 2
-      name: front right pressure
+      name: right front sensor mode
       type: uint8
-      unit: pct
-      comment: Front right air pressure as percentage
+      unit: Pct
     - byte: 3
-      name: rear left pressure
+      name: right rear sensor mode
       type: uint8
-      unit: pct
-      comment: Rear left air pressure as percentage
+      unit: Pct
     - byte: 4
-      name: rear right pressure
+      name: left rear sensor mode
       type: uint8
-      unit: pct
-      comment: Rear right air pressure as percentage
+      unit: Pct
     - byte: 5
       bit: 0-1
-      name: front left valve status
-      type: bit2
+      name: tag axle position
+      type: bit
       values:
-        00: closed
-        01: filling
-        10: dumping
-        11: unknown
-      comment: Status of front left valve
-    - byte: 5
-      bit: 2-3
-      name: front right valve status
-      type: bit2
-      values:
-        00: closed
-        01: filling
-        10: dumping
-        11: unknown
-      comment: Status of front right valve
-    - byte: 5
-      bit: 4-5
-      name: rear left valve status
-      type: bit2
-      values:
-        00: closed
-        01: filling
-        10: dumping
-        11: unknown
-      comment: Status of rear left valve
-    - byte: 5
-      bit: 6-7
-      name: rear right valve status
-      type: bit2
-      values:
-        00: closed
-        01: filling
-        10: dumping
-        11: unknown
-      comment: Status of rear right valve
-    - byte: 6
-      name: compressor status
-      type: uint8
-      values:
-        0: off
-        1: on
-        2: overheated
-        3: fault
-        255: unknown
-      comment: Status of the air compressor
-    - byte: 7
-      name: fault code
-      type: uint8
-      values:
-        0: no fault
-        1: compressor fault
-        2: valve fault
-        3: sensor fault
-        4: pressure fault
-        5: communication error
-        255: unknown fault
-      comment: System fault code
+        00: down
+        01: up
 
 1FFE8:
   name: SLIDE_STATUS
@@ -1604,85 +1324,45 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-      values:
-        0: main slide
-        1: living room slide
-        2: bedroom slide
-        3: kitchen slide
-        4: bathroom slide
-        5: secondary living room slide
-      comment: Identifies the specific slide-out
     - byte: 1
-      bit: 0-1
-      name: position status
-      type: bit2
+      name: motion
+      type: uint8
       values:
-        00: fully retracted
-        01: fully extended
-        10: moving
-        11: partially extended/retracted
-      comment: Current position status of the slide
-    - byte: 1
-      bit: 2-3
-      name: motion status
-      type: bit2
-      values:
-        00: stopped
-        01: extending
-        10: retracting
-        11: unknown
-      comment: Current motion status of the slide
-    - byte: 1
-      bit: 4-5
-      name: lockout status
-      type: bit2
-      values:
-        00: not locked out
-        01: locked out
-        10: error
-        11: unknown
-      comment: Slide movement lockout status
-    - byte: 1
-      bit: 6-7
-      name: fault status
-      type: bit2
-      values:
-        00: no fault
-        01: fault present
-        10: multiple faults
-        11: unknown
-      comment: Fault status of the slide
+        0: no motion
+        1: extending
+        2: retracting
     - byte: 2
-      name: extension position
+      name: position
       type: uint8
-      unit: pct
-      comment: Current extension position as percentage (0% = fully retracted, 100% = fully extended)
+      unit: Pct
     - byte: 3
-      name: motor current
-      type: uint8
-      unit: A
-      comment: Current draw of the slide motor
-    - byte: 4-5
-      name: encoder position
-      type: uint16
-      comment: Raw encoder position value
-    - byte: 6
-      name: fault code
-      type: uint8
+      bit: 0-1
+      name: lock status
+      type: uint2
       values:
-        0: no fault
-        1: overcurrent
-        2: motor stall
-        3: encoder fault
-        4: position error
-        5: obstruction detected
-        6: timeout
-        255: unknown fault
-      comment: Detailed fault code
-    - byte: 7
-      name: fault data
-      type: uint8
-      comment: Additional data related to the fault code
+        00: unlocked
+        01: locked
+    - byte: 3
+      bit: 2-3
+      name: unlock status
+      type: uint2
+      values:
+        00: unlocked
+        01: locked
+    - byte: 3
+      bit: 4-5
+      name: user lock status
+      type: uint2
+      values:
+        00: unlocked
+        01: locked
+    - byte: 3
+      bit: 6-7
+      name: brake status
+      type: uint2
+      values:
+        00: all motor brakes not locked
+        01: one or more motor brakes locked
 
 1FFE7:
   name: SLIDE_COMMAND
@@ -1690,54 +1370,18 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-      values:
-        0: main slide
-        1: living room slide
-        2: bedroom slide
-        3: kitchen slide
-        4: bathroom slide
-        5: secondary living room slide
-      comment: Identifies the specific slide-out to command
     - byte: 1
       bit: 0-1
-      name: movement command
+      name: direction of movement
       type: bit2
       values:
-        00: stop
-        01: extend
-        10: retract
-        11: reserved
-      comment: Command to control slide movement
-    - byte: 1
-      bit: 2-3
-      name: override command
-      type: bit2
-      values:
-        00: no override
-        01: override lockouts
-        10: reserved
-        11: reserved
-      comment: Command to override safety lockouts
-    - byte: 1
-      bit: 4-5
-      name: reset fault
-      type: bit2
-      values:
-        00: no action
-        01: reset fault
-        10: reserved
-        11: reserved
-      comment: Command to reset fault conditions
-    - byte: 2
-      name: target position
-      type: uint8
-      unit: pct
-      comment: Target position for the slide (0-100%)
+        0: stop
+        1: extend
+        2: retract
     - byte: 3
-      name: maximum current
+      name: move to position
       type: uint8
-      unit: A
-      comment: Maximum allowed current during operation
+      unit: Pct
 
 1FFE6:
   name: SLIDE_SENSOR_STATUS
@@ -1745,99 +1389,55 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-      comment: Identifies which slide-out these sensors are for
     - byte: 1
-      bit: 0-1
-      name: fully retracted sensor
-      type: bit2
-      values:
-        00: not triggered
-        01: triggered
-        10: error
-        11: unknown
-      comment: Status of the fully retracted position sensor
-    - byte: 1
-      bit: 2-3
-      name: fully extended sensor
-      type: bit2
-      values:
-        00: not triggered
-        01: triggered
-        10: error
-        11: unknown
-      comment: Status of the fully extended position sensor
-    - byte: 1
-      bit: 4-5
-      name: obstruction sensor
-      type: bit2
-      values:
-        00: clear
-        01: obstruction detected
-        10: error
-        11: unknown
-      comment: Status of obstruction detection sensor
-    - byte: 1
-      bit: 6-7
-      name: motion sensor
-      type: bit2
-      values:
-        00: no motion detected
-        01: motion detected
-        10: error
-        11: unknown
-      comment: Status of motion detection sensor
-    - byte: 2
-      bit: 0-1
-      name: inner seal sensor
-      type: bit2
-      values:
-        00: not sealed
-        01: sealed
-        10: error
-        11: unknown
-      comment: Status of the inner seal sensor
-    - byte: 2
-      bit: 2-3
-      name: outer seal sensor
-      type: bit2
-      values:
-        00: not sealed
-        01: sealed
-        10: error
-        11: unknown
-      comment: Status of the outer seal sensor
-    - byte: 2
-      bit: 4-5
-      name: encoder status
-      type: bit2
-      values:
-        00: not moving
-        01: moving
-        10: error
-        11: unknown
-      comment: Status of the position encoder
-    - byte: 3
-      name: fault code
+      name: voltage fault
       type: uint8
       values:
-        0: no fault
-        1: retracted sensor fault
-        2: extended sensor fault
-        3: obstruction sensor fault
-        4: motion sensor fault
-        5: inner seal sensor fault
-        6: outer seal sensor fault
-        7: encoder fault
-        255: unknown fault
-      comment: Detailed sensor fault code
-    - byte: 4-5
-      name: position encoder value
-      type: uint16
-      comment: Current raw encoder value
-    - byte: 6-7
-      name: position calibration value
-      type: uint16
-      comment: Calibration value for position encoder
+        0: voltage ok
+        1: extremely low voltage
+        2: low voltage
+        3: high voltage
+        4: extremely high voltage
+        5: open line 1 detected
+        6: open line 2 detected
+    - byte: 2
+      bit: 0-1
+      name: fault surge protection
+      type: bit2
+      values:
+        00: no fault
+        01: surge fault detected
+    - byte: 2
+      bit: 2-3
+      name: fault high frequency
+      type: bit2
+      values:
+        00: no fault
+        01: frequency over high limit
+    - byte: 2
+      bit: 4-5
+      name: fault low frequency
+      type: bit2
+      values:
+        00: no fault
+        01: frequency below low limit
+    - byte: 2
+      bit: 6-7
+      name: bypass mode active
+      type: bit2
+      values:
+        00: normal mode
+        01: bypass mode
+    - byte: 3
+      bit: 0-3
+      name: qualification Status
+      type: uint4
+      values:
+        0: unqualified (no ac present)
+        1: unqualified (bad ac)
+        2: waiting to qualify
+        3: qualifying
+        4: qualified (good ac)
 
 1FFE5:
   name: SLIDE_MOTOR_STATUS
@@ -1845,207 +1445,107 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-      comment: Identifies which slide-out this motor controls
     - byte: 1
       bit: 0-1
-      name: motor status
-      type: bit2
+      name: voltage fault
+      type: uint8
       values:
-        00: stopped
-        01: running
-        10: stalled
-        11: fault
-      comment: Current status of the motor
-    - byte: 1
+        0: voltage ok
+        1: extremely low voltage
+        2: low voltage
+        3: high voltage
+        4: extremely high voltage
+        5: open line 1 detected
+        6: open line 2 detected
+    - byte: 2
+      bit: 0-1
+      name: current fault
+      type: uint8
+      values:
+        0: current ok
+        1: extremely low current
+        2: low current
+        3: high current
+        4: extremely high current
+        5: open line 1 detected
+        6: open line 2 detected
+    - byte: 2
       bit: 2-3
-      name: direction
-      type: bit2
+      name: temperature fault
+      type: uint8
       values:
-        00: stopped
-        01: extending
-        10: retracting
-        11: unknown
-      comment: Current direction of motor operation
-    - byte: 1
+        0: temperature ok
+        1: too cold
+        2: cold
+        3: hot
+        4: extremely hot
+        5: open line 1 detected
+        6: open line 2 detected
+    - byte: 2
       bit: 4-5
-      name: thermal status
+      name: polarity fault
       type: bit2
       values:
-        00: normal
-        01: hot
-        10: overtemp
-        11: unknown
-      comment: Thermal status of the motor
-    - byte: 1
+        00: polarity ok
+        01: reverse polarity detected
+    - byte: 2
       bit: 6-7
-      name: relay status
+      name: ground fault
       type: bit2
       values:
-        00: off
-        01: on
-        10: error
-        11: unknown
-      comment: Status of the motor control relay
-    - byte: 2-3
-      name: motor current
-      type: uint16
-      unit: A
-      comment: Current being drawn by the motor
-    - byte: 4-5
-      name: motor voltage
-      type: uint16
-      unit: V
-      comment: Voltage at the motor
-    - byte: 6
-      name: duty cycle
-      type: uint8
-      unit: pct
-      comment: Current duty cycle of the motor
-    - byte: 7
-      name: fault code
-      type: uint8
-      values:
-        0: no fault
-        1: overcurrent
-        2: overvoltage
-        3: undervoltage
-        4: stall
-        5: overtemperature
-        6: relay fault
-        7: wiring fault
-        8: encoder fault
-        255: unknown fault
-      comment: Detailed motor fault code
-      
+        00: no fault
+        01: ground fault detected
+
 1FFE4:
   name: FURNACE_STATUS
   parameters:
     - byte: 0
       name: instance
       type: uint8
+      comment: Corresponds to "Zones" in user terminology.
     - byte: 1
-      bit: 0-1
-      name: operating status
-      type: bit2
-      values:
-        00: off
-        01: on
-    - byte: 1
-      bit: 2-3
+      bit: 0-3
       name: operating mode
-      type: bit2
+      type: bit4
       values:
-        00: automatic
-        01: manual
+        0000: off
+        0001: cool
+        0010: heat
+        0011: auto
+        0100: fan only
     - byte: 1
       bit: 4-5
-      name: fan status
-      type: bit2
-      values:
-        00: off
-        01: on
-    - byte: 2-3
-      name: ambient temperature
-      type: uint16
-      unit: Deg C
-    - byte: 4-5
-      name: setpoint temperature
-      type: uint16
-      unit: Deg C
-    - byte: 6
-      name: duty cycle
-      type: uint8
-      unit: pct
-    - byte: 7
-      bit: 0-1
-      name: flame detected
-      type: bit2
-      values:
-        00: no flame
-        01: flame detected
-
-1FFE3:
-  name: FURNACE_COMMAND
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific furnace in multi-furnace systems
-    - byte: 1
-      bit: 0-1
-      name: operating status command
-      type: bit2
-      values:
-        00: off
-        01: on
-        10: reserved
-        11: no change
-      comment: Command to turn furnace on or off
-    - byte: 1
-      bit: 2-3
-      name: operating mode command
-      type: bit2
-      values:
-        00: automatic
-        01: manual
-        10: emergency heat
-        11: no change
-      comment: Command to set furnace operating mode
-    - byte: 1
-      bit: 4-5
-      name: fan command
-      type: bit2
+      name: fan mode
+      type: bit
       values:
         00: auto
         01: on
-        10: reserved
-        11: no change
-      comment: Command to control fan operation
+      comment: This forces the fan to be on all the time, but allows heat and cool to turn on and off according to the Operating Mode.
     - byte: 1
       bit: 6-7
-      name: fault reset
-      type: bit2
+      name: schedule mode
+      type: bit
       values:
-        00: no action
-        01: reset fault
-        10: reserved
-        11: reserved
-      comment: Command to reset fault conditions
-    - byte: 2-3
-      name: setpoint temperature
-      type: uint16
-      unit: Deg C
-      comment: Target temperature setting
-    - byte: 4
+        00: disabled
+        01: enabled
+      comment: If enabled, the set point will change according to programmed scheduled.
+    - byte: 2
       name: fan speed
       type: uint8
-      unit: pct
-      comment: Fan speed setting (0-100%)
-    - byte: 5
-      bit: 0-1
-      name: heat stage
-      type: bit2
-      values:
-        00: stage 1
-        01: stage 2
-        10: stage 3
-        11: automatic
-      comment: Command to set heat stage
-    - byte: 6
-      name: cycle rate
-      type: uint8
-      unit: cycles/hr
-      comment: Desired cycling rate (cycles per hour)
-    - byte: 7
-      bit: 0-1
-      name: priority
-      type: bit2
-      values:
-        00: normal
-        01: high priority
-        10: reserved
-        11: reserved
-      comment: Command priority level
+      unit: Pct
+    - byte: 3-4
+      name: setpoint temp heat
+      type: uint16
+      unit: Deg C
+    - byte: 5-6
+      name: setpoint temp cool
+      type: uint16
+      unit: Deg C
+
+1FFE3:
+  name: FURNACE_COMMAND
+  alias: 1FFE4
+
 
 1FFE2:
   name: THERMOSTAT_STATUS_1
@@ -2130,32 +1630,33 @@ API_VERSION: 1
       type: uint8
       comment: Corresponds to "Zones" in user terminology.
     - byte: 1
-      name: schedule entry number
-      type: uint8
-    - byte: 2
-      name: day of week
+      name: schedule mode instance
       type: uint8
       values:
-        0: Sunday
-        1: Monday
-        2: Tuesday
-        3: Wednesday
-        4: Thursday
-        5: Friday
-        6: Saturday
-        0xFA: Weekdays
-        0xFB: Weekend
-        0xFC: All Days
+        0: sleep
+        1: wake
+        2: away
+        3: return
+        4-249: additional instances
+        250: storage
+    - byte: 2
+      name: start hour
+      type: uint8
+      unit: h
     - byte: 3
-      name: hour
+      name: start minute
       type: uint8
-    - byte: 4
-      name: minute
-      type: uint8
-    - byte: 5-6
-      name: temperature setting
+      unit: min
+    - byte: 4-5
+      name: setpoint temp - heat
       type: uint16
       unit: Deg C
+    - byte: 6-7
+      name: setpoint temp - cool
+      type: uint16
+      unit: Deg C
+
+
 
 1FEF6:
   name: THERMOSTAT_SCHEDULE_STATUS_2
@@ -2163,213 +1664,74 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-      comment: Corresponds to "Zones" in user terminology
+      comment: Corresponds to "Zones" in user terminology.
     - byte: 1
-      name: number of schedule entries
+      name: schedule mode instance
       type: uint8
-      comment: Total number of scheduling entries available in this zone
+      values:
+        0: sleep
+        1: wake
+        2: away
+        3: return
+        4-249: additional instances
+        250: storage
     - byte: 2
-      name: current schedule entry
-      type: uint8
-      comment: Currently active schedule entry index
-    - byte: 3
       bit: 0-1
-      name: schedule enabled status
+      name: sunday
       type: bit2
       values:
-        00: disabled
-        01: enabled
-        10: error
-        11: unavailable
-      comment: Whether scheduling is currently enabled
+        00: not scheduled for this day
+        01: schedule applies to this day
+    - byte: 2
+      bit: 2-3
+      name: monday
+      type: bit2
+      values:
+        00: not scheduled for this day
+        01: schedule applies to this day
+    - byte: 2
+      bit: 4-5
+      name: tuesday
+      type: bit2
+      values:
+        00: not scheduled for this day
+        01: schedule applies to this day
+    - byte: 2
+      bit: 6-7
+      name: wednesday
+      type: bit2
+      values:
+        00: not scheduled for this day
+        01: schedule applies to this day
+    - byte: 3
+      bit: 0-2
+      name: thursday
+      type: bit2
+      values:
+        00: not scheduled for this day
+        01: schedule applies to this day
     - byte: 3
       bit: 2-3
-      name: temporary override status
+      name: friday
       type: bit2
       values:
-        00: not overridden
-        01: temporary override active
-        10: error
-        11: unavailable
-      comment: Whether a temporary override is in effect
-    - byte: 4
-      name: override duration remaining
-      type: uint8
-      unit: min
-      comment: Time remaining for temporary override (0-255 minutes)
-    - byte: 5
-      bit: 0-1
-      name: vacation mode
+        00: not scheduled for this day
+        01: schedule applies to this day
+    - byte: 3
+      bit: 4-5
+      name: saturday
       type: bit2
       values:
-        00: vacation mode inactive
-        01: vacation mode active
-        10: error
-        11: unavailable
-      comment: Whether vacation mode is active
-    - byte: 5
-      bit: 2-3
-      name: schedule type
-      type: bit2
-      values:
-        00: 7-day (individual day programming)
-        01: 5-2 day (weekday/weekend programming)
-        10: 1-day (same program every day)
-        11: unavailable
-      comment: Type of scheduling supported
-    - byte: 6-7
-      name: next schedule change time
-      type: uint16
-      unit: min
-      comment: Minutes until next scheduled change (0-1440)
+        00: not scheduled for this day
+        01: schedule applies to this day
 
 1FEF5:
   name: THERMOSTAT_SCHEDULE_COMMAND_1
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Corresponds to "Zones" in user terminology
-    - byte: 1
-      name: schedule entry number
-      type: uint8
-      comment: Schedule entry to modify (0-based index)
-    - byte: 2
-      name: day of week
-      type: uint8
-      values:
-        0: Sunday
-        1: Monday
-        2: Tuesday
-        3: Wednesday
-        4: Thursday
-        5: Friday
-        6: Saturday
-        0xFA: Weekdays
-        0xFB: Weekend
-        0xFC: All Days
-        0xFF: Not applicable
-      comment: Day of week for this schedule entry
-    - byte: 3
-      name: hour
-      type: uint8
-      comment: Hour in 24-hour format (0-23)
-    - byte: 4
-      name: minute
-      type: uint8
-      comment: Minute (0-59)
-    - byte: 5-6
-      name: temperature setting
-      type: uint16
-      unit: Deg C
-      comment: Scheduled temperature setpoint
-    - byte: 7
-      bit: 0-1
-      name: mode
-      type: bit2
-      values:
-        00: off
-        01: heat
-        10: cool
-        11: auto
-      comment: Operating mode for this schedule entry
-    - byte: 7
-      bit: 2-3
-      name: fan setting
-      type: bit2
-      values:
-        00: auto
-        01: on
-        10: reserved
-        11: no change
-      comment: Fan setting for this schedule entry
+  alias: 1FFE2
 
 1FEF4:
   name: THERMOSTAT_SCHEDULE_COMMAND_2
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Corresponds to "Zones" in user terminology
-    - byte: 1
-      bit: 0-1
-      name: schedule enable command
-      type: bit2
-      values:
-        00: disable schedule
-        01: enable schedule
-        10: reserved
-        11: no change
-      comment: Command to enable or disable scheduling
-    - byte: 1
-      bit: 2-3
-      name: temporary override command
-      type: bit2
-      values:
-        00: cancel override
-        01: set override
-        10: reserved
-        11: no change
-      comment: Command to set or cancel temporary override
-    - byte: 2
-      name: override duration
-      type: uint8
-      unit: min
-      comment: Duration of temporary override in minutes
-    - byte: 3
-      bit: 0-1
-      name: vacation mode command
-      type: bit2
-      values:
-        00: disable vacation mode
-        01: enable vacation mode
-        10: reserved
-        11: no change
-      comment: Command to enable or disable vacation mode
-    - byte: 3
-      bit: 2-3
-      name: clear all schedule entries
-      type: bit2
-      values:
-        00: no action
-        01: clear all entries
-        10: reset to default
-        11: no change
-      comment: Command to clear all schedule entries
-    - byte: 4
-      name: vacation temperature heat
-      type: uint8
-      unit: Deg C
-      comment: Heating setpoint during vacation mode
-    - byte: 5
-      name: vacation temperature cool
-      type: uint8
-      unit: Deg C
-      comment: Cooling setpoint during vacation mode
-    - byte: 6
-      name: schedule type command
-      type: uint8
-      values:
-        0: 7-day (individual day programming)
-        1: 5-2 day (weekday/weekend programming)
-        2: 1-day (same program every day)
-        255: no change
-      comment: Command to set schedule type
-    - byte: 7
-      name: copy day command
-      type: uint8
-      values:
-        0: no action
-        1: copy Sunday to all
-        2: copy Monday to all
-        3: copy Tuesday to all
-        4: copy Wednesday to all
-        5: copy Thursday to all
-        6: copy Friday to all
-        7: copy Saturday to all
-        8: copy weekday to weekdays
-        9: copy weekend to weekends
-      comment: Command to copy schedule from one day to others
+  alias: 1FFE6
 
 
 1FF9C:
@@ -2429,56 +1791,66 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-    - byte: 1
-      bit: 0-1
-      name: operating status
-      type: bit2
       values:
-        00: off
-        01: on
+        0: invalid
+        1: main house battery bank
+        2: chassis start battery
+        3: secondary house battery bank
     - byte: 1
-      bit: 2-3
       name: operating mode
-      type: bit2
-      values:
-        00: off
-        01: heat
-        10: cool
-        11: auto
-    - byte: 1
-      bit: 4-5
-      name: fan status
-      type: bit2
-      values:
-        00: off
-        01: on
-    - byte: 2
-      name: stage
       type: uint8
       values:
-        0: off
-        1: low stage
-        2: high stage
+        0: automatic
+        1: manual
+    - byte: 2-3
+      name: max heat output level
+      type: uint8
+      unit: "%"
     - byte: 3
-      name: defrost status
+      name: heat output level
       type: uint8
-      values:
-        0: not defrosting
-        1: defrosting
+      unit: "%"
     - byte: 4
-      name: aux heat status
+      name: dead band
       type: uint8
-      values:
-        0: off
-        1: on
-    - byte: 5-6
-      name: ambient temperature
-      type: uint16
-      unit: Deg C
+      unit: "°C"
+    - byte: 5
+      name: second stage dead band
+      type: uint8
+      unit: "°C"
+    - byte: 6
+      name: fan speed
+      type: uint8
+      unit: "%"
 
 1FF9A:
   name: HEAT_PUMP_COMMAND
   alias: 1FF9B
+
+1FEA8:
+  name: CHASSIS_MOTION_STATUS_2
+  parameters:
+    - byte: 0-1
+      name: Steering Wheel Angle
+      type: uint16
+      unit: rad
+      comment: "Positive values indicate turning to the left (counter-clockwise)"
+    - byte: 2
+      name: Headlight Switch
+      type: uint2
+      values:
+        00: "Headlight Switch Off"
+        01: "Headlight Switch On"
+    - byte: 3
+      name: Fuel Level Percent
+      type: uint8
+      unit: "%"
+      comment: "The amount of fuel in the tank relative to capacity (see Table 5.3)"
+    - byte: 4-7
+      name: Odometer
+      type: uint32
+      unit: m
+      comment: "0 = 0 m; Value Range = 0 m to 21,474,836,465 m; scaling identical to SAE J1939 Total Vehicle Distance (High Resolution)"
 
 1FFDF:
   name: GENERATOR_AC_STATUS_1
@@ -2560,7 +1932,6 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-      comment: Identifies the specific DC generator
     - byte: 1
       name: charging algorithm
       type: uint8
@@ -2572,40 +1943,34 @@ API_VERSION: 1
         4: trickle
         249: custom 2
         250: custom 1
-        255: undefined
-      comment: Current charging algorithm used by the generator
     - byte: 2
-      name: generator mode
+      name: charger mode
       type: uint8
       values:
         0: stand-alone
         1: primary
         2: secondary
         3: linked to dc source
-        255: undefined
-      comment: Operating mode of the generator
     - byte: 3
       bit: 0-1
-      name: battery temperature sensor
-      type: bit2
+      name: battery sensor present
+      type: uint8
       values:
-        00: no sensor in use
-        01: sensor present and active
-        10: sensor error
-        11: unavailable
-      comment: Status of battery temperature sensor
+        0: no sensor in use
+        1: sensor present and active
     - byte: 3
       bit: 2-3
-      name: auto start
-      type: bit2
+      name: charger installation line
+      type: uint8
       values:
-        00: disabled
-        01: enabled
-        10: error
-        11: unavailable
-      comment: Status of automatic start functionality
-    - byte: 3
-      bit: 4-7
+        0: 1
+        1: 2
+    - byte: 4-5
+      name: battery bank size
+      type: uint16
+      unit: ah
+    - byte: 6
+      bit: 0-3
       name: battery type
       type: uint4
       values:
@@ -2613,20 +1978,10 @@ API_VERSION: 1
         1: gel
         2: agm
         3: lithium iron phosphate
-        4: lithium ion
-        5: carbon foam
-        15: undefined
-      comment: Type of battery connected to the generator
-    - byte: 4-5
-      name: battery bank size
-      type: uint16
-      unit: Ah
-      comment: Size of the connected battery bank
-    - byte: 6-7
+    - byte: 7
       name: maximum charging current
-      type: uint16
-      unit: A
-      comment: Maximum current allowed for battery charging
+      type: uint8
+      unit: a
 
 1FEC4:
   name: GENERATOR_DC_COMMAND
@@ -2634,66 +1989,14 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-      comment: Identifies the specific DC generator
     - byte: 1
-      name: generator command
+      name: command
       type: uint8
       values:
-        0: disable
-        1: enable
-        2: start
-        3: stop
-        4: start equalization
-        5: stop equalization
-        255: no change
-      comment: Command to control generator operation
-    - byte: 2
-      bit: 0-1
-      name: default state on power-up
-      type: bit2
-      values:
-        00: disabled
-        01: enabled
-        10: reserved
-        11: no change
-      comment: Sets default state when power is restored
-    - byte: 2
-      bit: 2-3
-      name: auto start command
-      type: bit2
-      values:
-        00: disable
-        01: enable
-        10: reserved
-        11: no change
-      comment: Command to enable/disable automatic starting
-    - byte: 2
-      bit: 4-7
-      name: forcing mode
-      type: uint4
-      values:
-        0: cancel forcing
-        1: force charge to bulk
-        2: force charge to absorption
-        3: force charge to float
-        4: force temperature compensation
-        15: no change
-      comment: Command to force a specific charging mode
-    - byte: 3
-      name: quiet mode RPM
-      type: uint8
-      unit: pct
-      comment: Engine RPM in quiet mode as a percentage of maximum
-    - byte: 4-5
-      name: desired run time
-      type: uint16
-      unit: min
-      comment: Desired run time in minutes
-    - byte: 6-7
-      name: delay before starting
-      type: uint16
-      unit: sec
-      comment: Delay before executing start command
+        0: stop
+        1: start
+        2: manual prime
+        3: manual preheat
 
 1FEC3:
   name: GENERATOR_DC_CONFIGURATION_COMMAND
@@ -2701,7 +2004,6 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-      comment: Identifies the specific DC generator
     - byte: 1
       name: charging algorithm
       type: uint8
@@ -2713,30 +2015,34 @@ API_VERSION: 1
         4: trickle
         249: custom 2
         250: custom 1
-        255: no change
-      comment: Command to set charging algorithm
     - byte: 2
-      name: generator mode
+      name: charger mode
       type: uint8
       values:
         0: stand-alone
         1: primary
         2: secondary
         3: linked to dc source
-        255: no change
-      comment: Command to set generator operating mode
     - byte: 3
       bit: 0-1
-      name: battery sensor use
-      type: bit2
+      name: battery sensor present
+      type: uint8
       values:
-        00: do not use sensor
-        01: use sensor if available
-        10: reserved
-        11: no change
-      comment: Command to control temperature sensor usage
+        0: no sensor in use
+        1: sensor present and active
     - byte: 3
-      bit: 4-7
+      bit: 2-3
+      name: charger installation line
+      type: uint8
+      values:
+        0: 1
+        1: 2
+    - byte: 4-5
+      name: battery bank size
+      type: uint16
+      unit: ah
+    - byte: 6
+      bit: 0-3
       name: battery type
       type: uint4
       values:
@@ -2744,20 +2050,10 @@ API_VERSION: 1
         1: gel
         2: agm
         3: lithium iron phosphate
-        4: lithium ion
-        5: carbon foam
-        15: no change
-      comment: Command to set battery type
-    - byte: 4-5
-      name: battery bank size
-      type: uint16
-      unit: Ah
-      comment: Command to set battery bank size
-    - byte: 6-7
+    - byte: 7
       name: maximum charging current
-      type: uint16
-      unit: A
-      comment: Command to set maximum charging current
+      type: uint8
+      unit: a
 
 1FEC2:
   name: GENERATOR_DC_EQUALIZATION_STATUS
@@ -2765,42 +2061,17 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-      comment: Identifies the specific DC generator
     - byte: 1-2
       name: time remaining
       type: uint16
       unit: min
-      comment: Time remaining in equalization cycle
     - byte: 3
       bit: 0-1
       name: pre-charging status
-      type: bit2
+      type: uint8
       values:
-        00: pre-charging not in process
-        01: charging batteries to prepare for equalization
-        10: error
-        11: unavailable
-      comment: Status of pre-charging before equalization
-    - byte: 3
-      bit: 2-3
-      name: equalization status
-      type: bit2
-      values:
-        00: not equalizing
-        01: equalizing in progress
-        10: error
-        11: unavailable
-      comment: Current status of the equalization process
-    - byte: 4-5
-      name: equalization voltage
-      type: uint16
-      unit: V
-      comment: Current equalization voltage
-    - byte: 6-7
-      name: equalization current
-      type: uint16
-      unit: A
-      comment: Current during equalization
+        0: pre-charging not in process
+        1: charging batteries to prepare for equalization
 
 1FEC1:
   name: GENERATOR_DC_EQUALIZATION_CONFIGURATION_STATUS
@@ -2808,93 +2079,18 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-      comment: Identifies the specific DC generator
     - byte: 1-2
       name: equalization voltage
       type: uint16
-      unit: V
-      comment: Target voltage for equalization
+      unit: v
     - byte: 3-4
       name: equalization time
       type: uint16
       unit: min
-      comment: Duration of equalization cycle
-    - byte: 5
-      name: days between equalizations
-      type: uint8
-      comment: Days between automatic equalization cycles
-    - byte: 6
-      bit: 0-1
-      name: auto equalize enabled
-      type: bit2
-      values:
-        00: disabled
-        01: enabled
-        10: error
-        11: unavailable
-      comment: Status of automatic equalization feature
-    - byte: 6
-      bit: 2-3
-      name: maximum temperature
-      type: bit2
-      values:
-        00: normal limits
-        01: extended limits
-        10: no limits
-        11: unavailable
-      comment: Temperature limits during equalization
-    - byte: 7
-      name: pre-charge time
-      type: uint8
-      unit: min
-      comment: Duration of pre-charging before equalization
 
 1FEC0:
   name: GENERATOR_DC_EQUALIZATION_CONFIGURATION_COMMAND
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific DC generator
-    - byte: 1-2
-      name: equalization voltage
-      type: uint16
-      unit: V
-      comment: Command to set equalization voltage
-    - byte: 3-4
-      name: equalization time
-      type: uint16
-      unit: min
-      comment: Command to set equalization duration
-    - byte: 5
-      name: days between equalizations
-      type: uint8
-      comment: Command to set interval between auto equalizations
-    - byte: 6
-      bit: 0-1
-      name: auto equalize command
-      type: bit2
-      values:
-        00: disable
-        01: enable
-        10: reserved
-        11: no change
-      comment: Command to control automatic equalization
-    - byte: 6
-      bit: 2-3
-      name: maximum temperature setting
-      type: bit2
-      values:
-        00: normal limits
-        01: extended limits
-        10: no limits
-        11: no change
-      comment: Command to set temperature limits
-    - byte: 7
-      name: pre-charge time
-      type: uint8
-      unit: min
-      comment: Command to set pre-charge duration
+  alias: 1FEC1
 
 
 1FFDC:
@@ -2993,76 +2189,26 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-      comment: Identifies the specific generator
     - byte: 1
-      name: cranking time
+      name: generator type
       type: uint8
-      unit: sec
-      comment: Maximum time for cranking during start attempt
+      values:
+        1: run/crank inputs
+        2: crank/glow & stop inputs
+        3: preheat/start input and prime/stop input
+        4: single on/off input
     - byte: 2
-      name: cranking rest time
+      name: generator pre-crank time
       type: uint8
-      unit: sec
-      comment: Rest time between cranking attempts
+      unit: s
     - byte: 3
-      name: start attempts
+      name: generator max crank time
       type: uint8
-      comment: Maximum number of start attempts before failure
+      unit: s
     - byte: 4
-      name: preheat time
+      name: generator stop time
       type: uint8
-      unit: sec
-      comment: Duration of preheat cycle before cranking
-    - byte: 5
-      name: prime time
-      type: uint8
-      unit: sec
-      comment: Duration of prime cycle before cranking
-    - byte: 6
-      bit: 0-1
-      name: auto choke enabled
-      type: bit2
-      values:
-        00: disabled
-        01: enabled
-        10: error
-        11: unavailable
-      comment: Whether automatic choke is enabled
-    - byte: 6
-      bit: 2-3
-      name: preheat type
-      type: bit2
-      values:
-        00: none
-        01: glow plug
-        10: grid heater
-        11: other
-      comment: Type of preheat system used
-    - byte: 6
-      bit: 4-5
-      name: auto prime enabled
-      type: bit2
-      values:
-        00: disabled
-        01: enabled
-        10: error
-        11: unavailable
-      comment: Whether automatic priming is enabled
-    - byte: 6
-      bit: 6-7
-      name: warm-up enabled
-      type: bit2
-      values:
-        00: disabled
-        01: enabled
-        10: error
-        11: unavailable
-      comment: Whether warm-up cycle is enabled
-    - byte: 7
-      name: warm-up time
-      type: uint8
-      unit: sec
-      comment: Duration of warm-up cycle after starting
+      unit: s
 
 1FFD8:
   name: GENERATOR_START_CONFIG_COMMAND
@@ -3070,77 +2216,28 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-      comment: Identifies the specific generator
     - byte: 1
-      name: cranking time
+      name: generator type
       type: uint8
-      unit: sec
-      comment: Command to set maximum cranking time
+      values:
+        1: run/crank inputs
+        2: crank/glow & stop inputs
+        3: preheat/start input and prime/stop input
+        4: single on/off input
     - byte: 2
-      name: cranking rest time
+      name: generator pre-crank time
       type: uint8
-      unit: sec
-      comment: Command to set rest time between cranking attempts
+      unit: s
     - byte: 3
-      name: start attempts
+      name: generator max crank time
       type: uint8
-      comment: Command to set maximum number of start attempts
+      unit: s
     - byte: 4
-      name: preheat time
+      name: generator stop time
       type: uint8
-      unit: sec
-      comment: Command to set preheat duration
-    - byte: 5
-      name: prime time
-      type: uint8
-      unit: sec
-      comment: Command to set prime duration
-    - byte: 6
-      bit: 0-1
-      name: auto choke command
-      type: bit2
-      values:
-        00: disable
-        01: enable
-        10: reserved
-        11: no change
-      comment: Command to enable/disable automatic choke
-    - byte: 6
-      bit: 2-3
-      name: preheat type command
-      type: bit2
-      values:
-        00: none
-        01: glow plug
-        10: grid heater
-        11: no change
-      comment: Command to set preheat system type
-    - byte: 6
-      bit: 4-5
-      name: auto prime command
-      type: bit2
-      values:
-        00: disable
-        01: enable
-        10: reserved
-        11: no change
-      comment: Command to enable/disable automatic priming
-    - byte: 6
-      bit: 6-7
-      name: warm-up command
-      type: bit2
-      values:
-        00: disable
-        01: enable
-        10: reserved
-        11: no change
-      comment: Command to enable/disable warm-up cycle
-    - byte: 7
-      name: warm-up time
-      type: uint8
-      unit: sec
-      comment: Command to set warm-up duration
-      
+      unit: s
+
+
 1FFD7:
   name: INVERTER_AC_STATUS_1
   alias: Z0000
@@ -3471,26 +2568,14 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-      comment: Identifies the specific inverter
     - byte: 1-2
-      name: total AC output
+      name: total number of operating days
       type: uint16
-      unit: kWh
-      comment: Total AC energy output since installation
+      unit: days
     - byte: 3-4
-      name: total DC input
+      name: solar charge controller measured temperature
       type: uint16
-      unit: kWh
-      comment: Total DC energy input since installation
-    - byte: 5-6
-      name: total time
-      type: uint16
-      unit: hr
-      comment: Total operating hours since installation
-    - byte: 7
-      name: overload counter
-      type: uint8
-      comment: Number of overload events since reset
+      unit: Deg C
 
 1FFCD:
   name: INVERTER_APS_STATUS
@@ -3498,226 +2583,19 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-      comment: Identifies the specific inverter
     - byte: 1
-      bit: 0-1
-      name: aux power status
-      type: bit2
-      values:
-        00: disabled
-        01: enabled
-        10: error
-        11: unavailable
-      comment: Status of auxiliary power source (APS)
-    - byte: 1
-      bit: 2-3
-      name: aps type
-      type: bit2
-      values:
-        00: generator
-        01: shore power
-        10: secondary inverter
-        11: other
-      comment: Type of auxiliary power source
-    - byte: 1
-      bit: 4-5
-      name: transfer switch status
-      type: bit2
-      values:
-        00: inverter mode
-        01: pass-through mode
-        10: error
-        11: unavailable
-      comment: Position of internal transfer switch
-    - byte: 2-3
-      name: transfer time
-      type: uint16
-      unit: ms
-      comment: Time required for transfer switch operation
-    - byte: 4
-      bit: 0-1
-      name: transfer switch auto return
-      type: bit2
-      values:
-        00: disabled
-        01: enabled
-        10: error
-        11: unavailable
-      comment: Whether transfer switch will auto return to inverter mode
-    - byte: 4
-      bit: 2-3
-      name: passthrough lockout
-      type: bit2
-      values:
-        00: not locked out
-        01: locked out
-        10: error
-        11: unavailable
-      comment: Passthrough lockout status
-    - byte: 5-6
-      name: search power threshold
-      type: uint16
-      unit: W
-      comment: Power threshold for search mode
-    - byte: 7
-      name: search detection interval
+      name: number paired devices
       type: uint8
-      unit: ms
-      comment: Time interval for search mode detection
+    - byte: 2
+      name: number of active devices
+      type: uint8
 
 1FFCC:
   name: INVERTER_DCBUS_STATUS
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific inverter
-    - byte: 1
-      bit: 0-1
-      name: low voltage disconnect status
-      type: bit2
-      values:
-        00: not disconnected
-        01: disconnected
-        10: error
-        11: unavailable
-      comment: Status of low voltage disconnect protection
-    - byte: 1
-      bit: 2-3
-      name: high voltage disconnect status
-      type: bit2
-      values:
-        00: not disconnected
-        01: disconnected
-        10: error
-        11: unavailable
-      comment: Status of high voltage disconnect protection
-    - byte: 1
-      bit: 4-5
-      name: ground fault detected
-      type: bit2
-      values:
-        00: not detected
-        01: detected
-        10: error
-        11: unavailable
-      comment: Whether DC ground fault is detected
-    - byte: 2-3
-      name: dc bus voltage
-      type: uint16
-      unit: V
-      comment: Current DC bus voltage
-    - byte: 4-5
-      name: dc bus current
-      type: uint16
-      unit: A
-      comment: Current DC bus current
-    - byte: 6
-      name: dc ripple
-      type: uint8
-      unit: mV
-      comment: DC ripple voltage measurement
-    - byte: 7
-      name: power source priority
-      type: uint8
-      values:
-        0: lowest priority
-        100: highest priority
-        255: unavailable
-      comment: Priority of this power source
 
 1FFCB:
   name: INVERTER_OPE_STATUS
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific inverter
-    - byte: 1
-      bit: 0-1
-      name: device status
-      type: bit2
-      values:
-        00: normal
-        01: fault present
-        10: warning present
-        11: unavailable
-      comment: Overall operational status of inverter
-    - byte: 1
-      bit: 2-3
-      name: dc disconnect status
-      type: bit2
-      values:
-        00: connected
-        01: disconnected
-        10: error
-        11: unavailable
-      comment: Status of DC input connection
-    - byte: 1
-      bit: 4-5
-      name: ac output status
-      type: bit2
-      values:
-        00: connected
-        01: disconnected
-        10: error
-        11: unavailable
-      comment: Status of AC output connection
-    - byte: 2
-      name: active fault code
-      type: uint8
-      values:
-        0: no fault
-        1: low battery voltage
-        2: high battery voltage
-        3: overload
-        4: over temperature
-        5: short circuit
-        6: internal hardware fault
-        7: cooling fan fault
-        8: transformer fault
-        9: output voltage fault
-        10: communication error
-        11: FET failure
-        12: battery connection fault
-        13: bridge driver fault
-        14: control board fault
-        15: configuration error
-        255: unknown fault
-      comment: Current active fault code
-    - byte: 3
-      name: active warning code
-      type: uint8
-      values:
-        0: no warning
-        1: low battery warning
-        2: high battery warning
-        3: load approaching limit
-        4: temperature approaching limit
-        5: communication issue
-        6: cooling restriction
-        7: input power fluctuation
-        8: efficiency reduction
-        9: output waveform degradation
-        10: AC pass-through issue
-        255: unknown warning
-      comment: Current active warning code
-    - byte: 4-5
-      name: operational time
-      type: uint16
-      unit: hr
-      comment: Time since last restart in hours
-    - byte: 6
-      name: output power
-      type: uint8
-      unit: pct
-      comment: Output power as percentage of rated capacity
-    - byte: 7
-      name: operational temperature
-      type: uint8
-      unit: Deg C
-      comment: Internal operating temperature
-      
+
 1FEE8:
   name: INVERTER_DC_STATUS
   parameters:
@@ -4294,6 +3172,278 @@ API_VERSION: 1
       type: uint16
       unit: A
 
+1FEFE:
+  name: AGS_CRITERION_STATUS
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      bit: 0-1
+      name: current demand status
+      type: uint2
+      values:
+        00: not demanding generator now
+        01: currently demanding generator
+    - byte: 1
+      bit: 2-3
+      name: active status
+      type: uint2
+      values:
+        00: currently inactive
+        01: currently active
+
+1FED2:
+  name: AGS_CRITERION_STATUS_2
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      bit: 0-1
+      name: high voltage limit status
+      type: uint2
+      values:
+        00: not reached
+        01: limit reached
+    - byte: 1
+      bit: 2-3
+      name: high voltage disconnect status
+      type: uint2
+      values:
+        00: connected
+        01: charge bus disconnected
+    - byte: 1
+      bit: 4-5
+      name: low voltage limit status
+      type: uint2
+      values:
+        00: not reached
+        01: limit reached
+    - byte: 1
+      bit: 6-7
+      name: low voltage disconnect status
+      type: uint2
+      values:
+        00: connected
+        01: charge bus disconnected
+
+1FED5:
+  name: AGS_DEMAND_CONFIGURATION_STATUS
+  parameters:
+    - byte: 0
+      bit: 0-1
+      name: disable on park brake release
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 0
+      bit: 2-3
+      name: disable on ignition
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 0
+      bit: 4-5
+      name: disable on drive
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 0
+      bit: 6-7
+      name: disable on motion
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 1
+      bit: 0-1
+      name: disable on oem switch
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 1
+      bit: 2-3
+      name: disable on service brake
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 1
+      bit: 4-5
+      name: disable on monoxide detect
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 1
+      bit: 6-7
+      name: disable on opened compartment
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 2
+      bit: 0-1
+      name: disable on fire alarm
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 2
+      bit: 2-3
+      name: disable on manual operation
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 2
+      bit: 4-5
+      name: disable on genset fault
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 2
+      bit: 6-7
+      name: disable on system fault
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 3
+      bit: 0-1
+      name: disable on shore power
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 3
+      bit: 2-3
+      name: disable on 50 amp shore
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 4
+      name: disable ags after time span
+      type: uint8
+      unit: days
+    - byte: 5
+      name: days remaining before automatic disabling
+      type: uint8
+      unit: days
+
+1FED4:
+  name: AGS_DEMAND_CONFIGURATION_COMMAND
+  parameters:
+    - byte: 0
+      bit: 0-1
+      name: disable on park brake release
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 0
+      bit: 2-3
+      name: disable on ignition
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 0
+      bit: 4-5
+      name: disable on drive
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 0
+      bit: 6-7
+      name: disable on motion
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 1
+      bit: 0-1
+      name: disable on oem switch
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 1
+      bit: 2-3
+      name: disable on service brake
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 1
+      bit: 4-5
+      name: disable on monoxide detect
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 1
+      bit: 6-7
+      name: disable on opened compartment
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 2
+      bit: 0-1
+      name: disable on fire alarm
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 2
+      bit: 2-3
+      name: disable on manual operation
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 2
+      bit: 4-5
+      name: disable on genset fault
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 2
+      bit: 6-7
+      name: disable on system fault
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 3
+      bit: 0-1
+      name: disable on shore power
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 3
+      bit: 2-3
+      name: disable on 50 amp shore
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 4
+      name: disable ags after time span
+      type: uint8
+      unit: days
+
 1FEDD:
   name: AC_LOAD_STATUS_2
   parameters:
@@ -4756,185 +3906,7 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-      comment: Identifies the specific digital input module
-    - byte: 1
-      bit: 0
-      name: input 1 status
-      type: bit1
-      values:
-        0: not active
-        1: active
-      comment: Status of digital input 1
-    - byte: 1
-      bit: 1
-      name: input 2 status
-      type: bit1
-      values:
-        0: not active
-        1: active
-      comment: Status of digital input 2
-    - byte: 1
-      bit: 2
-      name: input 3 status
-      type: bit1
-      values:
-        0: not active
-        1: active
-      comment: Status of digital input 3
-    - byte: 1
-      bit: 3
-      name: input 4 status
-      type: bit1
-      values:
-        0: not active
-        1: active
-      comment: Status of digital input 4
-    - byte: 1
-      bit: 4
-      name: input 5 status
-      type: bit1
-      values:
-        0: not active
-        1: active
-      comment: Status of digital input 5
-    - byte: 1
-      bit: 5
-      name: input 6 status
-      type: bit1
-      values:
-        0: not active
-        1: active
-      comment: Status of digital input 6
-    - byte: 1
-      bit: 6
-      name: input 7 status
-      type: bit1
-      values:
-        0: not active
-        1: active
-      comment: Status of digital input 7
-    - byte: 1
-      bit: 7
-      name: input 8 status
-      type: bit1
-      values:
-        0: not active
-        1: active
-      comment: Status of digital input 8
-    - byte: 2
-      bit: 0
-      name: input 9 status
-      type: bit1
-      values:
-        0: not active
-        1: active
-      comment: Status of digital input 9
-    - byte: 2
-      bit: 1
-      name: input 10 status
-      type: bit1
-      values:
-        0: not active
-        1: active
-      comment: Status of digital input 10
-    - byte: 2
-      bit: 2
-      name: input 11 status
-      type: bit1
-      values:
-        0: not active
-        1: active
-      comment: Status of digital input 11
-    - byte: 2
-      bit: 3
-      name: input 12 status
-      type: bit1
-      values:
-        0: not active
-        1: active
-      comment: Status of digital input 12
-    - byte: 2
-      bit: 4
-      name: input 13 status
-      type: bit1
-      values:
-        0: not active
-        1: active
-      comment: Status of digital input 13
-    - byte: 2
-      bit: 5
-      name: input 14 status
-      type: bit1
-      values:
-        0: not active
-        1: active
-      comment: Status of digital input 14
-    - byte: 2
-      bit: 6
-      name: input 15 status
-      type: bit1
-      values:
-        0: not active
-        1: active
-      comment: Status of digital input 15
-    - byte: 2
-      bit: 7
-      name: input 16 status
-      type: bit1
-      values:
-        0: not active
-        1: active
-      comment: Status of digital input 16
-    - byte: 3
-      name: input type
-      type: uint8
-      unit: bitmap
-      comment: Bitmap of input types (0 = normally open, 1 = normally closed)
-    - byte: 4
-      name: debounce time
-      type: uint8
-      unit: ms
-      comment: Input debounce time in milliseconds
-    - byte: 5
-      name: application type
-      type: uint8
-      values:
-        0: general purpose
-        1: door/hatch sensor
-        2: motion detector
-        3: smoke/CO detector
-        4: water leak sensor
-        5: gas leak sensor
-        6: temperature switch
-        7: pressure switch
-        8: limit switch
-        9: proximity sensor
-        10: occupancy sensor
-        255: other
-      comment: Type of application this input is being used for
-    - byte: 6
-      bit: 0-1
-      name: input fault status
-      type: bit2
-      values:
-        00: no fault
-        01: fault present
-        10: multiple faults
-        11: unavailable
-      comment: Fault status of the input module
-    - byte: 7
-      name: fault code
-      type: uint8
-      values:
-        0: no fault
-        1: open circuit
-        2: short circuit
-        3: voltage out of range
-        4: current out of range
-        5: communication error
-        6: sensor failure
-        255: other fault
-      comment: Specific fault code for the input module
+      comment: Instance number of the digital input
 
 1FED7:
   name: GENERIC_INDICATOR_STATUS
@@ -5023,86 +3995,92 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-      comment: Identifies the specific DC motor
     - byte: 1
+      name: group
+      type: uint8
+      unit: bitmap
+    - byte: 2
+      name: operating status (motor duty)
+      type: uint8
+      unit: Pct
+    - byte: 3
       bit: 0-1
-      name: motor status
-      type: bit2
-      values:
-        00: stopped
-        01: running
-        10: error
-        11: unavailable
-      comment: Current operational status of the motor
-    - byte: 1
-      bit: 2-3
-      name: direction
-      type: bit2
-      values:
-        00: stopped
-        01: forward
-        10: reverse
-        11: unavailable
-      comment: Current direction of motor rotation
-    - byte: 1
-      bit: 4-5
-      name: motor lock status
+      name: lock status
       type: bit2
       values:
         00: unlocked
         01: locked
-        10: error
-        11: unavailable
-      comment: Whether the motor is locked/prevented from operation
-    - byte: 1
-      bit: 6-7
-      name: fault status
+        11: lock command not supported
+    - byte: 3
+      bit: 2-3
+      name: motor status
       type: bit2
       values:
-        00: no fault
-        01: fault present
-        10: multiple faults
-        11: unknown
-      comment: Fault status of the motor controller
-    - byte: 2
-      name: speed
-      type: uint8
-      unit: pct
-      comment: Current speed as percentage of maximum (0-100%)
+        00: inactive
+        01: active
     - byte: 3
-      name: duty cycle
+      bit: 4-5
+      name: forward status
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 3
+      bit: 6-7
+      name: reverse status
+      type: bit2
+      values:
+        00: inactive
+        01: active
+    - byte: 4
+      name: duration
       type: uint8
-      unit: pct
-      comment: Current duty cycle as percentage (0-100%)
-    - byte: 4-5
-      name: current
-      type: uint16
-      unit: A
-      comment: Current being drawn by the motor
-    - byte: 6
-      name: thermal status
-      type: uint8
-      unit: pct
-      comment: Thermal load as percentage of maximum (0-100%)
-    - byte: 7
-      name: fault code
+    - byte: 5
+      name: last command
       type: uint8
       values:
-        0: no fault
-        1: overcurrent
-        2: overvoltage
-        3: undervoltage
-        4: over temperature
-        5: stall detected
-        6: sensor fault
-        7: controller fault
-        8: internal error
-        9: communication error
-        10: calibration error
-        11: position error
-        12: mechanical jam
-        255: unknown fault
-      comment: Specific fault code when fault status indicates a problem
+        4: stop
+        129: forward
+        65: reverse
+        133: toggle forward
+        69: toggle reverse
+        16: tilt
+        33: lock
+        34: unlock
+        49: flash
+        50: flash momentarily
+    - byte: 6
+      bit: 0-1
+      name: overcurrent status
+      type: bit2
+      values:
+        00: not in overcurrent
+        01: in overcurrent
+        11: overcurrent status unavailable
+    - byte: 6
+      bit: 2-3
+      name: override status
+      type: bit2
+      values:
+        00: override inactive
+        01: override active
+        11: override status unavailable
+    - byte: 6
+      bit: 4-5
+      name: disable1 status
+      type: bit2
+      values:
+        00: inactive
+        01: active
+        11: not supported
+    - byte: 6
+      bit: 6-7
+      name: disable2 status
+      type: bit2
+      values:
+        00: inactive
+        01: active
+        11: not supported
 
 1FEE1:
   name: DC_MOTOR_CONTROL_COMMAND
@@ -5110,87 +4088,37 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-      comment: Identifies the specific DC motor to control
     - byte: 1
-      bit: 0-1
-      name: operation command
-      type: bit2
-      values:
-        00: stop
-        01: start
-        10: reset
-        11: no change
-      comment: Command to control motor operation
-    - byte: 1
-      bit: 2-3
-      name: direction command
-      type: bit2
-      values:
-        00: stop
-        01: forward
-        10: reverse
-        11: no change
-      comment: Command to set motor direction
-    - byte: 1
-      bit: 4-5
-      name: lock command
-      type: bit2
-      values:
-        00: unlock
-        01: lock
-        10: reserved
-        11: no change
-      comment: Command to lock/unlock the motor
+      name: group
+      type: uint8
+      unit: bitmap
     - byte: 2
-      name: speed command
+      name: motor duty
       type: uint8
-      unit: pct
-      comment: Desired speed as percentage of maximum (0-100%)
+      unit: Pct
     - byte: 3
-      name: acceleration rate
+      name: command
       type: uint8
-      unit: pct
-      comment: Acceleration rate (0 = slowest, 100 = fastest)
+      values:
+        4: stop
+        129: forward
+        65: reverse
+        133: toggle forward
+        69: toggle reverse
+        16: tilt
+        33: lock
+        34: unlock
+        49: flash
+        50: flash momentarily
     - byte: 4
-      name: deceleration rate
-      type: uint8
-      unit: pct
-      comment: Deceleration rate (0 = slowest, 100 = fastest)
-    - byte: 5
-      name: run time
+      name: duration
       type: uint8
       unit: sec
-      comment: Maximum run time in seconds (0 = no limit)
-    - byte: 6
-      bit: 0-1
-      name: stall detection
-      type: bit2
-      values:
-        00: disable
-        01: enable
-        10: reserved
-        11: no change
-      comment: Command to enable/disable stall detection
-    - byte: 6
-      bit: 2-3
-      name: thermal protection
-      type: bit2
-      values:
-        00: disable
-        01: enable
-        10: reserved
-        11: no change
-      comment: Command to enable/disable thermal protection
-    - byte: 7
-      bit: 0-1
-      name: reset fault
-      type: bit2
-      values:
-        00: no action
-        01: reset fault
-        10: reserved
-        11: reserved
-      comment: Command to reset fault condition
+    - byte: 5
+      name: interlock
+      type: uint8
+      unit: bitmap
+
 
 1FFB7:
   name: TANK_STATUS
@@ -5229,53 +4157,20 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-      values:
-         0: fresh water
-         1: black waste
-         2: gray waste
-         3: lpg
-         16: second fresh water
-         17: second black waste
-         18: second gray waste
-         19: second lpg
-      comment: Identifies the specific tank to calibrate
     - byte: 1
-      bit: 0-1
-      name: calibration command
-      type: bit2
-      values:
-        00: no action
-        01: start calibration
-        10: abort calibration
-        11: save calibration
-      comment: Command to control calibration process
-    - byte: 1
-      bit: 2-3
-      name: calibration type
-      type: bit2
-      values:
-        00: automatic
-        01: manual
-        10: factory default
-        11: custom
-      comment: Type of calibration method to use
-    - byte: 2
-      name: calibration point
+      name: relative level
       type: uint8
-      comment: Current calibration point number (0-based index)
+    - byte: 2
+      name: resolution
+      type: uint8
     - byte: 3-4
-      name: current absolute level
+      name: absolute level
       type: uint16
       unit: Liter
-      comment: Current known absolute level for manual calibration
-    - byte: 5
-      name: total calibration points
-      type: uint8
-      comment: Total number of calibration points to use
-    - byte: 6-7
-      name: last calibration timestamp
+    - byte: 5-6
+      name: tank size
       type: uint16
-      comment: Days since last calibration (0 = today)
+      unit: Liter
 
 1FFB5:
   name: TANK_GEOMETRY_STATUS
@@ -5283,80 +4178,27 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-      values:
-         0: fresh water
-         1: black waste
-         2: gray waste
-         3: lpg
-         16: second fresh water
-         17: second black waste
-         18: second gray waste
-         19: second lpg
-      comment: Identifies the specific tank
     - byte: 1
-      name: shape code
+      name: number of entries
       type: uint8
-      values:
-        0: rectangular
-        1: horizontal cylindrical
-        2: vertical cylindrical
-        3: elliptical
-        4: spherical
-        5: odd/custom shape
-        255: unknown
-      comment: Physical shape of the tank
     - byte: 2
-      name: sensor type
+      name: point 1 level
       type: uint8
-      values:
-        0: resistive
-        1: capacitive
-        2: digital discrete
-        3: pressure
-        4: ultrasonic
-        5: optical
-        255: other
-      comment: Type of level sensing technology used
     - byte: 3
-      bit: 0-1
-      name: calibration status
-      type: bit2
-      values:
-        00: not calibrated
-        01: calibrated
-        10: calibration error
-        11: calibrating
-      comment: Current calibration status
-    - byte: 3
-      bit: 2-3
-      name: correction algorithm
-      type: bit2
-      values:
-        00: none
-        01: linear
-        10: polynomial
-        11: lookup table
-      comment: Algorithm used for sensor correction
-    - byte: 3
-      bit: 4-5
-      name: mounting orientation
-      type: bit2
-      values:
-        00: longitudinal
-        01: transverse
-        10: vertical
-        11: other
-      comment: Orientation of the tank installation
+      name: point 1 precision
+      type: uint8
     - byte: 4-5
-      name: length
+      name: point 1 table value
       type: uint16
-      unit: cm
-      comment: Physical length of the tank
-    - byte: 6-7
-      name: width or diameter
+    - byte: 6
+      name: point 2 level
+      type: uint8
+    - byte: 7
+      name: point 2 precision
+      type: uint8
+    - byte: 8-9
+      name: point 2 table value
       type: uint16
-      unit: cm
-      comment: Physical width or diameter of the tank
 
 1FFB4:
   name: TANK_GEOMETRY_COMMAND
@@ -5364,80 +4206,28 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-      values:
-         0: fresh water
-         1: black waste
-         2: gray waste
-         3: lpg
-         16: second fresh water
-         17: second black waste
-         18: second gray waste
-         19: second lpg
-      comment: Identifies the specific tank to configure
     - byte: 1
-      name: shape code
+      name: number of entries
       type: uint8
-      values:
-        0: rectangular
-        1: horizontal cylindrical
-        2: vertical cylindrical
-        3: elliptical
-        4: spherical
-        5: odd/custom shape
-        255: no change
-      comment: Command to set tank shape
     - byte: 2
-      name: sensor type
+      name: point 1 level
       type: uint8
-      values:
-        0: resistive
-        1: capacitive
-        2: digital discrete
-        3: pressure
-        4: ultrasonic
-        5: optical
-        255: no change
-      comment: Command to set sensor type
     - byte: 3
-      bit: 0-1
-      name: reset calibration
-      type: bit2
-      values:
-        00: no action
-        01: reset to factory defaults
-        10: clear calibration
-        11: no change
-      comment: Command to reset calibration
-    - byte: 3
-      bit: 2-3
-      name: correction algorithm
-      type: bit2
-      values:
-        00: none
-        01: linear
-        10: polynomial
-        11: lookup table
-      comment: Command to set correction algorithm
-    - byte: 3
-      bit: 4-5
-      name: mounting orientation
-      type: bit2
-      values:
-        00: longitudinal
-        01: transverse
-        10: vertical
-        11: no change
-      comment: Command to set mounting orientation
+      name: point 1 precision
+      type: uint8
     - byte: 4-5
-      name: length
+      name: point 1 table value
       type: uint16
-      unit: cm
-      comment: Command to set physical length of the tank
-    - byte: 6-7
-      name: width or diameter
+    - byte: 6
+      name: point 2 level
+      type: uint8
+    - byte: 7
+      name: point 2 precision
+      type: uint8
+    - byte: 8-9
+      name: point 2 table value
       type: uint16
-      unit: cm
-      comment: Command to set physical width or diameter of the tank
+
 
 1FFB3:
   name: WATER_PUMP_STATUS
@@ -5492,95 +4282,17 @@ API_VERSION: 1
       values:
         0: closed
         1: open
-
 1FFB0:
   name: AUTOFILL_COMMAND
   parameters:
     - byte: 0
       bit: 0-1
       name: command
-      type: bit2
+      type: uint2
       values:
-        00: off
-        01: on
-        10: reserved
-        11: no change
-      comment: Command to turn autofill system on or off
-    - byte: 0
-      bit: 2-3
-      name: mode
-      type: bit2
-      values:
-        00: automatic
-        01: manual
-        10: reserved
-        11: no change
-      comment: Command to set autofill operating mode
-    - byte: 0
-      bit: 4-5
-      name: valve command
-      type: bit2
-      values:
-        00: close valve
-        01: open valve
-        10: reserved
-        11: no change
-      comment: Direct command to control fill valve
-    - byte: 1
-      name: auto fill level
-      type: uint8
-      unit: pct
-      comment: Level at which to begin automatic filling (1-100%)
-    - byte: 2
-      name: auto stop level
-      type: uint8
-      unit: pct
-      comment: Level at which to stop automatic filling (1-100%)
-    - byte: 3
-      name: maximum fill time
-      type: uint8
-      unit: min
-      comment: Maximum fill time allowed before safety shutoff
-    - byte: 4
-      bit: 0-1
-      name: overfill protection
-      type: bit2
-      values:
-        00: disable
-        01: enable
-        10: reserved
-        11: no change
-      comment: Command to enable/disable overfill protection
-    - byte: 4
-      bit: 2-3
-      name: reset fault
-      type: bit2
-      values:
-        00: no action
-        01: reset fault
-        10: reserved
-        11: reserved
-      comment: Command to reset fault condition
-    - byte: 5
-      name: water source priority
-      type: uint8
-      values:
-        0: city water
-        1: onboard pump
-        2: auxiliary input
-        3: automatic selection
-        255: no change
-      comment: Priority of water source for filling
-    - byte: 6
-      name: pressure limit
-      type: uint8
-      unit: kPa
-      comment: Maximum pressure limit for fill operation
-    - byte: 7
-      name: flow rate limit
-      type: uint8
-      unit: lpm
-      comment: Maximum flow rate limit for fill operation
+        0: off
+        1: on
+
 
 1FFAF:
   name: WASTEDUMP_STATUS
@@ -5610,105 +4322,6 @@ API_VERSION: 1
 
 1FFAE:
   name: WASTEDUMP_COMMAND
-  parameters:
-    - byte: 0
-      bit: 0-1
-      name: black valve command
-      type: bit2
-      values:
-        00: close valve
-        01: open valve
-        10: reserved
-        11: no change
-      comment: Command to control black water dump valve
-    - byte: 0
-      bit: 2-3
-      name: gray valve command
-      type: bit2
-      values:
-        00: close valve
-        01: open valve
-        10: reserved
-        11: no change
-      comment: Command to control gray water dump valve
-    - byte: 0
-      bit: 4-5
-      name: flush command
-      type: bit2
-      values:
-        00: stop flush
-        01: start flush
-        10: reserved
-        11: no change
-      comment: Command to control tank flush system
-    - byte: 0
-      bit: 6-7
-      name: operating mode
-      type: bit2
-      values:
-        00: manual
-        01: automatic
-        10: scheduled
-        11: no change
-      comment: Command to set operating mode
-    - byte: 1
-      bit: 0-1
-      name: auto dump enable
-      type: bit2
-      values:
-        00: disable
-        01: enable
-        10: reserved
-        11: no change
-      comment: Command to enable/disable automatic dumping
-    - byte: 1
-      bit: 2-3
-      name: reset fault
-      type: bit2
-      values:
-        00: no action
-        01: reset fault
-        10: reserved
-        11: reserved
-      comment: Command to reset fault condition
-    - byte: 2
-      name: sequence operation
-      type: uint8
-      values:
-        0: no action
-        1: full dump sequence
-        2: black then gray
-        3: gray then black
-        4: black only
-        5: gray only
-        6: flush only
-        255: stop all operations
-      comment: Command to start a predefined dump sequence
-    - byte: 3
-      name: maximum operation time
-      type: uint8
-      unit: min
-      comment: Maximum time allowed for operation before timeout
-    - byte: 4
-      name: flush time
-      type: uint8
-      unit: sec
-      comment: Duration of flush operation
-    - byte: 5
-      name: black auto dump level
-      type: uint8
-      unit: pct
-      comment: Level at which black tank auto-dumps (1-100%)
-    - byte: 6
-      name: gray auto dump level
-      type: uint8
-      unit: pct
-      comment: Level at which gray tank auto-dumps (1-100%)
-    - byte: 7
-      name: scheduled time interval
-      type: uint8
-      unit: days
-      comment: Days between scheduled dumps (0 = disabled)
 
 1FFAD:
   name: ATS_AC_STATUS_1
@@ -5854,862 +4467,252 @@ API_VERSION: 1
   name: ATS_STATUS
   parameters:
     - byte: 0
+      bit: 0-2
       name: instance
-      type: uint8
-    - byte: 1
-      bit: 0-1
-      name: switch position
-      type: bit2
+      type: uint3
+    - byte: 0
+      bit: 3
+      name: input output type
+      type: bit1
       values:
-        00: off
-        01: source 1
-        10: source 2
-    - byte: 1
-      bit: 2-3
-      name: source 1 available
-      type: bit2
+        0: input
+        1: output
+    - byte: 0
+      bit: 4-6
+      name: source
+      type: bit3
       values:
-        00: not available
-        01: available
-    - byte: 1
-      bit: 4-5
-      name: source 2 available
-      type: bit2
+        000: primary
+        001: secondary
+        111: invalid
+    - byte: 0
+      bit: 7
+      name: leg
+      type: bit1
       values:
-        00: not available
-        01: available
-    - byte: 2
-      bit: 0-1
-      name: transfer status
-      type: bit2
-      values:
-        00: not transferring
-        01: transferring
+        0: 1
+        1: 2
 
 1FFA9:
   name: ATS_COMMAND
   parameters:
     - byte: 0
+      bit: 0-2
       name: instance
-      type: uint8
-      comment: Identifies the specific ATS to control
-    - byte: 1
-      bit: 0-1
-      name: switch position command
-      type: bit2
+      type: uint3
+    - byte: 0
+      bit: 3
+      name: input output type
+      type: bit1
       values:
-        00: off
-        01: source 1
-        10: source 2
-        11: no change
-      comment: Command to set the transfer switch position
-    - byte: 1
-      bit: 2-3
-      name: auto mode command
-      type: bit2
+        0: input
+        1: output
+    - byte: 0
+      bit: 4-6
+      name: source
+      type: bit3
       values:
-        00: manual mode
-        01: auto mode
-        10: reserved
-        11: no change
-      comment: Command to set automatic or manual mode
-    - byte: 1
-      bit: 4-5
-      name: preferred source
-      type: bit2
+        000: primary
+        001: secondary
+        111: invalid
+    - byte: 0
+      bit: 7
+      name: leg
+      type: bit1
       values:
-        00: no preference
-        01: source 1 preferred
-        10: source 2 preferred
-        11: no change
-      comment: Command to set preferred power source
-    - byte: 2
-      name: transfer delay
-      type: uint8
-      unit: sec
-      comment: Delay before transferring between sources
-    - byte: 3
-      bit: 0-1
-      name: reset fault
-      type: bit2
-      values:
-        00: no action
-        01: reset fault
-        10: reserved
-        11: reserved
-      comment: Command to reset fault condition
-    - byte: 4
-      name: voltage threshold
-      type: uint8
-      unit: V
-      comment: Voltage threshold for source qualification
-    - byte: 5
-      name: frequency threshold
-      type: uint8
-      unit: Hz
-      comment: Frequency threshold for source qualification
-    - byte: 6
-      name: qualification time
-      type: uint8
-      unit: sec
-      comment: Time required for source qualification
+        0: 1
+        1: 2
 
 1FFA5:
   name: WEATHER_STATUS_1
   parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific weather station
-    - byte: 1-2
-      name: outside temperature
+    - byte: 0-1
+      name: exterior air temperature
       type: uint16
       unit: Deg C
-      comment: Current outside temperature
-    - byte: 3
-      bit: 0-1
-      name: rain detected
-      type: bit2
-      values:
-        00: no rain
-        01: rain detected
-        10: error
-        11: unavailable
-      comment: Current rain detection status
-    - byte: 3
-      bit: 2-3
-      name: wind detection
-      type: bit2
-      values:
-        00: calm
-        01: wind detected
-        10: high wind
-        11: unavailable
-      comment: Current wind status
-    - byte: 4-5
-      name: barometric pressure
+    - byte: 2-3
+      name: alternative air temperature
       type: uint16
-      unit: hPa
-      comment: Current atmospheric pressure
+      unit: Deg C
+      comment: The location of the Alternative Air Temperature is undefined, and is typically a storage bay or indoor temperature.
+    - byte: 4-5
+      name: absolute air pressure
+      type: uint16
+      unit: mBar
     - byte: 6
-      name: humidity
+      name: relative humidity
       type: uint8
       unit: pct
-      comment: Current relative humidity percentage
     - byte: 7
-      name: dew point
-      type: uint8
-      unit: Deg C
-      comment: Current calculated dew point
+      bit: 0-1
+      name: air temperature alarm
+      type: uint2
+      values:
+        00: alarm inactive
+        01: alarm active
+    - byte: 7
+      bit: 2-3
+      name: relative humidity alarm
+      type: uint2
+      values:
+        00: alarm inactive
+        01: alarm active
 
 1FFA4:
   name: WEATHER_STATUS_2
   parameters:
     - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific weather station
-    - byte: 1-2
       name: wind speed
-      type: uint16
-      unit: km/h
-      comment: Current wind speed
-    - byte: 3-4
+      type: uint8
+      unit: kph
+    - byte: 1-2
       name: wind direction
       type: uint16
       unit: Deg
-      comment: Current wind direction (0-359 degrees, 0=North)
-    - byte: 5
-      name: wind gust
+    - byte: 3
+      name: solar intensity
       type: uint8
-      unit: km/h
-      comment: Maximum recent wind gust speed
-    - byte: 6
-      name: rain rate
+      unit: kLux
+    - byte: 4
+      name: rain intensity
       type: uint8
-      unit: mm/h
-      comment: Current rate of rainfall
-    - byte: 7
-      name: daily rain accumulation
-      type: uint8
-      unit: mm
-      comment: Total rainfall accumulated today
+      unit: pct
 
 1FFA3:
   name: ALTIMETER_STATUS
   parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific altimeter
-    - byte: 1-2
+    - byte: 0-1
+      name: altitude compensated air pressure
+      type: uint16
+      unit: mBar
+    - byte: 4-5
       name: altitude
       type: uint16
       unit: m
-      comment: Current altitude above sea level
-    - byte: 3-4
-      name: pressure altitude
-      type: uint16
-      unit: m
-      comment: Altitude based on standard pressure
-    - byte: 5-6
-      name: density altitude
-      type: uint16
-      unit: m
-      comment: Altitude adjusted for temperature
-    - byte: 7
-      name: trend
-      type: uint8
-      values:
-        0: steady
-        1: rising slowly
-        2: rising rapidly
-        3: falling slowly
-        4: falling rapidly
-        255: unknown
-      comment: Altitude trend over time
 
 1FFA2:
   name: ALTIMETER_COMMAND
   parameters:
     - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific altimeter
-    - byte: 1-2
-      name: reference pressure
-      type: uint16
-      unit: hPa
-      comment: Reference pressure for altitude calculation
-    - byte: 3
       bit: 0-1
-      name: units
-      type: bit2
+      name: command
+      type: uint8
       values:
-        00: metric
-        01: imperial
-        10: reserved
-        11: no change
-      comment: Command to set display units
-    - byte: 3
-      bit: 2-3
-      name: reset
-      type: bit2
-      values:
-        00: no action
-        01: reset
-        10: factory reset
-        11: no change
-      comment: Command to reset altimeter
-    - byte: 4-5
-      name: reference altitude
+        0: set to sea level
+        1: set altitude compensated pressure
+        2: set altitude basis pressure
+        3: increment altitude basis pressure
+        4: decrement altitude basis pressure
+    - byte: 1-2
+      name: value
       type: uint16
-      unit: m
-      comment: Known altitude for calibration
+      unit: mBar
 
 1FFA1:
   name: WEATHER_CALIBRATE_COMMAND
   parameters:
     - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific weather station
-    - byte: 1
-      name: sensor select
-      type: uint8
-      values:
-        0: all sensors
-        1: temperature sensor
-        2: pressure sensor
-        3: humidity sensor
-        4: wind sensor
-        5: rain sensor
-        255: no selection
-      comment: Selects which sensor to calibrate
-    - byte: 2
       bit: 0-1
-      name: calibrate command
-      type: bit2
+      name: command
+      type: uint2
       values:
-        00: no action
-        01: start calibration
-        10: stop calibration
-        11: reset to default
-      comment: Command to control calibration process
-    - byte: 3-4
-      name: reference value
-      type: uint16
-      comment: Reference value for calibration
-    - byte: 5
-      name: offset value
-      type: uint8
-      comment: Calibration offset value
-    - byte: 6
-      name: scale factor
-      type: uint8
-      unit: pct
-      comment: Calibration scale factor (100=no scaling)
+        0: calibrate exterior air temperature
+        1: calibrate alternative air temperature
+        2: calibrate absolute air pressure
+        3: calibrate relative humidity
+        4: calibrate wind speed
+        5: calibrate wind direction
+        6: calibrate solar intensity
+        7: calibrate rain intensity
 
 1FFA0:
   name: COMPASS_BEARING_STATUS
   parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific compass
-    - byte: 1-2
-      name: magnetic heading
+    - byte: 0-1
+      name: adjusted compass bearing
       type: uint16
       unit: Deg
-      comment: Current magnetic heading (0-359 degrees)
-    - byte: 3-4
-      name: true heading
+    - byte: 2-3
+      name: compass offset
       type: uint16
       unit: Deg
-      comment: Current true heading (0-359 degrees)
-    - byte: 5
-      name: magnetic variation
-      type: uint8
-      unit: Deg
-      comment: Magnetic variation angle
-    - byte: 6
-      bit: 0
-      name: variation direction
-      type: bit1
-      values:
-        0: east
-        1: west
-      comment: Direction of magnetic variation
-    - byte: 6
-      bit: 1-2
-      name: accuracy
-      type: bit2
-      values:
-        00: high accuracy
-        01: medium accuracy
-        10: low accuracy
-        11: unknown
-      comment: Current heading accuracy
-    - byte: 7
+    - byte: 4
       bit: 0-1
-      name: calibration status
-      type: bit2
+      name: compass calibration status
+      type: uint2
       values:
-        00: not calibrated
-        01: partially calibrated
-        10: fully calibrated
-        11: unknown
-      comment: Current calibration status
+        00: compass is calibrated
+        01: compass in calibration process
+        10: error
 
 1FF9F:
   name: COMPASS_CALIBRATE_COMMAND
   parameters:
     - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific compass
-    - byte: 1
       bit: 0-1
-      name: calibrate command
-      type: bit2
+      name: command
+      type: uint2
       values:
-        00: no action
-        01: start calibration
-        10: stop calibration
-        11: reset to default
-      comment: Command to control calibration process
-    - byte: 1
-      bit: 2-3
-      name: calibration type
-      type: bit2
-      values:
-        00: automatic
-        01: 2D calibration
-        10: 3D calibration
-        11: no change
-      comment: Type of calibration to perform
-    - byte: 2
-      name: magnetic variation
-      type: uint8
-      unit: Deg
-      comment: Magnetic variation to use
-    - byte: 3
-      bit: 0
-      name: variation direction
-      type: bit1
-      values:
-        0: east
-        1: west
-      comment: Direction of magnetic variation
-    - byte: 3
-      bit: 1-2
-      name: auto variation
-      type: bit2
-      values:
-        00: manual
-        01: automatic
-        10: reserved
-        11: no change
-      comment: Whether to use automatic variation
-    - byte: 4-5
-      name: mounting pitch correction
+        0: enter self-calibration mode
+        1: set compass offset
+        2: increment compass offset
+        3: decrement compass offset
+    - byte: 1-2
+      name: value
       type: uint16
       unit: Deg
-      comment: Correction for non-level mounting (pitch)
-    - byte: 6-7
-      name: mounting roll correction
-      type: uint16
-      unit: Deg
-      comment: Correction for non-level mounting (roll)
 
 1FF80:
   name: GENERATOR_DEMAND_STATUS
   parameters:
     - byte: 0
-      name: instance
-      type: uint8
-    - byte: 1
       bit: 0-1
-      name: start request status
+      name: generator demand
       type: bit2
       values:
-        00: no request
-        01: start request
-    - byte: 2-3
-      name: run time request
-      type: uint16
-      unit: min
-    - byte: 4-5
-      name: quiet mode time
-      type: uint16
-      unit: min
-    - byte: 6
-      name: demand priority
-      type: uint8
+        00: no demand for generator
+        01: generator is demanded
+    - byte: 0
+      bit: 2-3
+      name: internal generator demand
+      type: bit2
       values:
-        0: lowest priority
-        5: highest priority
+        00: no internal demand
+        01: internal ags criterion is demanding generator
+    - byte: 0
+      bit: 4-5
+      name: network generator demand
+      type: bit2
+      values:
+        00: no demand from other network nodes
+        01: network device is demanding generator
+    - byte: 0
+      bit: 6-7
+      name: external activity detected
+      type: bit2
+      values:
+        00: automatic starting is allowed
+        01: automatic starting is disabled due to external activity
+
 
 1FEFF:
   name: GENERATOR_DEMAND_COMMAND
   parameters:
     - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific generator
-    - byte: 1
       bit: 0-1
-      name: start request command
-      type: bit2
+      name: generator demand
+      type: uint2
       values:
-        00: no request
-        01: start request
-        10: cancel request
-        11: no change
-      comment: Command to request generator to start or cancel start request
-    - byte: 1
+        0: off
+        1: on
+    - byte: 0
       bit: 2-3
-      name: stop request command
-      type: bit2
+      name: quiet time override
+      type: uint2
       values:
-        00: no request
-        01: stop request
-        10: cancel request
-        11: no change
-      comment: Command to request generator to stop or cancel stop request
-    - byte: 1
-      bit: 4-5
-      name: auto mode command
-      type: bit2
-      values:
-        00: manual mode
-        01: auto mode
-        10: reserved
-        11: no change
-      comment: Command to set automatic or manual mode
-    - byte: 1
-      bit: 6-7
-      name: load management enable
-      type: bit2
-      values:
-        00: disable
-        01: enable
-        10: reserved
-        11: no change
-      comment: Command to enable load management functionality
-    - byte: 2-3
-      name: run time request
-      type: uint16
-      unit: min
-      comment: Requested run time duration in minutes (0 = indefinite)
-    - byte: 4-5
-      name: quiet mode time
-      type: uint16
-      unit: min
-      comment: Time to run in quiet mode (reduced RPM) in minutes
-    - byte: 6
-      name: demand priority
-      type: uint8
-      values:
-        0: lowest priority
-        1: low priority
-        2: medium-low priority
-        3: medium priority
-        4: medium-high priority
-        5: highest priority
-        255: no change
-      comment: Priority level of this demand request
-    - byte: 7
-      name: demand source
-      type: uint8
-      values:
-        0: manual request
-        1: automatic start system
-        2: inverter/charger
-        3: climate control
-        4: scheduled exercise
-        5: utility demand
-        255: other/no change
-      comment: Source of the generator demand
+        0: normal operation
+        1: override quiet time
 
-1FEFE:
-  name: AGS_CRITERION_STATUS
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-    - byte: 1
-      bit: 0-3
-      name: criterion type
-      type: uint4
-      values:
-        0: quiet time
-        1: quiet time range
-        2: AC power loss
-        3: battery voltage
-        4: run time
-        5: exercise
-        6: temperature
-        7: load
-        8: manual
-        9: test
-    - byte: 1
-      bit: 4-7
-      name: criterion state
-      type: uint4
-      values:
-        0: inactive
-        1: pending
-        2: active
-        3: satisfied
-        4: fault
-        15: unavailable
-    - byte: 2-3
-      name: criterion value
-      type: uint16
-    - byte: 4-5
-      name: criterion threshold
-      type: uint16
-    - byte: 6-7
-      name: criterion delay
-      type: uint16
-      unit: sec
-
-1FED2:
-  name: AGS_CRITERION_STATUS_2
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific criterion
-    - byte: 1
-      bit: 0-3
-      name: criterion type
-      type: uint4
-      values:
-        0: quiet time
-        1: quiet time range
-        2: AC power loss
-        3: battery voltage
-        4: run time
-        5: exercise
-        6: temperature
-        7: load
-        8: manual
-        9: test
-        10: SOC
-        11: AC load
-        12: HVAC request
-        13: water level
-        14: fault recovery
-        15: reserved
-      comment: Type of condition that can trigger generator start
-    - byte: 1
-      bit: 4-7
-      name: criterion state
-      type: uint4
-      values:
-        0: inactive
-        1: pending
-        2: active
-        3: satisfied
-        4: fault
-        5: canceled
-        6: completed
-        7: expired
-        15: unavailable
-      comment: Current state of this criterion
-    - byte: 2-3
-      name: remaining time
-      type: uint16
-      unit: sec
-      comment: Time remaining in current state
-    - byte: 4-5
-      name: current countdown
-      type: uint16
-      unit: sec
-      comment: Current countdown timer value
-    - byte: 6
-      name: generator run reason
-      type: uint8
-      values:
-        0: none
-        1: quiet time violation
-        2: AC power loss
-        3: low battery voltage
-        4: run time request
-        5: exercise
-        6: temperature
-        7: load demand
-        8: manual start
-        9: test
-        10: low SOC
-        11: AC load demand
-        12: HVAC request
-        13: low water level
-        14: fault recovery
-        255: unknown
-      comment: Reason code for current or last generator run
-    - byte: 7
-      name: generator stop reason
-      type: uint8
-      values:
-        0: none
-        1: normal completion
-        2: manual stop
-        3: fault condition
-        4: criterion canceled
-        5: higher priority start
-        6: runtime exceeded
-        7: forced stop
-        255: unknown
-      comment: Reason code for last generator stop
-
-1FEFD:
-  name: AGS_CRITERION_COMMAND
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific criterion to control
-    - byte: 1
-      bit: 0-3
-      name: criterion type
-      type: uint4
-      values:
-        0: quiet time
-        1: quiet time range
-        2: AC power loss
-        3: battery voltage
-        4: run time
-        5: exercise
-        6: temperature
-        7: load
-        8: manual
-        9: test
-        10: SOC
-        11: AC load
-        12: HVAC request
-        13: water level
-        14: fault recovery
-        15: no change
-      comment: Type of criterion to configure
-    - byte: 1
-      bit: 4-7
-      name: criterion command
-      type: uint4
-      values:
-        0: disable
-        1: enable
-        2: start now
-        3: stop now
-        4: reset
-        5: cancel
-        15: no change
-      comment: Command to control criterion behavior
-    - byte: 2-3
-      name: criterion value
-      type: uint16
-      comment: Value setting for this criterion (units depend on criterion type)
-    - byte: 4-5
-      name: criterion threshold
-      type: uint16
-      comment: Threshold value that triggers action (units depend on criterion type)
-    - byte: 6-7
-      name: criterion delay
-      type: uint16
-      unit: sec
-      comment: Delay time before this criterion triggers action
-
-1FED5:
-  name: AGS_DEMAND_CONFIGURATION_STATUS
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific AGS system
-    - byte: 1
-      bit: 0-1
-      name: AGS system status
-      type: bit2
-      values:
-        00: disabled
-        01: enabled
-        10: fault
-        11: unavailable
-      comment: Overall status of the AGS system
-    - byte: 1
-      bit: 2-3
-      name: quiet time enabled
-      type: bit2
-      values:
-        00: disabled
-        01: enabled
-        10: error
-        11: unavailable
-      comment: Whether quiet time restrictions are enabled
-    - byte: 1
-      bit: 4-5
-      name: exercise enabled
-      type: bit2
-      values:
-        00: disabled
-        01: enabled
-        10: error
-        11: unavailable
-      comment: Whether regular exercise runs are enabled
-    - byte: 1
-      bit: 6-7
-      name: SOC monitoring
-      type: bit2
-      values:
-        00: disabled
-        01: enabled
-        10: error
-        11: unavailable
-      comment: Whether battery state of charge monitoring is enabled
-    - byte: 2
-      name: max run time
-      type: uint8
-      unit: hr
-      comment: Maximum allowed generator run time
-    - byte: 3
-      name: exercise interval
-      type: uint8
-      unit: days
-      comment: Days between exercise runs
-    - byte: 4
-      name: exercise start hour
-      type: uint8
-      comment: Hour to start exercise (0-23)
-    - byte: 5
-      name: exercise run time
-      type: uint8
-      unit: min
-      comment: Duration of exercise runs
-    - byte: 6
-      name: quiet time start hour
-      type: uint8
-      comment: Hour when quiet time begins (0-23)
-    - byte: 7
-      name: quiet time end hour
-      type: uint8
-      comment: Hour when quiet time ends (0-23)
-
-1FED4:
-  name: AGS_DEMAND_CONFIGURATION_COMMAND
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific AGS system to configure
-    - byte: 1
-      bit: 0-1
-      name: AGS system command
-      type: bit2
-      values:
-        00: disable
-        01: enable
-        10: reset
-        11: no change
-      comment: Command to control overall AGS system
-    - byte: 1
-      bit: 2-3
-      name: quiet time command
-      type: bit2
-      values:
-        00: disable
-        01: enable
-        10: reserved
-        11: no change
-      comment: Command to control quiet time restrictions
-    - byte: 1
-      bit: 4-5
-      name: exercise command
-      type: bit2
-      values:
-        00: disable
-        01: enable
-        10: reserved
-        11: no change
-      comment: Command to control exercise runs
-    - byte: 1
-      bit: 6-7
-      name: SOC monitoring command
-      type: bit2
-      values:
-        00: disable
-        01: enable
-        10: reserved
-        11: no change
-      comment: Command to control SOC monitoring
-    - byte: 2
-      name: max run time
-      type: uint8
-      unit: hr
-      comment: Command to set maximum allowed run time
-    - byte: 3
-      name: exercise interval
-      type: uint8
-      unit: days
-      comment: Command to set days between exercise runs
-    - byte: 4
-      name: exercise start hour
-      type: uint8
-      comment: Command to set exercise start hour (0-23)
-    - byte: 5
-      name: exercise run time
-      type: uint8
-      unit: min
-      comment: Command to set exercise run duration
-    - byte: 6
-      name: quiet time start hour
-      type: uint8
-      comment: Command to set quiet time start hour (0-23)
-    - byte: 7
-      name: quiet time end hour
-      type: uint8
-      comment: Command to set quiet time end hour (0-23)
 
 1FEFC:
   name: FLOOR_HEAT_STATUS
@@ -6739,727 +4742,6 @@ API_VERSION: 1
         0: off
         1: on
 
-1FEFB:
-  name: FLOOR_HEAT_COMMAND
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific floor heating zone
-    - byte: 1
-      bit: 0-1
-      name: operating mode command
-      type: bit2
-      values:
-        00: off
-        01: on
-        10: reserved
-        11: no change
-      comment: Command to turn floor heating on or off
-    - byte: 1
-      bit: 2-3
-      name: mode select
-      type: bit2
-      values:
-        00: automatic
-        01: manual
-        10: reserved
-        11: no change
-      comment: Command to set operating mode
-    - byte: 2-3
-      name: setpoint temperature
-      type: uint16
-      unit: Deg C
-      comment: Target temperature for floor heating
-    - byte: 4
-      name: power level
-      type: uint8
-      unit: pct
-      comment: Power level setting (0-100%)
-    - byte: 5
-      name: minimum floor temperature
-      type: uint8
-      unit: Deg C
-      comment: Minimum allowed floor temperature
-    - byte: 6
-      name: maximum floor temperature
-      type: uint8
-      unit: Deg C
-      comment: Maximum allowed floor temperature
-    - byte: 7
-      bit: 0-1
-      name: reset fault
-      type: bit2
-      values:
-        00: no action
-        01: reset fault
-        10: reserved
-        11: reserved
-      comment: Command to reset fault condition
-
-1FEF1:
-  name: TIRE_RAW_STATUS
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific tire (position code)
-    - byte: 1-2
-      name: raw pressure
-      type: uint16
-      comment: Raw pressure sensor reading
-    - byte: 3-4
-      name: raw temperature
-      type: uint16
-      comment: Raw temperature sensor reading
-    - byte: 5
-      name: battery status
-      type: uint8
-      unit: pct
-      comment: Battery level of tire sensor
-    - byte: 6
-      bit: 0-1
-      name: sensor status
-      type: bit2
-      values:
-        00: normal
-        01: warning
-        10: critical
-        11: error
-      comment: Status of the tire sensor
-    - byte: 6
-      bit: 2-3
-      name: signal strength
-      type: bit2
-      values:
-        00: poor
-        01: fair
-        10: good
-        11: excellent
-      comment: RF signal strength from sensor
-    - byte: 7
-      name: last update time
-      type: uint8
-      unit: min
-      comment: Minutes since last update from sensor
-
-1FEF0:
-  name: TIRE_STATUS
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific tire (position code)
-    - byte: 1-2
-      name: pressure
-      type: uint16
-      unit: kPa
-      comment: Current tire pressure
-    - byte: 3-4
-      name: temperature
-      type: uint16
-      unit: Deg C
-      comment: Current tire temperature
-    - byte: 5
-      bit: 0-1
-      name: pressure status
-      type: bit2
-      values:
-        00: normal
-        01: low warning
-        10: critical low
-        11: high warning
-      comment: Status of tire pressure
-    - byte: 5
-      bit: 2-3
-      name: temperature status
-      type: bit2
-      values:
-        00: normal
-        01: high warning
-        10: critical high
-        11: error
-      comment: Status of tire temperature
-    - byte: 5
-      bit: 4-5
-      name: leak status
-      type: bit2
-      values:
-        00: no leak
-        01: slow leak
-        10: fast leak
-        11: error
-      comment: Status of leak detection
-    - byte: 6
-      name: leak rate
-      type: uint8
-      unit: kPa/hr
-      comment: Rate of pressure loss if leak detected
-    - byte: 7
-      bit: 0-3
-      name: location code
-      type: uint4
-      values:
-        0: unknown
-        1: front driver
-        2: front passenger
-        3: rear driver outer
-        4: rear passenger outer
-        5: rear driver inner
-        6: rear passenger inner
-        7: spare
-        8: trailer 1
-        9: trailer 2
-        10: trailer 3
-        15: other
-      comment: Physical location of the tire
-
-1FEEF:
-  name: TIRE_SLOW_LEAK_ALARM
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific tire (position code)
-    - byte: 1-2
-      name: starting pressure
-      type: uint16
-      unit: kPa
-      comment: Pressure at beginning of monitoring period
-    - byte: 3-4
-      name: ending pressure
-      type: uint16
-      unit: kPa
-      comment: Pressure at end of monitoring period
-    - byte: 5-6
-      name: monitoring period
-      type: uint16
-      unit: hr
-      comment: Duration of monitoring period
-    - byte: 7
-      bit: 0-1
-      name: alarm status
-      type: bit2
-      values:
-        00: no alarm
-        01: alarm active
-        10: alarm acknowledged
-        11: error
-      comment: Status of slow leak alarm
-    - byte: 7
-      bit: 2-3
-      name: confidence level
-      type: bit2
-      values:
-        00: low
-        01: medium
-        10: high
-        11: unknown
-      comment: Confidence in leak detection
-
-1FEEE:
-  name: TIRE_TEMPERATURE_CONFIGURATION_STATUS
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific tire (position code)
-    - byte: 1-2
-      name: high temp warning threshold
-      type: uint16
-      unit: Deg C
-      comment: Temperature that triggers warning
-    - byte: 3-4
-      name: critical temp threshold
-      type: uint16
-      unit: Deg C
-      comment: Temperature that triggers critical alarm
-    - byte: 5
-      bit: 0-1
-      name: alarm enable
-      type: bit2
-      values:
-        00: disabled
-        01: enabled
-        10: error
-        11: unavailable
-      comment: Whether temperature alarms are enabled
-    - byte: 6
-      name: alarm delay
-      type: uint8
-      unit: sec
-      comment: Delay before alarm is triggered
-    - byte: 7
-      name: temperature offset
-      type: uint8
-      unit: Deg C
-      comment: Calibration offset for temperature sensor
-
-1FEED:
-  name: TIRE_PRESSURE_CONFIGURATION_STATUS
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific tire (position code)
-    - byte: 1-2
-      name: target pressure
-      type: uint16
-      unit: kPa
-      comment: Target pressure for this tire
-    - byte: 3
-      name: low pressure threshold
-      type: uint8
-      unit: pct
-      comment: Low pressure threshold as percentage of target
-    - byte: 4
-      name: critical low threshold
-      type: uint8
-      unit: pct
-      comment: Critical low threshold as percentage of target
-    - byte: 5
-      name: high pressure threshold
-      type: uint8
-      unit: pct
-      comment: High pressure threshold as percentage of target
-    - byte: 6
-      bit: 0-1
-      name: alarm enable
-      type: bit2
-      values:
-        00: disabled
-        01: enabled
-        10: error
-        11: unavailable
-      comment: Whether pressure alarms are enabled
-    - byte: 7
-      name: pressure offset
-      type: uint8
-      unit: kPa
-      comment: Calibration offset for pressure sensor
-
-1FEEC:
-  name: TIRE_PRESSURE_CONFIGURATION_COMMAND
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific tire to configure
-    - byte: 1-2
-      name: target pressure
-      type: uint16
-      unit: kPa
-      comment: Command to set target pressure
-    - byte: 3
-      name: low pressure threshold
-      type: uint8
-      unit: pct
-      comment: Command to set low pressure threshold percentage
-    - byte: 4
-      name: critical low threshold
-      type: uint8
-      unit: pct
-      comment: Command to set critical low threshold percentage
-    - byte: 5
-      name: high pressure threshold
-      type: uint8
-      unit: pct
-      comment: Command to set high pressure threshold percentage
-    - byte: 6
-      bit: 0-1
-      name: alarm command
-      type: bit2
-      values:
-        00: disable alarms
-        01: enable alarms
-        10: reserved
-        11: no change
-      comment: Command to enable/disable pressure alarms
-    - byte: 7
-      name: pressure offset
-      type: uint8
-      unit: kPa
-      comment: Command to set pressure calibration offset
-
-1FEEB:
-  name: TIRE_TEMPERATURE_CONFIGURATION_COMMAND
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific tire to configure
-    - byte: 1-2
-      name: high temp warning threshold
-      type: uint16
-      unit: Deg C
-      comment: Command to set warning temperature threshold
-    - byte: 3-4
-      name: critical temp threshold
-      type: uint16
-      unit: Deg C
-      comment: Command to set critical temperature threshold
-    - byte: 5
-      bit: 0-1
-      name: alarm command
-      type: bit2
-      values:
-        00: disable alarms
-        01: enable alarms
-        10: reserved
-        11: no change
-      comment: Command to enable/disable temperature alarms
-    - byte: 6
-      name: alarm delay
-      type: uint8
-      unit: sec
-      comment: Command to set alarm delay
-    - byte: 7
-      name: temperature offset
-      type: uint8
-      unit: Deg C
-      comment: Command to set temperature calibration offset
-
-1FEEA:
-  name: TIRE_ID_STATUS
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific tire position
-    - byte: 1
-      bit: 0-3
-      name: location code
-      type: uint4
-      values:
-        0: unknown
-        1: front driver
-        2: front passenger
-        3: rear driver outer
-        4: rear passenger outer
-        5: rear driver inner
-        6: rear passenger inner
-        7: spare
-        8: trailer 1
-        9: trailer 2
-        10: trailer 3
-        15: other
-      comment: Physical location of the tire
-    - byte: 1
-      bit: 4-7
-      name: axle number
-      type: uint4
-      comment: Axle number (1-based)
-    - byte: 2
-      name: tire type
-      type: uint8
-      values:
-        0: unknown
-        1: standard
-        2: winter
-        3: all season
-        4: performance
-        5: off-road
-        6: spare
-        255: other
-      comment: Type of tire
-    - byte: 3-6
-      name: sensor ID
-      type: uint32
-      comment: Unique sensor ID (hex value)
-    - byte: 7
-      bit: 0-1
-      name: learn mode
-      type: bit2
-      values:
-        00: normal mode
-        01: learn mode active
-        10: error
-        11: unavailable
-      comment: Whether sensor learn mode is active
-
-1FEE9:
-  name: TIRE_ID_COMMAND
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific tire position to configure
-    - byte: 1
-      bit: 0-3
-      name: location code
-      type: uint4
-      values:
-        0: unknown
-        1: front driver
-        2: front passenger
-        3: rear driver outer
-        4: rear passenger outer
-        5: rear driver inner
-        6: rear passenger inner
-        7: spare
-        8: trailer 1
-        9: trailer 2
-        10: trailer 3
-        15: other
-      comment: Command to set physical location
-    - byte: 1
-      bit: 4-7
-      name: axle number
-      type: uint4
-      comment: Command to set axle number (1-based)
-    - byte: 2
-      name: tire type
-      type: uint8
-      values:
-        0: unknown
-        1: standard
-        2: winter
-        3: all season
-        4: performance
-        5: off-road
-        6: spare
-        255: no change
-      comment: Command to set tire type
-    - byte: 3-6
-      name: sensor ID
-      type: uint32
-      comment: Command to set sensor ID (hex value)
-    - byte: 7
-      bit: 0-1
-      name: learn mode command
-      type: bit2
-      values:
-        00: exit learn mode
-        01: enter learn mode
-        10: clear learned sensors
-        11: no change
-      comment: Command to control sensor learning mode
-
-1FEF3:
-  name: AWNING_STATUS
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific awning
-    - byte: 1
-      bit: 0-1
-      name: position status
-      type: bit2
-      values:
-        00: fully retracted
-        01: fully extended
-        10: moving
-        11: partially extended
-      comment: Current position of the awning
-    - byte: 1
-      bit: 2-3
-      name: motion status
-      type: bit2
-      values:
-        00: stopped
-        01: extending
-        10: retracting
-        11: unknown
-      comment: Current motion of the awning
-    - byte: 1
-      bit: 4-5
-      name: lock status
-      type: bit2
-      values:
-        00: unlocked
-        01: locked
-        10: error
-        11: unknown
-      comment: Lock status of the awning
-    - byte: 1
-      bit: 6-7
-      name: fault status
-      type: bit2
-      values:
-        00: no fault
-        01: fault present
-        10: multiple faults
-        11: unknown
-      comment: Fault status of the awning
-    - byte: 2
-      name: extension
-      type: uint8
-      unit: pct
-      comment: Current extension percentage (0-100%)
-    - byte: 3
-      bit: 0-1
-      name: wind sensor status
-      type: bit2
-      values:
-        00: no wind
-        01: wind detected
-        10: high wind
-        11: sensor error
-      comment: Status of wind sensor
-    - byte: 3
-      bit: 2-3
-      name: rain sensor status
-      type: bit2
-      values:
-        00: no rain
-        01: rain detected
-        10: heavy rain
-        11: sensor error
-      comment: Status of rain sensor
-    - byte: 3
-      bit: 4-5
-      name: light sensor status
-      type: bit2
-      values:
-        00: dark
-        01: dim
-        10: bright
-        11: sensor error
-      comment: Status of light sensor
-    - byte: 4
-      name: motor current
-      type: uint8
-      unit: A
-      comment: Current draw of the awning motor
-    - byte: 5
-      name: auto retract cause
-      type: uint8
-      values:
-        0: none
-        1: wind
-        2: rain
-        3: vehicle ignition
-        4: vehicle movement
-        5: timer
-        6: darkness
-        7: manual command
-        8: remote control
-        255: other
-      comment: Cause of last automatic retraction
-    - byte: 6
-      name: wind speed
-      type: uint8
-      unit: km/h
-      comment: Current wind speed at awning
-    - byte: 7
-      name: fault code
-      type: uint8
-      values:
-        0: no fault
-        1: motor overcurrent
-        2: motor stall
-        3: sensor fault
-        4: obstruction
-        5: position error
-        6: arm error
-        7: wind damage
-        8: communication error
-        255: unknown fault
-      comment: Specific fault code
-
-1FEF2:
-  name: AWNING_COMMAND
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific awning to control
-    - byte: 1
-      bit: 0-1
-      name: position command
-      type: bit2
-      values:
-        00: retract
-        01: extend
-        10: stop
-        11: no change
-      comment: Command to control awning position
-    - byte: 1
-      bit: 2-3
-      name: lock command
-      type: bit2
-      values:
-        00: unlock
-        01: lock
-        10: reserved
-        11: no change
-      comment: Command to lock/unlock the awning
-    - byte: 1
-      bit: 4-5
-      name: light command
-      type: bit2
-      values:
-        00: lights off
-        01: lights on
-        10: lights toggle
-        11: no change
-      comment: Command to control awning lights
-    - byte: 2
-      name: extension
-      type: uint8
-      unit: pct
-      comment: Desired extension percentage (0-100%)
-    - byte: 3
-      bit: 0-1
-      name: auto retract command
-      type: bit2
-      values:
-        00: disable
-        01: enable
-        10: reserved
-        11: no change
-      comment: Command to enable/disable auto retract
-    - byte: 3
-      bit: 2-3
-      name: reset fault
-      type: bit2
-      values:
-        00: no action
-        01: reset fault
-        10: reserved
-        11: no change
-      comment: Command to reset fault condition
-    - byte: 4
-      name: maximum wind threshold
-      type: uint8
-      unit: km/h
-      comment: Wind speed threshold for auto retract
-    - byte: 5
-      bit: 0-1
-      name: wind sensor command
-      type: bit2
-      values:
-        00: ignore sensor
-        01: use sensor
-        10: reserved
-        11: no change
-      comment: Command to control wind sensor usage
-    - byte: 5
-      bit: 2-3
-      name: rain sensor command
-      type: bit2
-      values:
-        00: ignore sensor
-        01: use sensor
-        10: reserved
-        11: no change
-      comment: Command to control rain sensor usage
-    - byte: 5
-      bit: 4-5
-      name: light sensor command
-      type: bit2
-      values:
-        00: ignore sensor
-        01: use sensor
-        10: reserved
-        11: no change
-      comment: Command to control light sensor usage
-    - byte: 6
-      name: auto extension timer
-      type: uint8
-      unit: min
-      comment: Timer for automatic extension (0 = disabled)
 
 1FEDE:
   name: WINDOW_SHADE_CONTROL_STATUS
@@ -7604,907 +4886,29 @@ API_VERSION: 1
   name: LOCK_COMMAND
   alias: 1FEE5
 
-1FEE3:
-  name: WINDOW_STATUS
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific window
-    - byte: 1
-      bit: 0-1
-      name: position status
-      type: bit2
-      values:
-        00: fully closed
-        01: fully open
-        10: moving
-        11: partially open
-      comment: Current position of the window
-    - byte: 1
-      bit: 2-3
-      name: motion status
-      type: bit2
-      values:
-        00: stopped
-        01: opening
-        10: closing
-        11: unknown
-      comment: Current motion of the window
-    - byte: 1
-      bit: 4-5
-      name: lock status
-      type: bit2
-      values:
-        00: unlocked
-        01: locked
-        10: error
-        11: unknown
-      comment: Lock status of the window
-    - byte: 1
-      bit: 6-7
-      name: fault status
-      type: bit2
-      values:
-        00: no fault
-        01: fault present
-        10: multiple faults
-        11: unknown
-      comment: Fault status of the window
-    - byte: 2
-      name: opening percentage
-      type: uint8
-      unit: pct
-      comment: Current opening percentage (0-100%)
-    - byte: 3
-      bit: 0-1
-      name: rain sensor status
-      type: bit2
-      values:
-        00: no rain
-        01: rain detected
-        10: sensor error
-        11: unavailable
-      comment: Status of rain sensor
-    - byte: 3
-      bit: 2-3
-      name: temperature sensor status
-      type: bit2
-      values:
-        00: normal
-        01: high temperature
-        10: sensor error
-        11: unavailable
-      comment: Status of temperature sensor
-    - byte: 3
-      bit: 4-5
-      name: obstruction sensor status
-      type: bit2
-      values:
-        00: no obstruction
-        01: obstruction detected
-        10: sensor error
-        11: unavailable
-      comment: Status of obstruction sensor
-    - byte: 4
-      name: motor current
-      type: uint8
-      unit: A
-      comment: Current draw of the window motor
-    - byte: 5
-      name: auto close cause
-      type: uint8
-      values:
-        0: none
-        1: rain
-        2: high temperature
-        3: vehicle ignition
-        4: vehicle movement
-        5: timer
-        6: security system
-        7: remote control
-        8: low battery
-        255: other
-      comment: Cause of last automatic closing
-    - byte: 6
-      name: window type
-      type: uint8
-      values:
-        0: unknown
-        1: sliding
-        2: casement
-        3: awning
-        4: hopper
-        5: skylight
-        6: emergency exit
-        7: fixed
-        255: other
-      comment: Type of window
-    - byte: 7
-      name: fault code
-      type: uint8
-      values:
-        0: no fault
-        1: motor overcurrent
-        2: motor stall
-        3: sensor fault
-        4: obstruction
-        5: position error
-        6: mechanism error
-        7: seal error
-        8: communication error
-        255: unknown fault
-      comment: Specific fault code
-
-1FEE2:
-  name: WINDOW_COMMAND
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific window to control
-    - byte: 1
-      bit: 0-1
-      name: position command
-      type: bit2
-      values:
-        00: close
-        01: open
-        10: stop
-        11: no change
-      comment: Command to control window position
-    - byte: 1
-      bit: 2-3
-      name: lock command
-      type: bit2
-      values:
-        00: unlock
-        01: lock
-        10: reserved
-        11: no change
-      comment: Command to lock/unlock the window
-    - byte: 1
-      bit: 4-5
-      name: vent command
-      type: bit2
-      values:
-        00: close vent
-        01: open vent
-        10: toggle vent
-        11: no change
-      comment: Command to control vent position
-    - byte: 2
-      name: opening percentage
-      type: uint8
-      unit: pct
-      comment: Desired opening percentage (0-100%)
-    - byte: 3
-      bit: 0-1
-      name: auto close command
-      type: bit2
-      values:
-        00: disable
-        01: enable
-        10: reserved
-        11: no change
-      comment: Command to enable/disable auto close
-    - byte: 3
-      bit: 2-3
-      name: reset fault
-      type: bit2
-      values:
-        00: no action
-        01: reset fault
-        10: reserved
-        11: no change
-      comment: Command to reset fault condition
-    - byte: 4
-      bit: 0-1
-      name: rain sensor command
-      type: bit2
-      values:
-        00: ignore sensor
-        01: use sensor
-        10: reserved
-        11: no change
-      comment: Command to control rain sensor usage
-    - byte: 4
-      bit: 2-3
-      name: temperature sensor command
-      type: bit2
-      values:
-        00: ignore sensor
-        01: use sensor
-        10: reserved
-        11: no change
-      comment: Command to control temperature sensor usage
-    - byte: 5
-      name: maximum temperature
-      type: uint8
-      unit: Deg C
-      comment: Temperature threshold for auto close
-    - byte: 6
-      name: maximum open time
-      type: uint8
-      unit: min
-      comment: Maximum time window can remain open
-    - byte: 7
-      name: maximum motor run time
-      type: uint8
-      unit: sec
-      comment: Maximum time motor can run continuously
-
-0FEF3:
-  name: GPS_POSITION
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific GPS receiver
-    - byte: 1
-      bit: 0-3
-      name: fix type
-      type: uint4
-      values:
-        0: no fix
-        1: GPS fix
-        2: DGPS fix
-        3: PPS fix
-        4: RTK fix
-        5: float RTK
-        6: estimated/dead reckoning
-        7: manual input
-        8: simulation mode
-        15: unknown
-      comment: Type of GPS fix
-    - byte: 1
-      bit: 4-5
-      name: position valid
-      type: bit2
-      values:
-        00: invalid
-        01: valid
-        10: error
-        11: unknown
-      comment: Whether position is valid
-    - byte: 1
-      bit: 6-7
-      name: heading valid
-      type: bit2
-      values:
-        00: invalid
-        01: valid
-        10: error
-        11: unknown
-      comment: Whether heading is valid
-    - byte: 2-5
-      name: latitude
-      type: int32
-      unit: 10⁻⁷ deg
-      comment: Latitude in 10^-7 degrees (positive=North, negative=South)
-    - byte: 6-9
-      name: longitude
-      type: int32
-      unit: 10⁻⁷ deg
-      comment: Longitude in 10^-7 degrees (positive=East, negative=West)
-    - byte: 10-11
-      name: altitude
-      type: int16
-      unit: m
-      comment: Altitude in meters above mean sea level
-    - byte: 12-13
-      name: speed
-      type: uint16
-      unit: km/h
-      comment: Ground speed in kilometers per hour
-    - byte: 14-15
-      name: heading
-      type: uint16
-      unit: deg
-      comment: True heading in degrees (0-359, 0=North)
-    - byte: 16-17
-      name: horizontal accuracy
-      type: uint16
-      unit: m
-      comment: Horizontal accuracy estimate in meters
-    - byte: 18-19
-      name: vertical accuracy
-      type: uint16
-      unit: m
-      comment: Vertical accuracy estimate in meters
-
-1FED3:
-  name: GPS_STATUS
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific GPS receiver
-    - byte: 1
-      name: satellites in view
-      type: uint8
-      comment: Number of satellites in view
-    - byte: 2
-      name: satellites used
-      type: uint8
-      comment: Number of satellites used in solution
-    - byte: 3
-      name: HDOP
-      type: uint8
-      unit: x10
-      comment: Horizontal dilution of precision x10 (lower is better)
-    - byte: 4
-      name: VDOP
-      type: uint8
-      unit: x10
-      comment: Vertical dilution of precision x10 (lower is better)
-    - byte: 5
-      bit: 0-1
-      name: antenna status
-      type: bit2
-      values:
-        00: disconnected
-        01: connected
-        10: short circuit
-        11: unknown
-      comment: Status of GPS antenna
-    - byte: 5
-      bit: 2-3
-      name: signal quality
-      type: bit2
-      values:
-        00: poor
-        01: fair
-        10: good
-        11: excellent
-      comment: Overall signal quality
-    - byte: 6
-      name: correction age
-      type: uint8
-      unit: sec
-      comment: Age of differential corrections in seconds
-    - byte: 7
-      name: receiver status
-      type: uint8
-      values:
-        0: normal
-        1: searching
-        2: initializing
-        3: standby
-        4: power save
-        5: error
-        255: unknown
-      comment: Status of GPS receiver
-
-1FED0:
-  name: DC_DISCONNECT_STATUS
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-    - byte: 1
-      bit: 0-1
-      name: disconnect status
-      type: bit2
-      values:
-        00: disconnected
-        01: connected
-    - byte: 1
-      bit: 2-3
-      name: disconnect enable
-      type: bit2
-      values:
-        00: disabled
-        01: enabled
-    - byte: 1
-      bit: 4-5
-      name: manual override
-      type: bit2
-      values:
-        00: no override
-        01: override active
-
-
-1FECF:
-  name: DC_DISCONNECT_COMMAND
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific DC disconnect device
-    - byte: 1
-      bit: 0-1
-      name: disconnect command
-      type: bit2
-      values:
-        00: disconnect
-        01: connect
-        10: toggle
-        11: no change
-      comment: Command to control disconnect state
-    - byte: 1
-      bit: 2-3
-      name: disconnect enable
-      type: bit2
-      values:
-        00: disable
-        01: enable
-        10: reserved
-        11: no change
-      comment: Command to enable/disable disconnect function
-    - byte: 1
-      bit: 4-5
-      name: manual override
-      type: bit2
-      values:
-        00: cancel override
-        01: override active
-        10: reserved
-        11: no change
-      comment: Command to override automatic operation
-    - byte: 1
-      bit: 6-7
-      name: auto reconnect
-      type: bit2
-      values:
-        00: manual reconnect
-        01: auto reconnect
-        10: reserved
-        11: no change
-      comment: Command to set auto reconnect mode
-    - byte: 2-3
-      name: disconnect voltage threshold
-      type: uint16
-      unit: V
-      comment: Voltage threshold for automatic disconnect
-    - byte: 4-5
-      name: reconnect voltage threshold
-      type: uint16
-      unit: V
-      comment: Voltage threshold for automatic reconnect
-    - byte: 6-7
-      name: disconnect delay
-      type: uint16
-      unit: sec
-      comment: Time delay before disconnect is triggered
-
 1FEB3:
   name: SOLAR_CONTROLLER_STATUS
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific solar controller
-    - byte: 1
-      bit: 0-1
-      name: controller status
-      type: bit2
-      values:
-        00: off
-        01: on
-        10: fault
-        11: unavailable
-      comment: Current operational status
-    - byte: 1
-      bit: 2-3
-      name: charging status
-      type: bit2
-      values:
-        00: not charging
-        01: charging
-        10: fault
-        11: unavailable
-      comment: Current charging status
-    - byte: 1
-      bit: 4-7
-      name: charging stage
-      type: uint4
-      values:
-        0: not charging
-        1: bulk
-        2: absorption
-        3: overcharge
-        4: float
-        5: equalize
-        6: constant voltage/current
-        7: night mode
-        8: MPPT active
-        15: unknown
-      comment: Current charging stage
-    - byte: 2-3
-      name: battery voltage
-      type: uint16
-      unit: V
-      comment: Current battery voltage
-    - byte: 4-5
-      name: charging current
-      type: uint16
-      unit: A
-      comment: Current charging output
-    - byte: 6-7
-      name: solar panel voltage
-      type: uint16
-      unit: V
-      comment: Current solar panel voltage
 
 1FEB2:
   name: SOLAR_CONTROLLER_CONFIGURATION_STATUS
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific solar controller
-    - byte: 1
-      name: charging algorithm
-      type: uint8
-      values:
-        0: constant voltage
-        1: constant current
-        2: 3-stage
-        3: 2-stage
-        4: MPPT
-        249: custom 2
-        250: custom 1
-        255: undefined
-      comment: Current charging algorithm used
-    - byte: 2
-      name: controller mode
-      type: uint8
-      values:
-        0: stand-alone
-        1: primary
-        2: secondary
-        3: linked to dc source
-        255: undefined
-      comment: Operating mode of the controller
-    - byte: 3
-      bit: 0-1
-      name: battery temperature sensor
-      type: bit2
-      values:
-        00: no sensor in use
-        01: sensor present and active
-        10: sensor error
-        11: unavailable
-      comment: Status of battery temperature sensor
-    - byte: 3
-      bit: 2-3
-      name: auto start
-      type: bit2
-      values:
-        00: disabled
-        01: enabled
-        10: error
-        11: unavailable
-      comment: Status of automatic start functionality
-    - byte: 3
-      bit: 4-7
-      name: battery type
-      type: uint4
-      values:
-        0: flooded
-        1: gel
-        2: agm
-        3: lithium iron phosphate
-        4: lithium ion
-        5: carbon foam
-        15: undefined
-      comment: Type of battery connected
-    - byte: 4-5
-      name: battery bank size
-      type: uint16
-      unit: Ah
-      comment: Size of the connected battery bank
-    - byte: 6-7
-      name: maximum charging current
-      type: uint16
-      unit: A
-      comment: Maximum current allowed for battery charging
 
 1FEB1:
   name: SOLAR_CONTROLLER_COMMAND
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific solar controller
-    - byte: 1
-      name: controller command
-      type: uint8
-      values:
-        0: disable
-        1: enable
-        2: sleep
-        3: wake
-        4: start equalization
-        5: stop equalization
-        255: no change
-      comment: Command to control controller operation
-    - byte: 2
-      bit: 0-1
-      name: default state on power-up
-      type: bit2
-      values:
-        00: disabled
-        01: enabled
-        10: reserved
-        11: no change
-      comment: Sets default state when power is restored
-    - byte: 2
-      bit: 2-3
-      name: night mode
-      type: bit2
-      values:
-        00: disable
-        01: enable
-        10: reserved
-        11: no change
-      comment: Command for night mode behavior
-    - byte: 2
-      bit: 4-7
-      name: forcing mode
-      type: uint4
-      values:
-        0: cancel forcing
-        1: force bulk
-        2: force absorption
-        3: force float
-        4: force MPPT
-        15: no change
-      comment: Command to force a specific charging mode
-    - byte: 3
-      name: charge limit
-      type: uint8
-      unit: pct
-      comment: Charging limit as percentage of maximum
-    - byte: 4-5
-      name: absorption voltage
-      type: uint16
-      unit: V
-      comment: Target absorption stage voltage
-    - byte: 6-7
-      name: float voltage
-      type: uint16
-      unit: V
-      comment: Target float stage voltage
 
 1FEB0:
   name: SOLAR_CONTROLLER_CONFIGURATION_COMMAND
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific solar controller
-    - byte: 1
-      name: charging algorithm
-      type: uint8
-      values:
-        0: constant voltage
-        1: constant current
-        2: 3-stage
-        3: 2-stage
-        4: MPPT
-        249: custom 2
-        250: custom 1
-        255: no change
-      comment: Command to set charging algorithm
-    - byte: 2
-      name: controller mode
-      type: uint8
-      values:
-        0: stand-alone
-        1: primary
-        2: secondary
-        3: linked to dc source
-        255: no change
-      comment: Command to set controller operating mode
-    - byte: 3
-      bit: 0-1
-      name: battery sensor use
-      type: bit2
-      values:
-        00: do not use sensor
-        01: use sensor if available
-        10: reserved
-        11: no change
-      comment: Command to control temperature sensor usage
-    - byte: 3
-      bit: 4-7
-      name: battery type
-      type: uint4
-      values:
-        0: flooded
-        1: gel
-        2: agm
-        3: lithium iron phosphate
-        4: lithium ion
-        5: carbon foam
-        15: no change
-      comment: Command to set battery type
-    - byte: 4-5
-      name: battery bank size
-      type: uint16
-      unit: Ah
-      comment: Command to set battery bank size
-    - byte: 6-7
-      name: maximum charging current
-      type: uint16
-      unit: A
-      comment: Command to set maximum charging current
 
 1FEAF:
   name: SOLAR_EQUALIZATION_STATUS
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific solar controller
-    - byte: 1-2
-      name: time remaining
-      type: uint16
-      unit: min
-      comment: Time remaining in equalization cycle
-    - byte: 3
-      bit: 0-1
-      name: pre-charging status
-      type: bit2
-      values:
-        00: pre-charging not in process
-        01: charging batteries to prepare for equalization
-        10: error
-        11: unavailable
-      comment: Status of pre-charging before equalization
-    - byte: 3
-      bit: 2-3
-      name: equalization status
-      type: bit2
-      values:
-        00: not equalizing
-        01: equalizing in progress
-        10: error
-        11: unavailable
-      comment: Current status of the equalization process
-    - byte: 4-5
-      name: equalization voltage
-      type: uint16
-      unit: V
-      comment: Current equalization voltage
-    - byte: 6-7
-      name: equalization current
-      type: uint16
-      unit: A
-      comment: Current during equalization
 
 1FEAE:
   name: SOLAR_EQUALIZATION_CONFIGURATION_STATUS
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific solar controller
-    - byte: 1-2
-      name: equalization voltage
-      type: uint16
-      unit: V
-      comment: Target voltage for equalization
-    - byte: 3-4
-      name: equalization time
-      type: uint16
-      unit: min
-      comment: Duration of equalization cycle
-    - byte: 5
-      name: days between equalizations
-      type: uint8
-      comment: Days between automatic equalization cycles
-    - byte: 6
-      bit: 0-1
-      name: auto equalize enabled
-      type: bit2
-      values:
-        00: disabled
-        01: enabled
-        10: error
-        11: unavailable
-      comment: Status of automatic equalization feature
-    - byte: 6
-      bit: 2-3
-      name: maximum temperature
-      type: bit2
-      values:
-        00: normal limits
-        01: extended limits
-        10: no limits
-        11: unavailable
-      comment: Temperature limits during equalization
-    - byte: 7
-      name: pre-charge time
-      type: uint8
-      unit: min
-      comment: Duration of pre-charging before equalization
 
 1FEAD:
   name: SOLAR_EQUALIZATION_CONFIGURATION_COMMAND
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: Identifies the specific solar controller
-    - byte: 1-2
-      name: equalization voltage
-      type: uint16
-      unit: V
-      comment: Command to set equalization voltage
-    - byte: 3-4
-      name: equalization time
-      type: uint16
-      unit: min
-      comment: Command to set equalization duration
-    - byte: 5
-      name: days between equalizations
-      type: uint8
-      comment: Command to set interval between auto equalizations
-    - byte: 6
-      bit: 0-1
-      name: auto equalize command
-      type: bit2
-      values:
-        00: disable
-        01: enable
-        10: reserved
-        11: no change
-      comment: Command to control automatic equalization
-    - byte: 6
-      bit: 2-3
-      name: maximum temperature setting
-      type: bit2
-      values:
-        00: normal limits
-        01: extended limits
-        10: no limits
-        11: no change
-      comment: Command to set temperature limits
-    - byte: 7
-      name: pre-charge time
-      type: uint8
-      unit: min
-      comment: Command to set pre-charge duration
 
 1FED6:
   name: MFG_SPECIFIC_CLAIM_REQUEST
-  parameters:
-    - byte: 0
-      name: function instance
-      type: uint8
-      comment: Identifies the specific function instance
-    - byte: 1
-      name: function
-      type: uint8
-      comment: Function code
-    - byte: 2
-      name: manufacturer code
-      type: uint16
-      comment: Manufacturer code claiming the DGN range
-    - byte: 3
-      name: industry group
-      type: uint8
-      values:
-        0: global
-        1: on-highway equipment
-        2: agricultural and forestry equipment
-        3: construction equipment
-        4: marine equipment
-        5: industrial-process control
-        6: RV
-        7: reserved
-      comment: Industry group this manufacturer belongs to
-    - byte: 4-6
-      name: starting DGN
-      type: uint24
-      comment: Starting Data Group Number of proprietary range
-    - byte: 7
-      name: DGN count
-      type: uint8
-      comment: Number of DGNs being claimed (1-255)
 
 1FECA:
   name: DM_RV
@@ -8770,3 +5174,968 @@ Z0005:
       type: uint8
       unit: Hz
 
+
+1FDA5:
+  name: WEATHER_STATUS_1
+  parameters:
+    - byte: 0-1
+      name: exterior air temperature
+      type: uint16
+      unit: Deg C
+    - byte: 2-3
+      name: alternative air temperature
+      type: uint16
+      unit: Deg C
+      comment: The location of the Alternative Air Temperature is undefined, and is typically a storage bay or indoor temperature.
+    - byte: 4-5
+      name: absolute air pressure
+      type: uint16
+      unit: mBar
+    - byte: 6
+      name: relative humidity
+      type: uint8
+      unit: pct
+    - byte: 7
+      bit: 0-1
+      name: air temperature alarm
+      type: uint2
+      values:
+        00: alarm inactive
+        01: alarm active
+    - byte: 7
+      bit: 2-3
+      name: relative humidity alarm
+      type: uint2
+      values:
+        00: alarm inactive
+        01: alarm active
+
+1FEA7:
+  name: ROOF_FAN_STATUS_1
+  parameters:
+    - byte: 0
+      name: Instance
+      type: uint8
+      comment: "1-250"
+    - byte: 1
+      bit: 0-1
+      name: System Status
+      type: uint2
+      values:
+        00: "Off"
+        01: "On"
+    - byte: 2
+      bit: 0-3
+      name: Fan Mode
+      type: uint2
+      values:
+        0000: "Auto"
+        0001: "Forced On"
+    - byte: 2
+      bit: 4-5
+      name: Speed Mode
+      type: uint2
+      values:
+        00: "Auto (Variable)"
+        01: "Manual"
+    - byte: 2
+      bit: 6-7
+      name: Light
+      type: uint2
+      values:
+        00: "Off"
+        01: "On"
+    - byte: 3
+      bit: 0-1
+      name: Wind Direction Switch
+      type: uint2
+      values:
+        00: "Air Out"
+        01: "Air In"
+    - byte: 4-5
+      name: Ambient Temperature
+      type: uint16
+      unit: Deg C
+    - byte: 6
+      name: Dead band
+      type: uint8
+      unit: "°C"
+    - byte: 7
+      name: Set Point
+      type: uint16
+      unit: "°C"
+
+1FDE3:
+  name: ROOF_FAN_STATUS_2
+  parameters:
+    - byte: 0
+      name: Instance
+      type: uint8
+    - byte: 1
+      name: Dome Mode
+      type: uint8
+      values:
+        0: Stopped
+        1: Opening (Raising)
+        2: Closing (Lowering)
+    - byte: 2
+      name: Dome Position
+      type: uint8
+      unit: "%"
+    - byte: 3
+      bit: 0-1
+      name: Rain Sensor
+      type: uint2
+      values:
+        00: "No Rain Detected"
+        01: "Rain Detected"
+    - byte: 3
+      bit: 2-3
+      name: Rain Sensor Override
+      type: uint2
+      values:
+        00: "Rain Sensor Used (dome will automatically close when rain is detected)"
+        01: "Rain Sensor Overridden (dome will not automatically close due to rain or can be raised despite the rain)"
+    - byte: 4
+      bit: 0-1
+      name: Pump Overcurrent Status
+      type: uint2
+      values:
+        00: No overcurrent detected
+        01: Overcurrent detected
+    - byte: 4
+      bit: 2-3
+      name: Pump Undercurrent Status
+      type: uint2
+      values:
+        00: No undercurrent detected
+        01: Undercurrent detected
+    - byte: 4
+      bit: 4-5
+      name: Pump Temperature Status
+      type: uint2
+      values:
+        00: Temperature normal
+        01: Temperature warning
+
+1FE9F:
+  name: GENERIC_ALARM_STATUS
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      name: DSA
+      type: uint8
+    - byte: 2-3
+      name: Elapsed Time
+      type: uint16
+      unit: min
+    - byte: 4
+      bit: 0-1
+      name: Alarm for User Notification
+      type: uint2
+      values:
+        00b: Do not notify user
+        01b: User notification required
+    - byte: 4
+      bit: 2-3
+      name: Alarm for Logging
+      type: uint2
+      values:
+        00b: Do not log alarm now
+        01b: Alarm should be logged
+    - byte: 4
+      bit: 6-7
+      name: Full-Time Monitoring Required
+      type: uint2
+      values:
+        00b: Full-Time monitoring of alarm is not required
+        01b: Full-Time monitoring of alarm is required
+    - byte: 5
+      name: Device Instance
+      type: uint8
+    - byte: 6
+      bit: 0-1
+      name: Automatic Reset Enabled
+      type: uint2
+      values:
+        00b: Alarm will not automatically return to Ready State
+        01b: Alarm will automatically return to Ready State
+    - byte: 6
+      bit: 2-3
+      name: Alarm Ready
+      type: uint2
+      values:
+        00b: Alarm condition is not being monitored
+        01b: Alarm condition is being monitored
+    - byte: 6
+      bit: 4-5
+      name: Alarm is Acknowledged
+      type: uint2
+      values:
+        00b: Alarm has not been acknowledged
+        01b: Alarm has been triggered and acknowledged
+    - byte: 6
+      bit: 6-7
+      name: Alarm Triggered
+      type: uint2
+      values:
+        00b: Alarm is not Triggered
+        01b: Alarm is Triggered
+
+1FEA6:
+  name: ROOF_FAN_COMMAND_1
+  parameters:
+    - byte: 0
+      name: Instance
+      type: uint8
+      comment: "1-250"
+    - byte: 1
+      bit: 0-1
+      name: Direction of movement
+      type: bit2
+      values:
+        0: stop
+        1: extend
+        2: retract
+    - byte: 3
+      name: Move to Position
+      type: uint8
+      unit: Pct
+
+1FDB1:
+  name: BROKER_CONNECTION_COMMAND
+  parameters:
+    - byte: 0
+      name: Broker Instance
+      type: uint8
+      comment: "1-250"
+    - byte: 1
+      name: Connection Instance
+      type: uint8
+      comment: "1-250"
+    - byte: 2
+      name: Connection Text Identifier Length
+      type: uint8
+
+1FEA6:
+  name: ROOF_FAN_COMMAND_1
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+      comment: "1-250"
+    - byte: 1
+      bit: 0-1
+      name: Direction of movement
+      type: bit2
+      values:
+        0: stop
+        1: extend
+        2: retract
+    - byte: 3
+      name: move to position
+      type: uint8
+      unit: Pct
+
+1FEE3:
+  name: WINDOW_STATUS
+  parameters:
+    - byte: 0
+      name: Instance
+      type: uint8
+      comment: "1-250"
+    - byte: 1
+      name: Motion
+      type: uint8
+      values:
+        1: "No motion"
+        2: "Extending"
+        3: "Retracting"
+    - byte: 2
+      name: Position
+      type: uint8
+      unit: "%"
+    - byte: 3
+      bit: 0-1
+      name: Mechanical Lock status
+      type: uint2
+      values:
+        00b: "Lift is unlocked"
+        01b: "Lift is locked"
+    - byte: 3
+      bit: 2-3
+      name: Unlock status
+      type: uint2
+      values:
+        00b: "Lift is unlocked"
+        01b: "Lift is locked"
+    - byte: 3
+      bit: 4-5
+      name: User Lock Status
+      type: uint2
+      values:
+        00b: "User lock is not activated. Lift is OK to move"
+        01b: "User lock is activated. Lift will not move"
+    - byte: 3
+      bit: 6-7
+      name: Brake status
+      type: uint2
+      values:
+        00b: "All motor brakes are not locked"
+        01b: "One or more motor brakes are locked"
+
+1FEE2:
+  name: WINDOW_COMMAND
+  parameters:
+    - byte: 0
+      name: Instance
+      type: uint8
+    - byte: 1
+      bit: 0-1
+      name: Lock Command
+      type: uint2
+      values:
+        0: Unlock Window
+        1: Lock Window
+    - byte: 2
+      name: Manual Operation
+      type: uint8
+      values:
+        1: "Stop"
+        2: "Open Window"
+        3: "Close Window"
+    - byte: 3
+      name: Automatic Operation
+      type: uint8
+      unit: Pct
+
+0FEF3:
+  name: GPS_POSITION
+  parameters:
+    - byte: 0-3
+      name: Latitude
+      type: uint32
+    - byte: 4-7
+      name: Longitude
+      type: uint32
+
+1FED3:
+  name: GPS_STATUS
+  parameters:
+    - byte: 0-1
+      name: Heading
+      type: uint16
+      unit: Deg
+    - byte: 2-3
+      name: Speed
+      type: uint16
+      unit: kph
+    - byte: 4-5
+      name: Altitude
+      type: uint16
+      unit: m
+    - byte: 6
+      name: Satellites in View
+      type: uint8
+    - byte: 7
+      bit: 0-2
+      name: Fix Type
+      type: uint3
+      values:
+        000b: No Fix
+        010b: 2D
+        011b: 3D
+
+1FED0:
+  name: DC_DISCONNECT_STATUS
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      bit: 0-1
+      name: Circuit Status
+      type: uint2
+      values:
+        00b: Circuit is disconnected
+        01b: Circuit is connected
+    - byte: 2-3
+      name: Last Command
+      type: uint2
+      values:
+        00b: Disconnect circuit
+        01b: Connect circuit
+    - byte: 4-5
+      name: Bypass Detect
+      type: uint2
+      values:
+        00b: Circuit is under system control
+        01b: Circuit has been bypassed
+    - byte: 2-3
+      name: DC switched voltage
+      type: uint16
+      unit: Vdc
+    - byte: 4-7
+      name: DC switched current
+      type: uint32
+      unit: Adc
+
+1FECF:
+  name: DC_DISCONNECT_COMMAND
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      bit: 0-1
+      name: command
+      type: uint2
+      values:
+        00b: Disconnect circuit
+        01b: Connect circuit
+
+1FEFB:
+  name: FLOOR_HEAT_COMMAND
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      bit: 0-1
+      name: Desired operating mode
+      type: uint2
+      values:
+        00b: Automatic
+        01b: Manual
+    - byte: 2-3
+      name: Set point
+      type: uint16
+      unit: Deg C
+    - byte: 4
+      name: Dead band
+      type: uint8
+      unit: Deg C
+
+1FEF1:
+  name: TIRE_RAW_STATUS
+  parameters:
+    - byte: 0-3
+      name: Sensor ID
+      type: uint32
+    - byte: 4-5
+      name: Tire pressure
+      type: uint16
+      unit: kPa
+    - byte: 6-7
+      name: Tire temperature
+      type: uint16
+      unit: Deg C
+
+1FEF0:
+  name: TIRE_STATUS
+  parameters:
+    - byte: 0
+      bit: 0-3
+      name: Tire location - Position
+      type: uint4
+      values:
+        0: Outside left tire
+        1: Inside left tire
+        2: Inside right tire
+        3: Outside right tire
+    - byte: 0
+      bit: 4-7
+      name: Tire location - Axle
+      type: uint4
+      values:
+        0: Steer axle
+        1: Drive axle
+        2: Tag axle
+        3-13: Trailer / Tow axle / Spare Tire axle
+    - byte: 1-2
+      name: Tire pressure
+      type: uint16
+      unit: kPa
+    - byte: 3-4
+      name: Tire temperature
+      type: uint16
+      unit: Deg C
+    - byte: 5
+      name: Battery level
+      type: uint8
+      unit: Vdc
+
+1FEEF:
+  name: TIRE_SLOW_LEAK_ALARM
+  parameters:
+    - byte: 0
+      bit: 0-3
+      name: Tire location - Position
+      type: uint4
+      values:
+        0: Outside left tire
+        1: Inside left tire
+        2: Inside right tire
+        3: Outside right tire
+    - byte: 0
+      bit: 4-7
+      name: Tire location - Axle
+      type: uint4
+      values:
+        0: Steer axle
+        1: Drive axle
+        2: Tag axle
+        3-13: Trailer / Tow axle / Spare Tire axle
+    - byte: 1
+      bit: 0-1
+      name: Alarm status
+      type: uint2
+      values:
+        00b: No alarm
+        01b: Slow leak detected
+    - byte: 2-3
+      name: Leak rate
+      type: uint16
+      unit: kPa/h
+
+1FEEE:
+  name: TIRE_TEMPERATURE_CONFIGURATION_STATUS
+  parameters:
+    - byte: 0
+      bit: 0-3
+      name: Tire location - Position
+      type: uint4
+      values:
+        0: Outside left tire
+        1: Inside left tire
+        2: Inside right tire
+        3: Outside right tire
+    - byte: 0
+      bit: 4-7
+      name: Tire location - Axle
+      type: uint4
+      values:
+        0: Steer axle
+        1: Drive axle
+        2: Tag axle
+        3-13: Trailer / Tow axle / Spare Tire axle
+    - byte: 1
+      name: Extremely high tire temperature level
+      type: uint8
+      unit: Vac
+    - byte: 2
+      name: Low voltage level
+      type: uint8
+      unit: Vac
+    - byte: 3
+      name: High voltage level
+      type: uint8
+      unit: Vac
+    - byte: 4
+      name: Extreme high voltage level
+      type: uint8
+      unit: Vac
+    - byte: 5
+      name: Qualification time
+      type: uint8
+      unit: s
+    - byte: 6
+      bit: 0-1
+      name: Bypass mode
+      type: uint2
+      values:
+        00b: Normal Mode
+        01b: Bypass Mode
+
+1FEED:
+  name: TIRE_PRESSURE_CONFIGURATION_STATUS
+  parameters:
+    - byte: 0
+      bit: 0-3
+      name: Tire location - Position
+      type: uint4
+      values:
+        0: Outside left tire
+        1: Inside left tire
+        2: Inside right tire
+        3: Outside right tire
+    - byte: 0
+      bit: 4-7
+      name: Tire location - Axle
+      type: uint4
+      values:
+        0: Steer axle
+        1: Drive axle
+        2: Tag axle
+        3-13: Trailer / Tow axle / Spare Tire axle
+
+1FEEC:
+  name: TIRE_PRESSURE_CONFIGURATION_COMMAND
+  parameters:
+    - byte: 0
+      bit: 0-3
+      name: Tire location - Position
+      type: uint4
+      values:
+        0: Outside left tire
+        1: Inside left tire
+        2: Inside right tire
+        3: Outside right tire
+    - byte: 0
+      bit: 4-7
+      name: Tire location - Axle
+      type: uint4
+      values:
+        0: Steer axle
+        1: Drive axle
+        2: Tag axle
+        3-13: Trailer / Tow axle / Spare Tire axle
+
+1FEEB:
+  name: TIRE_TEMPERATURE_CONFIGURATION_COMMAND
+  parameters:
+    - byte: 0
+      bit: 0-3
+      name: Tire location - Position
+      type: uint4
+      values:
+        0: Outside left tire
+        1: Inside left tire
+        2: Inside right tire
+        3: Outside right tire
+    - byte: 0
+      bit: 4-7
+      name: Tire location - Axle
+      type: uint4
+      values:
+        0: Steer axle
+        1: Drive axle
+        2: Tag axle
+        3-13: Trailer / Tow axle / Spare Tire axle
+
+1FEEA:
+  name: TIRE_ID_STATUS
+  parameters:
+    - byte: 0
+      bit: 0-3
+      name: Tire location - Position
+      type: uint4
+      values:
+        0: Outside left tire
+        1: Inside left tire
+        2: Inside right tire
+        3: Outside right tire
+    - byte: 0
+      bit: 4-7
+      name: Tire location - Axle
+      type: uint4
+      values:
+        0: Steer axle
+        1: Drive axle
+        2: Tag axle
+        3-13: Trailer / Tow axle / Spare Tire axle
+    - byte: 1-4
+      name: Sensor identification number
+      type: uint32
+
+1FEE9:
+  name: TIRE_ID_COMMAND
+  parameters:
+    - byte: 0
+      bit: 0-3
+      name: Tire location - Position
+      type: uint4
+      values:
+        0: Outside left tire
+        1: Inside left tire
+        2: Inside right tire
+        3: Outside right tire
+    - byte: 0
+      bit: 4-7
+      name: Tire location - Axle
+      type: uint4
+      values:
+        0: Steer axle
+        1: Drive axle
+        2: Tag axle
+        3-13: Trailer / Tow axle / Spare Tire axle
+    - byte: 1-4
+      name: Sensor identification number
+      type: uint32
+
+1FEF3:
+  name: AWNING_STATUS
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      name: motion
+      type: uint8
+      values:
+        0: no motion
+        1: extending
+        2: retracting
+    - byte: 2
+      name: position
+      type: uint8
+      unit: Pct
+    - byte: 3
+      bit: 0-1
+      name: lock status
+      type: uint2
+      values:
+        00: unlocked
+        01: locked
+    - byte: 3
+      bit: 2-3
+      name: unlock status
+      type: uint2
+      values:
+        00: unlocked
+        01: locked
+    - byte: 3
+      bit: 4-5
+      name: user lock status
+      type: uint2
+      values:
+        00: unlocked
+        01: locked
+    - byte: 3
+      bit: 6-7
+      name: brake status
+      type: uint2
+      values:
+        00: all motor brakes not locked
+        01: one or more motor brakes locked
+
+1FEF2:
+  name: AWNING_COMMAND
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      bit: 0-1
+      name: direction of movement
+      type: bit2
+      values:
+        0: stop
+        1: extend
+        2: retract
+    - byte: 3
+      name: move to position
+      type: uint8
+      unit: Pct
+
+1FE98:
+  name: WATERHEATER_COMMAND_2
+  parameters:
+    - byte: 0
+      name: Instance
+      type: uint8
+      comment: Corresponds to "Zones" in user terminology.
+    - byte: 2
+      name: Command
+      type: uint8
+      values:
+        0: Electric Low - Enable
+        1: Electric Low - Disable
+        2: Electric Low - Toggle
+        3: Electric High - Enable
+        4: Electric High - Disable
+        5: Electric High - Toggle
+        6: Burner - Enable
+        7: Burner - Disable
+        8: Burner - Toggle
+        9: Electric - Cycle (low to high to off)
+        10: Electric - Cycle (high to low to off)
+        11: Electric Low Test - Toggle
+        12: Electric High Test - Toggle
+        13: Burner Test - Toggle
+    - byte: 3
+      bit: 0-1
+      name: Hot Water Priority
+      type: Unit 2
+      values:
+        0: Domestic water priority (disable/reduce interior heating)
+        1: Heating priority (Normal system operation)
+
+1FE99:
+  name: WATERHEATER_STATUS_2
+  parameters:
+    - byte: 0
+      name: Instance
+      type: uint8
+      values:
+        0: all
+        "1-250": Instance number
+    - byte: 1
+      bit: 0-3
+      name: Electric Element Level
+      type: uint4
+      values:
+        "1-13": Desired Level
+    - byte: 1
+      bit: 4-7
+      name: Max Electric Element Level
+      type: uint4
+      values:
+        "1-13": Desired Level # Typically 1 (single element) or 2 (dual low/high element)
+    - byte: 2
+      bit: 0-3
+      name: Engine Preheat
+      type: uint4
+      values:
+        "0000": Off
+        "0001": On
+        "0101": Test (Forced On)
+    - byte: 2
+      bit: 4-5
+      name: Coolant Level Warning
+      type: uint2
+      values:
+        "00": Coolant level sufficient
+        "01": Coolant level low
+    - byte: 2
+      bit: 6-7
+      name: Hot Water Priority
+      type: uint2
+      values:
+        "00": Domestic water priority
+        "01": Heating priority
+    - byte: 3
+      bit: 0-1
+      name: Output Status:Burner
+      type: uint2
+      values:
+        "00": Off
+        "01": On
+    - byte: 3
+      bit: 2-3
+      name: Output Status:Burner Indicator
+      type: uint2
+      values:
+        "00": Off
+        "01": On
+    - byte: 3
+      bit: 4-5
+      name: Output Status:Electric Low
+      type: uint2
+      values:
+        "00": Off
+        "01": On
+    - byte: 3
+      bit: 6-7
+      name: Output Status:Electric High
+      type: uint2
+      values:
+        "00": Off
+        "01": On
+    - byte: 4
+      bit: 0-1
+      name: Burner Overcurrent Status
+      type: uint2
+      values:
+        "00": No overcurrent detected
+        "01": Overcurrent detected
+    - byte: 4
+      bit: 2-3
+      name: Burner Undercurrent Status
+      type: uint2
+      values:
+        "00": No undercurrent detected
+        "01": Undercurrent detected
+    - byte: 4
+      bit: 4-5
+      name: Burner Temperature Status
+      type: uint2
+      values:
+        "00": Temperature normal
+        "01": Temperature warning
+    - byte: 4
+      bit: 6-7
+      name: Burner Input Status
+      type: uint2
+      values:
+        "00": Off (Inactive)
+        "01": On (Active)
+    - byte: 5
+      bit: 0-1
+      name: Burner Indicator Overcurrent Status
+      type: uint2
+      values:
+        "00": No overcurrent detected
+        "01": Overcurrent detected
+    - byte: 5
+      bit: 2-3
+      name: Burner Indicator Undercurrent Status
+      type: uint2
+      values:
+        "00": No undercurrent detected
+        "01": Undercurrent detected
+    - byte: 5
+      bit: 4-5
+      name: Burner Indicator Temperature Status
+      type: uint2
+      values:
+        "00": Temperature normal
+        "01": Temperature warning
+    - byte: 6
+      bit: 0-1
+      name: Electric Low Element Overcurrent Status
+      type: uint2
+      values:
+        "00": No overcurrent detected
+        "01": Overcurrent detected
+    - byte: 6
+      bit: 2-3
+      name: Electric Low Element Undercurrent Status
+      type: uint2
+      values:
+        "00": No undercurrent detected
+        "01": Undercurrent detected
+    - byte: 6
+      bit: 4-5
+      name: Electric Low Element Temperature Status
+      type: uint2
+      values:
+        "00": Temperature normal
+        "01": Temperature warning
+    - byte: 6
+      bit: 6-7
+      name: Electric Low Element Input Status
+      type: uint2
+      values:
+        "00": Off (Inactive)
+        "01": On (Active)
+    - byte: 7
+      bit: 0-1
+      name: Electric High Element Overcurrent Status
+      type: uint2
+      values:
+        "00": No overcurrent detected
+        "01": Overcurrent detected
+    - byte: 7
+      bit: 2-3
+      name: Electric High Element Undercurrent Status
+      type: uint2
+      values:
+        "00": No undercurrent detected
+        "01": Undercurrent detected
+    - byte: 7
+      bit: 4-5
+      name: Electric High Element Temperature Status
+      type: uint2
+      values:
+        "00": Temperature normal
+        "01": Temperature warning
+    - byte: 7
+      bit: 6-7
+      name: Electric High Element Input Status
+      type: uint2
+      values:
+        "00": Off (Inactive)
+        "01": On (Active)
