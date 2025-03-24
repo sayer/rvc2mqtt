@@ -17,13 +17,12 @@
 
 use strict;
 use warnings;
-use IO::Socket::INET;
-use IO::Select;
+use Net::MQTT::Simple;
+use Socket;
 use Getopt::Long qw(GetOptions);
 use YAML::Tiny;
 use JSON;
 use Switch;
-use POSIX;
 use Time::HiRes qw(time sleep);
 
 my $debug;
@@ -63,450 +62,68 @@ foreach my $dgn (keys %$encoders) {
   $dgn_map{$name} = $dgn if defined $name;
 }
 
-# MQTT client implementation using basic sockets
-# This avoids issues with Net::MQTT::Simple callback handling
-my $mqtt_socket = IO::Socket::INET->new(
-  PeerAddr => $mqtt_server,
-  PeerPort => $mqtt_port,
-  Proto => 'tcp',
-) or die "Cannot connect to MQTT broker at $mqtt_server:$mqtt_port: $!\n";
+# Create MQTT client using Net::MQTT::Simple
+print "Connecting to MQTT broker at $mqtt_server:$mqtt_port\n" if $debug;
+my $mqtt = Net::MQTT::Simple->new("$mqtt_server:$mqtt_port");
 
-print "Connected to MQTT broker at $mqtt_server:$mqtt_port\n" if $debug;
+# Set up authentication if username is provided
+if ($mqtt_user) {
+  print "Using MQTT authentication with username: $mqtt_user\n" if $debug;
+  $mqtt->login($mqtt_user, $mqtt_password);
+}
 
-# Send MQTT CONNECT packet
-my $client_id = "mqtt2rvc_".int(rand(1000000));
-send_mqtt_connect($mqtt_socket, $client_id);
-
-# Subscribe to topics
+# Subscribe to RVC topics with callbacks
 print "Subscribing to MQTT topics\n" if $debug;
-mqtt_subscribe($mqtt_socket, "RVC/+/set");
-mqtt_subscribe($mqtt_socket, "RVC/+/+/set");
+$mqtt->subscribe("RVC/+/set" => \&handle_mqtt_message);
+$mqtt->subscribe("RVC/+/+/set" => \&handle_mqtt_message);
 
 # Print status
 print "Using CAN interface: $can_interface\n" if $debug;
 print "MQTT to RV-C bridge started. Waiting for commands...\n";
 
-# Main event loop with automatic reconnection
-while (1) {
-  eval {
-    # Set up select for reading from socket
-    my $select = IO::Select->new($mqtt_socket);
-    
-    # Loop until an error occurs
-    while (1) {
-      my @ready = $select->can_read(1);
-      foreach my $fh (@ready) {
-        if ($fh == $mqtt_socket) {
-          process_mqtt_data($mqtt_socket);
-        }
-      }
-      
-      # Send PINGREQ every 30 seconds to keep the connection alive
-      if (time() % 30 == 0) {
-        send_mqtt_pingreq($mqtt_socket);
-        sleep(0.1);  # Short sleep to avoid sending multiple pings in the same second
-      }
-    }
-  };
-  
-  # Handle connection errors
-  if ($@) {
-    print "MQTT error: $@\n";
-    print "Reconnecting in 5 seconds...\n";
-    
-    # Close socket if it exists
-    if (defined $mqtt_socket) {
-      close($mqtt_socket);
-      undef $mqtt_socket;
-    }
-    
-    # Wait before reconnecting
-    sleep(5);
-    
-    # Try to reconnect
-    eval {
-      $mqtt_socket = IO::Socket::INET->new(
-        PeerAddr => $mqtt_server,
-        PeerPort => $mqtt_port,
-        Proto => 'tcp',
-      );
-      
-      if (!$mqtt_socket) {
-        die "Cannot reconnect to MQTT broker: $!\n";
-      }
-      
-      print "Reconnected to MQTT broker\n" if $debug;
-      
-      # Re-establish MQTT connection
-      send_mqtt_connect($mqtt_socket, $client_id);
-      
-      # Resubscribe to topics
-      mqtt_subscribe($mqtt_socket, "RVC/+/set");
-      mqtt_subscribe($mqtt_socket, "RVC/+/+/set");
-    };
-    
-    if ($@) {
-      print "Reconnection failed: $@\n";
-    }
-  }
-}
+# Start the MQTT event loop - this will handle callbacks automatically
+$mqtt->run();
 
-# --------------------------------------------------------------
-# MQTT Basic Protocol Implementation
-# --------------------------------------------------------------
-
-# Send MQTT CONNECT packet
-sub send_mqtt_connect {
-  my ($socket, $client_id) = @_;
-  my $protocol_name = "\x00\x04MQTT";
-  my $protocol_level = "\x04";  # MQTT 3.1.1
+# MQTT message callback handler
+sub handle_mqtt_message {
+  my ($topic, $message) = @_;
   
-  # Set connect flags based on authentication
-  my $connect_flags = "\x02";  # Base: Clean session only (0x02)
+  print "MQTT: Received message on topic $topic: $message\n" if $debug;
   
-  # Add username and password flags if provided
-  if ($mqtt_user) {
-    # Set username flag (bit 7)
-    $connect_flags = chr(ord($connect_flags) | 0x80);
+  # Process based on topic patterns
+  if ($topic =~ m|^RVC/(.+?)/set$|) {
+    # Simple topic pattern: RVC/name/set
+    my $dgn_name = $1;
+    my $instance;
     
-    if ($mqtt_password) {
-      # Set password flag (bit 6)
-      $connect_flags = chr(ord($connect_flags) | 0x40);
-    }
-  }
-  
-  my $keep_alive = "\x00\x3c";  # 60 seconds
-  
-  my $client_id_len = pack("n", length($client_id));
-  my $client_id_bytes = $client_id_len . $client_id;
-  
-  my $variable_header = $protocol_name . $protocol_level . $connect_flags . $keep_alive;
-  my $payload = $client_id_bytes;
-  
-  # Add username if provided
-  if ($mqtt_user) {
-    my $username_len = pack("n", length($mqtt_user));
-    $payload .= $username_len . $mqtt_user;
-    
-    # Add password if provided
-    if ($mqtt_password) {
-      my $password_len = pack("n", length($mqtt_password));
-      $payload .= $password_len . $mqtt_password;
-    }
-  }
-  
-  my $remaining_length = length($variable_header) + length($payload);
-  my $rl_bytes = encode_remaining_length($remaining_length);
-  
-  my $packet = "\x10" . $rl_bytes . $variable_header . $payload;
-  
-  $socket->send($packet);
-  
-  # Wait for CONNACK with proper timeout and error handling
-  my $buffer = "";
-  my $timeout = time() + 5;  # 5 second timeout
-  
-  # First read at least 2 bytes to get the packet type and length
-  while (length($buffer) < 2 && time() < $timeout) {
-    my $select = IO::Select->new($socket);
-    next unless $select->can_read(0.1);
-    
-    my $chunk;
-    my $bytes = $socket->recv($chunk, 2 - length($buffer));
-    if (!defined $bytes || !defined $chunk || $bytes =~ /^0+$/ || $bytes eq '') {
-      die "MQTT: Connection closed by broker during connection handshake\n";
-    }
-    $buffer .= $chunk;
-  }
-  
-  if (length($buffer) < 2) {
-    die "MQTT: Timeout waiting for CONNACK\n";
-  }
-  
-  # Verify packet type
-  my $packet_type = ord(substr($buffer, 0, 1)) >> 4;
-  if ($packet_type != 2) {  # Not a CONNACK
-    die sprintf("MQTT: Expected CONNACK but received packet type %d\n", $packet_type);
-  }
-  
-  # Get remaining length
-  my $remain_len = ord(substr($buffer, 1, 1));
-  
-  # Read the rest of the packet
-  while (length($buffer) < 2 + $remain_len && time() < $timeout) {
-    my $select = IO::Select->new($socket);
-    next unless $select->can_read(0.1);
-    
-    my $chunk;
-    my $bytes = $socket->recv($chunk, (2 + $remain_len) - length($buffer));
-    if (!defined $bytes || !defined $chunk || $bytes =~ /^0+$/ || $bytes eq '') {
-      die "MQTT: Connection closed by broker during connection handshake\n";
-    }
-    $buffer .= $chunk;
-  }
-  
-  if (length($buffer) < 2 + $remain_len) {
-    die "MQTT: Timeout waiting for complete CONNACK packet\n";
-  }
-  
-  # Check flags (session present flag)
-  my $flags = ord(substr($buffer, 2, 1));
-  
-  # Get the connection return code
-  my $return_code = ord(substr($buffer, 3, 1));
-  
-  # Check the return code
-  if ($return_code != 0) {
-    # Translate return code to a meaningful message
-    my $error_message = "Unknown error";
-    if ($return_code == 1) {
-      $error_message = "Connection refused: unacceptable protocol version";
-    } elsif ($return_code == 2) {
-      $error_message = "Connection refused: identifier rejected";
-    } elsif ($return_code == 3) {
-      $error_message = "Connection refused: server unavailable";
-    } elsif ($return_code == 4) {
-      $error_message = "Connection refused: bad username or password";
-    } elsif ($return_code == 5) {
-      $error_message = "Connection refused: not authorized";
-    }
-    
-    die "MQTT: $error_message (code $return_code)\n";
-  }
-  
-  print "MQTT: Connected successfully\n" if $debug;
-}
-
-# MQTT SUBSCRIBE packet
-sub mqtt_subscribe {
-  my ($socket, $topic) = @_;
-  my $packet_id_int = int(rand(65535));
-  my $packet_id = pack("n", $packet_id_int);
-  
-  my $topic_len = pack("n", length($topic));
-  my $topic_filter = $topic_len . $topic . "\x00";  # QoS 0
-  
-  my $variable_header = $packet_id;
-  my $payload = $topic_filter;
-  
-  my $remaining_length = length($variable_header) + length($payload);
-  my $rl_bytes = encode_remaining_length($remaining_length);
-  
-  my $packet = "\x82" . $rl_bytes . $variable_header . $payload;
-  
-  $socket->send($packet);
-  
-  # Wait for SUBACK with timeout
-  my $buffer = "";
-  my $timeout = time() + 5;  # 5 second timeout
-  
-  # First wait for the header
-  while (time() < $timeout) {
-    my $select = IO::Select->new($socket);
-    next unless $select->can_read(0.1);
-    
-    my $tmp;
-    my $bytes = $socket->recv($tmp, 1);
-    if (!defined $bytes || !defined $tmp || $bytes =~ /^0+$/ || $bytes eq '') {
-      die "MQTT: Connection closed by broker during subscribe\n";
-    }
-    
-    $buffer .= $tmp;
-    
-    # Check if we have the control packet type
-    if (length($buffer) >= 1) {
-      my $packet_type = ord(substr($buffer, 0, 1)) >> 4;
-      if ($packet_type == 9) {  # SUBACK
-        # Now read the remaining length
-        my $rem_len = 0;
-        my $multiplier = 1;
-        my $pos = 1;
-        
-        do {
-          if (time() >= $timeout) {
-            die "MQTT: Timeout waiting for SUBACK remaining length\n";
-          }
-          
-          $select = IO::Select->new($socket);
-          next unless $select->can_read(0.1);
-          
-          my $byte;
-          $bytes = $socket->recv($byte, 1);
-          if (!defined $bytes || !defined $byte || $bytes =~ /^0+$/ || $bytes eq '') {
-            die "MQTT: Connection closed by broker during subscribe\n";
-          }
-          
-          $buffer .= $byte;
-          my $byte_val = ord(substr($buffer, $pos, 1));
-          $rem_len += ($byte_val & 0x7F) * $multiplier;
-          $multiplier *= 128;
-          $pos++;
-        } while (ord(substr($buffer, $pos-1, 1)) & 0x80 && $pos <= 4);
-        
-        # Read the rest of the packet
-        while (length($buffer) < $pos + $rem_len) {
-          if (time() >= $timeout) {
-            die "MQTT: Timeout waiting for complete SUBACK packet\n";
-          }
-          
-          $select = IO::Select->new($socket);
-          next unless $select->can_read(0.1);
-          
-          my $chunk;
-          $bytes = $socket->recv($chunk, $pos + $rem_len - length($buffer));
-          if (!defined $bytes || !defined $chunk || $bytes =~ /^0+$/ || $bytes eq '') {
-            die "MQTT: Connection closed by broker during subscribe\n";
-          }
-          
-          $buffer .= $chunk;
-        }
-        
-        # Verify the packet ID
-        my $received_id = unpack("n", substr($buffer, $pos, 2));
-        if ($received_id != $packet_id_int) {
-          print "MQTT: Warning - SUBACK packet ID mismatch: sent $packet_id_int, received $received_id\n" if $debug;
-        }
-        
-        # Check the return code
-        if ($rem_len > 2) {
-          my $return_code = ord(substr($buffer, $pos + 2, 1));
-          if ($return_code > 2) {  # QoS > 2 means failure
-            die "MQTT: Subscription failed with code $return_code\n";
-          }
-        }
-        
-        # Successfully subscribed
-        print "MQTT: Subscribed to topic: $topic\n" if $debug;
-        return;
-      }
-    }
-  }
-  
-  # If we get here, we timed out waiting for SUBACK
-  die "MQTT: Timeout waiting for SUBACK\n";
-}
-
-# MQTT PINGREQ packet
-sub send_mqtt_pingreq {
-  my ($socket) = @_;
-  my $packet = "\xc0\x00";
-  $socket->send($packet);
-}
-
-# Encode MQTT remaining length
-sub encode_remaining_length {
-  my ($length) = @_;
-  my $bytes = '';
-  
-  do {
-    my $digit = $length % 128;
-    $length = int($length / 128);
-    if ($length > 0) {
-      $digit |= 0x80;
-    }
-    $bytes .= chr($digit);
-  } while ($length > 0);
-  
-  return $bytes;
-}
-
-# Process incoming MQTT data
-sub process_mqtt_data {
-  my ($socket) = @_;
-  my $buffer;
-  my $bytes_read = $socket->recv($buffer, 2);
-  
-  if (!defined $bytes_read || !defined $buffer || $bytes_read =~ /^0+$/ || $bytes_read eq '') {
-    die "MQTT: Connection closed by broker\n";
-  }
-  
-  my $packet_type = ord(substr($buffer, 0, 1)) >> 4;
-  
-  # Handle different packet types
-  if ($packet_type == 3) {  # PUBLISH
-    # Read the remaining length
-    my $multiplier = 1;
-    my $remaining_length = 0;
-    my $pos = 1;
-    my $byte;
-    
-    do {
-      my $recv_result = $socket->recv($byte, 1);
-      if (!defined $recv_result || !defined $byte || $recv_result =~ /^0+$/ || $recv_result eq '') {
-        die "MQTT: Connection closed by broker while reading packet length\n";
-      }
-      my $byte_val = ord($byte);
-      $remaining_length += ($byte_val & 0x7F) * $multiplier;
-      $multiplier *= 128;
-      $pos++;
-    } while (ord($byte) & 0x80);
-    
-    # Read the topic
-    my $topic_len_bytes;
-    my $recv_result = $socket->recv($topic_len_bytes, 2);
-    if (!defined $recv_result || !defined $topic_len_bytes || $recv_result =~ /^0+$/ || $recv_result eq '') {
-      die "MQTT: Connection closed by broker while reading topic length\n";
-    }
-    my $topic_len = unpack("n", $topic_len_bytes);
-    
-    my $topic;
-    $recv_result = $socket->recv($topic, $topic_len);
-    if (!defined $recv_result || !defined $topic || $recv_result =~ /^0+$/ || $recv_result eq '') {
-      die "MQTT: Connection closed by broker while reading topic\n";
-    }
-    
-    # Calculate message length
-    my $message_len = $remaining_length - 2 - $topic_len;
-    
-    # Read the message
-    my $message;
-    $recv_result = $socket->recv($message, $message_len);
-    if (!defined $recv_result || !defined $message || $recv_result =~ /^0+$/ || $recv_result eq '') {
-      die "MQTT: Connection closed by broker while reading message\n";
+    # Check if name includes an instance
+    if ($dgn_name =~ m|^(.+?)/(\d+)$|) {
+      $dgn_name = $1;
+      $instance = $2;
     }
     
     # Process the message
-    print "MQTT: Received message on topic $topic: $message\n" if $debug;
+    eval {
+      process_mqtt_message($dgn_name, $instance, $message);
+    };
     
-    # Process based on topic patterns
-    if ($topic =~ m|^RVC/(.+?)/set$|) {
-      # Simple topic pattern: RVC/name/set
-      my $dgn_name = $1;
-      my $instance;
-      
-      # Check if name includes an instance
-      if ($dgn_name =~ m|^(.+?)/(\d+)$|) {
-        $dgn_name = $1;
-        $instance = $2;
-      }
-      
-      # Process the message
-      eval {
-        process_mqtt_message($dgn_name, $instance, $message);
-      };
-      
-      if ($@) {
-        print "Error processing message: $@\n";
-      }
-    }
-    elsif ($topic =~ m|^RVC/(.+?)/(.+?)/set$|) {
-      # Instance topic pattern: RVC/name/instance/set
-      my $dgn_name = $1;
-      my $instance = $2;
-      
-      # Process the message
-      eval {
-        process_mqtt_message($dgn_name, $instance, $message);
-      };
-      
-      if ($@) {
-        print "Error processing message: $@\n";
-      }
+    if ($@) {
+      print "Error processing message: $@\n";
     }
   }
-  elsif ($packet_type == 13) {  # PINGRESP
-    # Just acknowledge the ping response
-    print "MQTT: Received PINGRESP\n" if $debug;
+  elsif ($topic =~ m|^RVC/(.+?)/(.+?)/set$|) {
+    # Instance topic pattern: RVC/name/instance/set
+    my $dgn_name = $1;
+    my $instance = $2;
+    
+    # Process the message
+    eval {
+      process_mqtt_message($dgn_name, $instance, $message);
+    };
+    
+    if ($@) {
+      print "Error processing message: $@\n";
+    }
   }
 }
 
@@ -674,7 +291,7 @@ sub build_data_packet {
 }
 
 # --------------------------------------------------------------
-# Encode a value according to unit and data type (reverse of convert_unit)
+# Encode a value according to unit and data type
 # --------------------------------------------------------------
 sub encode_value {
   my ($value, $unit, $type) = @_;
@@ -753,44 +370,35 @@ sub send_can_message {
   # Convert source address to binary (8 bits)
   my $source_bin = sprintf("%08b", hex($source_address));
   
-  # Combine to form CAN ID
-  my $can_id_bin = $prio_bin . "0" . $dgn_bin . $source_bin;
-  
-  # Convert binary CAN ID to hex
-  my $can_id = sprintf("%08X", oct("0b$can_id_bin"));
+  # Combine to form 29-bit CAN ID
+  my $can_id_bin = $prio_bin . $dgn_bin . $source_bin;
+  my $can_id_hex = sprintf("%08X", oct("0b$can_id_bin"));
   
   # Build cansend command
-  my $command = "cansend $can_interface $can_id#$data";
+  my $cmd = "cansend $can_interface $can_id_hex#$data";
   
-  # Execute command
-  if ($debug) {
-    print "Executing: $command\n";
-  } else {
-    system($command);
+  print "CAN command: $cmd\n" if $debug;
+  
+  # Execute the command
+  system($cmd);
+  
+  if ($? != 0) {
+    print "Error sending CAN message: $?\n";
   }
 }
 
-# --------------------------------------------------------------
-# Print usage information
-# --------------------------------------------------------------
+# Display usage information
 sub usage {
-  print q{
-    Usage: mqtt2rvc.pl [options]
-    
-    This script subscribes to MQTT topics and sends commands to the RV-C CAN bus.
-    
-    Options:
-      --debug             Enable debug output
-      --specfile=FILE     Path to RV-C spec YAML file (default: /coachproxy/etc/rvc-spec.yml)
-      --interface=IF      CAN interface to use (default: can0)
-      --source=ADDR       Source address to use in hex (default: A0)
-      --priority=PRIO     Priority to use in hex (default: 6)
-      --mqtt=SERVER       MQTT server address (default: localhost)
-      --mqttport=PORT     MQTT server port (default: 1883)
-      --user=USER         MQTT username if authentication is required
-      --password=PASS     MQTT password if authentication is required
-  };
-  print "\n";
-  
+  print "Usage: $0 [options]\n";
+  print "Options:\n";
+  print "  --debug               Enable debug output\n";
+  print "  --specfile=<file>     Path to RV-C specification file (default: /coachproxy/etc/rvc-spec.yml)\n";
+  print "  --interface=<if>      CAN interface to use (default: can0)\n";
+  print "  --source=<addr>       Source address in hex (default: A0)\n";
+  print "  --priority=<prio>     Message priority in hex (default: 6)\n";
+  print "  --mqtt=<server>       MQTT broker address (default: localhost)\n";
+  print "  --mqttport=<port>     MQTT broker port (default: 1883)\n";
+  print "  --user=<username>     MQTT username if required\n";
+  print "  --password=<pass>     MQTT password if required\n";
   exit(1);
 }
