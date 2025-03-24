@@ -55,6 +55,7 @@ COPY rvc-spec.yml /coachproxy/etc/
 COPY DC_DIMMER_STATUS_3.sh /coachproxy/rv-c/
 COPY THERMOSTAT_COMMAND_1_MODE.sh /coachproxy/rv-c/
 COPY THERMOSTAT_COMMAND_1_TEMP.sh /coachproxy/rv-c/
+COPY mqtt2rvc.pl /coachproxy/rv-c/
 
 # Set execute permissions
 RUN chmod +x /coachproxy/rv-c/*.pl /coachproxy/rv-c/*.sh && \

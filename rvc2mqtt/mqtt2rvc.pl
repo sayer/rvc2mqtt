@@ -17,7 +17,7 @@
 
 use strict;
 use warnings;
-use Net::MQTT::Simple "localhost";
+use Net::MQTT::Simple;
 use Getopt::Long qw(GetOptions);
 use YAML::Tiny;
 use JSON;
@@ -30,6 +30,8 @@ my $spec_file = '/coachproxy/etc/rvc-spec.yml';
 my $can_interface = 'can0';
 my $source_address = 'A0';  # Default source address, configurable
 my $priority = '6';         # Default priority, configurable
+my $mqtt_server = 'localhost';  # Default MQTT server, configurable
+my $mqtt;  # MQTT client instance
 
 GetOptions(
   'debug' => \$debug,
@@ -37,6 +39,7 @@ GetOptions(
   'interface=s' => \$can_interface,
   'source=s' => \$source_address,
   'priority=s' => \$priority,
+  'mqtt=s' => \$mqtt_server,
 ) or usage();
 
 # Load the RV-C specification
@@ -54,23 +57,28 @@ foreach my $dgn (keys %$encoders) {
   $dgn_map{$name} = $dgn if defined $name;
 }
 
+# Initialize MQTT client
+print "Connecting to MQTT server: $mqtt_server\n" if $debug;
+$mqtt = Net::MQTT::Simple->new($mqtt_server);
+
 # Subscribe to all SET topics
 print "Subscribing to MQTT SET topics\n" if $debug;
-subscribe_topic("RVC/+/set");
-subscribe_topic("RVC/+/+/set");
+$mqtt->subscribe("RVC/+/set");
+$mqtt->subscribe("RVC/+/+/set");
 
 # Open a pipe to cansend
 print "Using CAN interface: $can_interface\n" if $debug;
 
 # Start the MQTT event loop
 print "MQTT to RV-C bridge started. Waiting for commands...\n";
-mqtt_loop();
+mqtt_loop($mqtt);
 
 # --------------------------------------------------------------
 # MQTT Callback - Process incoming SET commands
 # --------------------------------------------------------------
 sub mqtt_loop {
-  Net::MQTT::Simple->run_client(
+  my ($mqtt) = @_;
+  $mqtt->run_client(
     on_publish => sub {
       my ($topic, $message) = @_;
       
@@ -373,6 +381,7 @@ sub usage {
       --interface=IF      CAN interface to use (default: can0)
       --source=ADDR       Source address to use in hex (default: A0)
       --priority=PRIO     Priority to use in hex (default: 6)
+      --mqtt=SERVER       MQTT server address (default: 172.30.33.4)
   };
   print "\n";
   
