@@ -1,15 +1,22 @@
 # RVC to MQTT Bridge Testing Guide
 
-This document explains how to test and troubleshoot the RVC-MQTT bridge (mqtt2rvc.pl).
+This document explains how to test and troubleshoot the RVC-MQTT bridge.
 
 ## Issue Fixes
 
-### 1. Fixed MQTT Implementation
+### 1. MQTT Implementation Issues
 
-The original error "Can't locate object method 'run_client'" has been fixed in mqtt2rvc.pl by:
-- Properly defining callback functions outside the subscription loop
-- Using correct callback registration syntax for Net::MQTT::Simple
-- Implementing a proper event loop with optimal CPU usage
+We have created two different implementations to handle MQTT:
+
+1. **mqtt2rvc.pl (Updated)**:
+   - Fixed MQTT callback implementation
+   - Improved event loop handling
+
+2. **mqtt2rvc_simple.pl (New)**:
+   - Completely new implementation
+   - Uses raw socket communication instead of Net::MQTT::Simple callbacks
+   - Doesn't depend on problematic callback features
+   - **Try this if the updated mqtt2rvc.pl still has issues**
 
 ### 2. YAML Duplicate Key Issue
 
@@ -42,7 +49,7 @@ chmod +x test_lights.pl
 ./test_lights.pl
 ```
 
-This script doesn't require any external tools as it uses the same Perl MQTT library as mqtt2rvc.pl.
+This script doesn't require any external tools as it uses the same Perl MQTT library.
 
 ### 3. MQTT Monitor
 
@@ -59,23 +66,31 @@ This tool will display all MQTT traffic related to RVC, showing both status upda
 
 1. Fix the duplicate key issue in rvc-spec.yml as described above.
 
-2. In one terminal, start the mqtt2rvc.pl script with debug mode:
+2. Choose which implementation to use:
+   - Original (updated): `mqtt2rvc.pl`
+   - New socket-based version: `mqtt2rvc_simple.pl`
+
+3. In one terminal, start your chosen script with debug mode:
    ```
    ./mqtt2rvc.pl --debug
    ```
+   or
+   ```
+   ./mqtt2rvc_simple.pl --debug
+   ```
 
-3. In another terminal, start the MQTT monitor:
+4. In another terminal, start the MQTT monitor:
    ```
    ./mqtt_monitor.pl
    ```
 
-4. In a third terminal, run the test script:
+5. In a third terminal, run the test script:
    ```
    ./test_lights.pl
    ```
 
-5. Watch the output in all terminals to verify:
-   - mqtt2rvc.pl properly receives the MQTT messages and converts them to CAN messages
+6. Watch the output in all terminals to verify:
+   - The bridge script properly receives the MQTT messages and converts them to CAN messages
    - The MQTT monitor shows all message traffic
    - No errors occur during the process
 
@@ -83,26 +98,33 @@ This tool will display all MQTT traffic related to RVC, showing both status upda
 
 If you encounter issues:
 
-1. Verify the MQTT broker is running:
+1. **Try the alternate implementation**: If one version doesn't work, try the other!
+
+2. Verify the MQTT broker is running:
    ```
    systemctl status mosquitto
    ```
 
-2. Check that the mqtt2rvc.pl script has the correct permissions:
+3. Check script permissions:
    ```
-   chmod +x mqtt2rvc.pl
+   chmod +x mqtt2rvc.pl mqtt2rvc_simple.pl
    ```
 
-3. Make sure the CAN interface is properly configured:
+4. Make sure the CAN interface is properly configured:
    ```
    ip link show can0
    ```
 
-4. Test a simple MQTT publication from Perl:
-   ```perl
-   perl -MNet::MQTT::Simple=localhost -e '$mqtt->publish("test/topic", "test message");'
+5. Test a simple MQTT publication manually:
+   ```
+   mosquitto_pub -h localhost -t "test/topic" -m "test message"
    ```
 
-5. If needed, restart the MQTT broker:
+6. Fix duplicate keys in rvc-spec.yml:
+   ```
+   grep -n "^[0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]:" /coachproxy/etc/rvc-spec.yml | sort | uniq -d
+   ```
+
+7. If needed, restart the MQTT broker:
    ```
    systemctl restart mosquitto

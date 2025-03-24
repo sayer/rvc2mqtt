@@ -1,37 +1,24 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 #
-# Copyright (C) 2025
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# Simplified RVC-MQTT Bridge Script
+# This version uses a basic approach to MQTT to ensure compatibility
 
 use strict;
 use warnings;
-use Net::MQTT::Simple;
-use Getopt::Long qw(GetOptions);
-use YAML::Tiny;
+use IO::Socket::INET;
+use IO::Select;
 use JSON;
+use YAML::Tiny;
+use Getopt::Long qw(GetOptions);
 use Switch;
-use POSIX;
-use IO::Handle;
 
 my $debug;
 my $spec_file = '/coachproxy/etc/rvc-spec.yml';
 my $can_interface = 'can0';
-my $source_address = 'A0';  # Default source address, configurable
-my $priority = '6';         # Default priority, configurable
-my $mqtt_server = 'localhost';  # Default MQTT server, configurable
-my $mqtt;  # MQTT client instance
+my $source_address = 'A0';  # Default source address
+my $priority = '6';         # Default priority
+my $mqtt_server = 'localhost';
+my $mqtt_port = 1883;
 
 GetOptions(
   'debug' => \$debug,
@@ -40,6 +27,7 @@ GetOptions(
   'source=s' => \$source_address,
   'priority=s' => \$priority,
   'mqtt=s' => \$mqtt_server,
+  'mqttport=i' => \$mqtt_port,
 ) or usage();
 
 # Load the RV-C specification
@@ -57,123 +45,214 @@ foreach my $dgn (keys %$encoders) {
   $dgn_map{$name} = $dgn if defined $name;
 }
 
-# Initialize MQTT client
-print "Connecting to MQTT server: $mqtt_server\n" if $debug;
-$mqtt = Net::MQTT::Simple->new($mqtt_server);
+# MQTT client implementation using basic sockets
+# This avoids issues with Net::MQTT::Simple callback handling
+my $mqtt_socket = IO::Socket::INET->new(
+  PeerAddr => $mqtt_server,
+  PeerPort => $mqtt_port,
+  Proto => 'tcp',
+) or die "Cannot connect to MQTT broker at $mqtt_server:$mqtt_port: $!\n";
 
-# Subscribe to all SET topics
-print "Subscribing to MQTT SET topics\n" if $debug;
-$mqtt->subscribe("RVC/+/set");
-$mqtt->subscribe("RVC/+/+/set");
+print "Connected to MQTT broker at $mqtt_server:$mqtt_port\n" if $debug;
 
-# Open a pipe to cansend
+# Send MQTT CONNECT packet
+my $client_id = "mqtt2rvc_".int(rand(1000000));
+send_mqtt_connect($mqtt_socket, $client_id);
+
+# Subscribe to topics
+print "Subscribing to MQTT topics\n" if $debug;
+mqtt_subscribe($mqtt_socket, "RVC/+/set");
+mqtt_subscribe($mqtt_socket, "RVC/+/+/set");
+
+# Print status
 print "Using CAN interface: $can_interface\n" if $debug;
-
-# Start the MQTT event loop
 print "MQTT to RV-C bridge started. Waiting for commands...\n";
-mqtt_loop($mqtt);
 
-# --------------------------------------------------------------
-# MQTT Callback - Process incoming SET commands
-# --------------------------------------------------------------
-# Global variable to store the MQTT client
-our $GLOBAL_MQTT;
-
-# Define a global callback function that will be called when a message arrives
-sub process_mqtt_topic {
-  my ($topic, $message) = @_;
-  
-  print "Received MQTT message: $topic = $message\n" if $debug;
-  
-  # Process messages based on topic patterns
-  if ($topic =~ m|^RVC/(.+?)/set$|) {
-    # Simple topic pattern: RVC/name/set
-    my $dgn_name = $1;
-    my $instance;
-    
-    # Check if name includes an instance
-    if ($dgn_name =~ m|^(.+?)/(\d+)$|) {
-      $dgn_name = $1;
-      $instance = $2;
-    }
-    
-    # Process the message
-    eval {
-      process_mqtt_message($dgn_name, $instance, $message);
-    };
-    
-    if ($@) {
-      print "Error processing message: $@\n";
+# Main event loop
+my $select = IO::Select->new($mqtt_socket);
+while (1) {
+  my @ready = $select->can_read(1);
+  foreach my $fh (@ready) {
+    if ($fh == $mqtt_socket) {
+      process_mqtt_data($mqtt_socket);
     }
   }
-  elsif ($topic =~ m|^RVC/(.+?)/(.+?)/set$|) {
-    # Instance topic pattern: RVC/name/instance/set
-    my $dgn_name = $1;
-    my $instance = $2;
-    
-    # Process the message
-    eval {
-      process_mqtt_message($dgn_name, $instance, $message);
-    };
-    
-    if ($@) {
-      print "Error processing message: $@\n";
-    }
+  # Send PINGREQ every 30 seconds to keep the connection alive
+  if (time() % 30 == 0) {
+    send_mqtt_pingreq($mqtt_socket);
   }
 }
 
-sub mqtt_loop {
-  my ($mqtt) = @_;
+# --------------------------------------------------------------
+# MQTT Basic Protocol Implementation
+# --------------------------------------------------------------
+
+# Send MQTT CONNECT packet
+sub send_mqtt_connect {
+  my ($socket, $client_id) = @_;
+  my $protocol_name = "\x00\x04MQTT";
+  my $protocol_level = "\x04";  # MQTT 3.1.1
+  my $connect_flags = "\x02";   # Clean session
+  my $keep_alive = "\x00\x3c";  # 60 seconds
   
-  # Store in global variable
-  $GLOBAL_MQTT = $mqtt;
+  my $client_id_len = pack("n", length($client_id));
+  my $client_id_bytes = $client_id_len . $client_id;
   
-  print "Setting up MQTT subscriptions...\n" if $debug;
+  my $variable_header = $protocol_name . $protocol_level . $connect_flags . $keep_alive;
+  my $payload = $client_id_bytes;
   
-  # Use the simpler subscribe syntax without callbacks
-  $mqtt->subscribe("RVC/+/set");
-  $mqtt->subscribe("RVC/+/+/set");
+  my $remaining_length = length($variable_header) + length($payload);
+  my $rl_bytes = encode_remaining_length($remaining_length);
   
-  print "Entering MQTT event loop...\n" if $debug;
+  my $packet = "\x10" . $rl_bytes . $variable_header . $payload;
   
-  # Create our own event loop that polls for messages
-  while (1) {
-    eval {
-      # Check for any incoming messages
-      $mqtt->tick();
+  $socket->send($packet);
+  
+  # Wait for CONNACK
+  my $buffer;
+  $socket->recv($buffer, 4);
+  if (ord(substr($buffer, 0, 1)) != 0x20) {
+    die "MQTT: Expected CONNACK but received something else\n";
+  }
+  my $return_code = ord(substr($buffer, 3, 1));
+  if ($return_code != 0) {
+    die "MQTT: Connection failed with return code $return_code\n";
+  }
+  
+  print "MQTT: Connected successfully\n" if $debug;
+}
+
+# MQTT SUBSCRIBE packet
+sub mqtt_subscribe {
+  my ($socket, $topic) = @_;
+  my $packet_id = pack("n", int(rand(65535)));
+  
+  my $topic_len = pack("n", length($topic));
+  my $topic_filter = $topic_len . $topic . "\x00";  # QoS 0
+  
+  my $variable_header = $packet_id;
+  my $payload = $topic_filter;
+  
+  my $remaining_length = length($variable_header) + length($payload);
+  my $rl_bytes = encode_remaining_length($remaining_length);
+  
+  my $packet = "\x82" . $rl_bytes . $variable_header . $payload;
+  
+  $socket->send($packet);
+  
+  print "MQTT: Subscribed to topic: $topic\n" if $debug;
+}
+
+# MQTT PINGREQ packet
+sub send_mqtt_pingreq {
+  my ($socket) = @_;
+  my $packet = "\xc0\x00";
+  $socket->send($packet);
+}
+
+# Encode MQTT remaining length
+sub encode_remaining_length {
+  my ($length) = @_;
+  my $bytes = '';
+  
+  do {
+    my $digit = $length % 128;
+    $length = int($length / 128);
+    if ($length > 0) {
+      $digit |= 0x80;
+    }
+    $bytes .= chr($digit);
+  } while ($length > 0);
+  
+  return $bytes;
+}
+
+# Process incoming MQTT data
+sub process_mqtt_data {
+  my ($socket) = @_;
+  my $buffer;
+  my $bytes_read = $socket->recv($buffer, 2);
+  
+  if (!$bytes_read) {
+    die "MQTT: Connection closed by broker\n";
+  }
+  
+  my $packet_type = ord(substr($buffer, 0, 1)) >> 4;
+  
+  # Handle different packet types
+  if ($packet_type == 3) {  # PUBLISH
+    # Read the remaining length
+    my $multiplier = 1;
+    my $remaining_length = 0;
+    my $pos = 1;
+    my $byte;
+    
+    do {
+      $socket->recv($byte, 1);
+      my $byte_val = ord($byte);
+      $remaining_length += ($byte_val & 0x7F) * $multiplier;
+      $multiplier *= 128;
+      $pos++;
+    } while (ord($byte) & 0x80);
+    
+    # Read the topic
+    my $topic_len_bytes;
+    $socket->recv($topic_len_bytes, 2);
+    my $topic_len = unpack("n", $topic_len_bytes);
+    
+    my $topic;
+    $socket->recv($topic, $topic_len);
+    
+    # Calculate message length
+    my $message_len = $remaining_length - 2 - $topic_len;
+    
+    # Read the message
+    my $message;
+    $socket->recv($message, $message_len);
+    
+    # Process the message
+    print "MQTT: Received message on topic $topic: $message\n" if $debug;
+    
+    # Process based on topic patterns
+    if ($topic =~ m|^RVC/(.+?)/set$|) {
+      # Simple topic pattern: RVC/name/set
+      my $dgn_name = $1;
+      my $instance;
       
-      # Sleep a bit to avoid using too much CPU
-      select(undef, undef, undef, 0.1);
-    };
-    
-    if ($@) {
-      print "Error in MQTT loop: $@\n";
-      sleep(1);  # Longer sleep on error
+      # Check if name includes an instance
+      if ($dgn_name =~ m|^(.+?)/(\d+)$|) {
+        $dgn_name = $1;
+        $instance = $2;
+      }
+      
+      # Process the message
+      eval {
+        process_mqtt_message($dgn_name, $instance, $message);
+      };
+      
+      if ($@) {
+        print "Error processing message: $@\n";
+      }
+    }
+    elsif ($topic =~ m|^RVC/(.+?)/(.+?)/set$|) {
+      # Instance topic pattern: RVC/name/instance/set
+      my $dgn_name = $1;
+      my $instance = $2;
+      
+      # Process the message
+      eval {
+        process_mqtt_message($dgn_name, $instance, $message);
+      };
+      
+      if ($@) {
+        print "Error processing message: $@\n";
+      }
     }
   }
-}
-
-# Override the default callback in Net::MQTT::Simple by monkey-patching
-# This is a workaround for older versions of the module
-{
-  no warnings 'redefine';
-  
-  # Save the original implementation
-  my $original_on_message;
-  if (defined &Net::MQTT::Simple::_default_callback) {
-    $original_on_message = \&Net::MQTT::Simple::_default_callback;
+  elsif ($packet_type == 13) {  # PINGRESP
+    # Just acknowledge the ping response
+    print "MQTT: Received PINGRESP\n" if $debug;
   }
-  
-  # Replace with our own implementation
-  *Net::MQTT::Simple::_default_callback = sub {
-    my ($mqtt, $topic, $message) = @_;
-    
-    # Call our global callback
-    process_mqtt_topic($topic, $message);
-    
-    # Also call the original if it exists
-    $original_on_message->($mqtt, $topic, $message) if defined $original_on_message;
-  };
 }
 
 # --------------------------------------------------------------
@@ -340,7 +419,7 @@ sub build_data_packet {
 }
 
 # --------------------------------------------------------------
-# Encode a value according to unit and data type (reverse of convert_unit)
+# Encode a value according to unit and data type
 # --------------------------------------------------------------
 sub encode_value {
   my ($value, $unit, $type) = @_;
@@ -451,7 +530,8 @@ sub usage {
       --interface=IF      CAN interface to use (default: can0)
       --source=ADDR       Source address to use in hex (default: A0)
       --priority=PRIO     Priority to use in hex (default: 6)
-      --mqtt=SERVER       MQTT server address (default: 172.30.33.4)
+      --mqtt=SERVER       MQTT server address (default: localhost)
+      --mqttport=PORT     MQTT server port (default: 1883)
   };
   print "\n";
   
