@@ -29,7 +29,7 @@ MQTT_PASSWORD=$(jq --raw-output ".mqtt_password // empty" /data/options.json 2>/
 # Start mqtt2rvc without authentication since Net::MQTT::Simple doesn't support
 # password authentication on non-TLS connections
 echo "Starting mqtt2rvc without authentication (Net::MQTT::Simple limitation)"
-/coachproxy/rv-c/mqtt2rvc.pl &
+/coachproxy/rv-c/rvc2mqtt.pl &
 
 sleep 5
 jobs
@@ -37,6 +37,10 @@ jobs
 #Start mqtt_rvc_set in the foreground
 echo "starting mqtt_rvc_set..."
 /coachproxy/rv-c/mqtt_rvc_set.pl
+
+#
+echo "starting mqtt2rvc..."
+/coachproxy/rv-c/mqtt2rvc.pl &
 
 # Function to clean up processes
 cleanup() {
