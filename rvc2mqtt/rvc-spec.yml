@@ -5419,26 +5419,6 @@ Z0005:
       name: Connection Text Identifier Length
       type: uint8
 
-1FEA6:
-  name: ROOF_FAN_COMMAND_1
-  parameters:
-    - byte: 0
-      name: instance
-      type: uint8
-      comment: "1-250"
-    - byte: 1
-      bit: 0-1
-      name: Direction of movement
-      type: bit2
-      values:
-        0: stop
-        1: extend
-        2: retract
-    - byte: 3
-      name: move to position
-      type: uint8
-      unit: Pct
-
 1FEE3:
   name: WINDOW_STATUS
   parameters:

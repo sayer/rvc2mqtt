@@ -80,7 +80,7 @@ sub mqtt_loop {
   my ($mqtt) = @_;
   
   # Set up subscription callback
-  $mqtt->subscribe("RVC/+/set" => sub {
+  $mqtt->subscribe("RVC/+/set", sub {
     my ($topic, $message) = @_;
     
     # Skip if not a set topic
@@ -105,7 +105,7 @@ sub mqtt_loop {
     }
   });
   
-  $mqtt->subscribe("RVC/+/+/set" => sub {
+  $mqtt->subscribe("RVC/+/+/set", sub {
     my ($topic, $message) = @_;
     
     # Skip if not a set topic
@@ -125,7 +125,14 @@ sub mqtt_loop {
   });
   
   # Start the event loop
-  $mqtt->run();
+  $mqtt->tick();
+  
+  # Keep the event loop running
+  while (1) {
+    $mqtt->tick();
+    # Sleep a bit to avoid burning CPU
+    select(undef, undef, undef, 0.01);
+  }
 }
 
 # --------------------------------------------------------------
