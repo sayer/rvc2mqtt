@@ -28,7 +28,7 @@ RUN apt-get update && \
     kmod \
     && rm -rf /var/lib/apt/lists/*
 
-# Install required Perl mcdules
+# Install required Perl modules
 RUN cpanm --force Net::MQTT::Simple && \
     cpanm --force Switch && \
     cpanm --force Wifi::WpaCtrl && \
@@ -36,7 +36,8 @@ RUN cpanm --force Net::MQTT::Simple && \
     cpanm --force JSON::Parse && \
     cpanm --force YAML::Tiny && \
     cpanm --force AnyEvent && \
-    cpanm --force AnyEvent::MQTT
+    cpanm --force AnyEvent::MQTT && \
+    cpanm --force Term::ReadKey
 
 # Create app directory
 WORKDIR /coachproxy

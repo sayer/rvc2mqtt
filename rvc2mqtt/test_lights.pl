@@ -16,7 +16,12 @@ use warnings;
 use Net::MQTT::Simple;
 use Time::HiRes qw(sleep);
 use Getopt::Long;
-use Term::ReadKey;
+# Try to load Term::ReadKey but continue even if not available
+eval {
+    require Term::ReadKey;
+    Term::ReadKey->import();
+};
+my $has_readkey = $@ ? 0 : 1;
 
 # Set the MQTT broker details
 my $mqtt_host = "localhost";
@@ -155,10 +160,19 @@ sub prompt_user {
     return 1 unless $prompt_mode;
     
     print "\n${YELLOW}$message${RESET} (y/n/q): ";
-    ReadMode('cbreak');
-    my $key = ReadKey(0);
-    ReadMode('normal');
-    print "$key\n";
+    
+    my $key;
+    if ($has_readkey) {
+        # Use ReadKey if available for single keypress capture
+        Term::ReadKey::ReadMode('cbreak');
+        $key = Term::ReadKey::ReadKey(0);
+        Term::ReadKey::ReadMode('normal');
+        print "$key\n";
+    } else {
+        # Fallback to standard input if Term::ReadKey is not available
+        $key = <STDIN>;
+        chomp($key);
+    }
     
     if (lc($key) eq 'q') {
         print "${RED}Test aborted by user${RESET}\n";
