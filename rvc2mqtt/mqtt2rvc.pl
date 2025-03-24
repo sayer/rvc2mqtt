@@ -33,6 +33,8 @@ my $source_address = 'A0';  # Default source address, configurable
 my $priority = '6';         # Default priority, configurable
 my $mqtt_server = 'localhost';  # Default MQTT server, configurable
 my $mqtt_port = 1883;           # Default MQTT port, configurable
+my $mqtt_user = '';             # MQTT username if required
+my $mqtt_password = '';         # MQTT password if required
 
 GetOptions(
   'debug' => \$debug,
@@ -42,6 +44,8 @@ GetOptions(
   'priority=s' => \$priority,
   'mqtt=s' => \$mqtt_server,
   'mqttport=i' => \$mqtt_port,
+  'user=s' => \$mqtt_user,
+  'password=s' => \$mqtt_password,
 ) or usage();
 
 # Load the RV-C specification
@@ -156,7 +160,21 @@ sub send_mqtt_connect {
   my ($socket, $client_id) = @_;
   my $protocol_name = "\x00\x04MQTT";
   my $protocol_level = "\x04";  # MQTT 3.1.1
-  my $connect_flags = "\x02";   # Clean session
+  
+  # Set connect flags based on authentication
+  my $connect_flags = "\x02";  # Base: Clean session only (0x02)
+  
+  # Add username and password flags if provided
+  if ($mqtt_user) {
+    # Set username flag (bit 7)
+    $connect_flags = chr(ord($connect_flags) | 0x80);
+    
+    if ($mqtt_password) {
+      # Set password flag (bit 6)
+      $connect_flags = chr(ord($connect_flags) | 0x40);
+    }
+  }
+  
   my $keep_alive = "\x00\x3c";  # 60 seconds
   
   my $client_id_len = pack("n", length($client_id));
@@ -165,6 +183,18 @@ sub send_mqtt_connect {
   my $variable_header = $protocol_name . $protocol_level . $connect_flags . $keep_alive;
   my $payload = $client_id_bytes;
   
+  # Add username if provided
+  if ($mqtt_user) {
+    my $username_len = pack("n", length($mqtt_user));
+    $payload .= $username_len . $mqtt_user;
+    
+    # Add password if provided
+    if ($mqtt_password) {
+      my $password_len = pack("n", length($mqtt_password));
+      $payload .= $password_len . $mqtt_password;
+    }
+  }
+  
   my $remaining_length = length($variable_header) + length($payload);
   my $rl_bytes = encode_remaining_length($remaining_length);
   
@@ -172,15 +202,76 @@ sub send_mqtt_connect {
   
   $socket->send($packet);
   
-  # Wait for CONNACK
-  my $buffer;
-  $socket->recv($buffer, 4);
-  if (ord(substr($buffer, 0, 1)) != 0x20) {
-    die "MQTT: Expected CONNACK but received something else\n";
+  # Wait for CONNACK with proper timeout and error handling
+  my $buffer = "";
+  my $timeout = time() + 5;  # 5 second timeout
+  
+  # First read at least 2 bytes to get the packet type and length
+  while (length($buffer) < 2 && time() < $timeout) {
+    my $select = IO::Select->new($socket);
+    next unless $select->can_read(0.1);
+    
+    my $chunk;
+    my $bytes = $socket->recv($chunk, 2 - length($buffer));
+    if (!defined $bytes || $bytes == 0) {
+      die "MQTT: Connection closed by broker during connection handshake\n";
+    }
+    $buffer .= $chunk;
   }
+  
+  if (length($buffer) < 2) {
+    die "MQTT: Timeout waiting for CONNACK\n";
+  }
+  
+  # Verify packet type
+  my $packet_type = ord(substr($buffer, 0, 1)) >> 4;
+  if ($packet_type != 2) {  # Not a CONNACK
+    die sprintf("MQTT: Expected CONNACK but received packet type %d\n", $packet_type);
+  }
+  
+  # Get remaining length
+  my $remain_len = ord(substr($buffer, 1, 1));
+  
+  # Read the rest of the packet
+  while (length($buffer) < 2 + $remain_len && time() < $timeout) {
+    my $select = IO::Select->new($socket);
+    next unless $select->can_read(0.1);
+    
+    my $chunk;
+    my $bytes = $socket->recv($chunk, (2 + $remain_len) - length($buffer));
+    if (!defined $bytes || $bytes == 0) {
+      die "MQTT: Connection closed by broker during connection handshake\n";
+    }
+    $buffer .= $chunk;
+  }
+  
+  if (length($buffer) < 2 + $remain_len) {
+    die "MQTT: Timeout waiting for complete CONNACK packet\n";
+  }
+  
+  # Check flags (session present flag)
+  my $flags = ord(substr($buffer, 2, 1));
+  
+  # Get the connection return code
   my $return_code = ord(substr($buffer, 3, 1));
+  
+  # Check the return code
   if ($return_code != 0) {
-    die "MQTT: Connection failed with return code $return_code\n";
+    # Translate return code to a meaningful message
+    my $error_message = "Unknown error";
+    if ($return_code == 1) {
+      $error_message = "Connection refused: unacceptable protocol version";
+    } elsif ($return_code == 2) {
+      $error_message = "Connection refused: identifier rejected";
+    } elsif ($return_code == 3) {
+      $error_message = "Connection refused: server unavailable";
+    } elsif ($return_code == 4) {
+      $error_message = "Connection refused: bad username or password";
+    } elsif ($return_code == 5) {
+      $error_message = "Connection refused: not authorized";
+    }
+    
+    die "MQTT: $error_message (code $return_code)\n";
   }
   
   print "MQTT: Connected successfully\n" if $debug;
@@ -189,7 +280,8 @@ sub send_mqtt_connect {
 # MQTT SUBSCRIBE packet
 sub mqtt_subscribe {
   my ($socket, $topic) = @_;
-  my $packet_id = pack("n", int(rand(65535)));
+  my $packet_id_int = int(rand(65535));
+  my $packet_id = pack("n", $packet_id_int);
   
   my $topic_len = pack("n", length($topic));
   my $topic_filter = $topic_len . $topic . "\x00";  # QoS 0
@@ -204,7 +296,94 @@ sub mqtt_subscribe {
   
   $socket->send($packet);
   
-  print "MQTT: Subscribed to topic: $topic\n" if $debug;
+  # Wait for SUBACK with timeout
+  my $buffer = "";
+  my $timeout = time() + 5;  # 5 second timeout
+  
+  # First wait for the header
+  while (time() < $timeout) {
+    my $select = IO::Select->new($socket);
+    next unless $select->can_read(0.1);
+    
+    my $tmp;
+    my $bytes = $socket->recv($tmp, 1);
+    if (!defined $bytes || $bytes == 0) {
+      die "MQTT: Connection closed by broker during subscribe\n";
+    }
+    
+    $buffer .= $tmp;
+    
+    # Check if we have the control packet type
+    if (length($buffer) >= 1) {
+      my $packet_type = ord(substr($buffer, 0, 1)) >> 4;
+      if ($packet_type == 9) {  # SUBACK
+        # Now read the remaining length
+        my $rem_len = 0;
+        my $multiplier = 1;
+        my $pos = 1;
+        
+        do {
+          if (time() >= $timeout) {
+            die "MQTT: Timeout waiting for SUBACK remaining length\n";
+          }
+          
+          $select = IO::Select->new($socket);
+          next unless $select->can_read(0.1);
+          
+          my $byte;
+          $bytes = $socket->recv($byte, 1);
+          if (!defined $bytes || $bytes == 0) {
+            die "MQTT: Connection closed by broker during subscribe\n";
+          }
+          
+          $buffer .= $byte;
+          my $byte_val = ord(substr($buffer, $pos, 1));
+          $rem_len += ($byte_val & 0x7F) * $multiplier;
+          $multiplier *= 128;
+          $pos++;
+        } while (ord(substr($buffer, $pos-1, 1)) & 0x80 && $pos <= 4);
+        
+        # Read the rest of the packet
+        while (length($buffer) < $pos + $rem_len) {
+          if (time() >= $timeout) {
+            die "MQTT: Timeout waiting for complete SUBACK packet\n";
+          }
+          
+          $select = IO::Select->new($socket);
+          next unless $select->can_read(0.1);
+          
+          my $chunk;
+          $bytes = $socket->recv($chunk, $pos + $rem_len - length($buffer));
+          if (!defined $bytes || $bytes == 0) {
+            die "MQTT: Connection closed by broker during subscribe\n";
+          }
+          
+          $buffer .= $chunk;
+        }
+        
+        # Verify the packet ID
+        my $received_id = unpack("n", substr($buffer, $pos, 2));
+        if ($received_id != $packet_id_int) {
+          print "MQTT: Warning - SUBACK packet ID mismatch: sent $packet_id_int, received $received_id\n" if $debug;
+        }
+        
+        # Check the return code
+        if ($rem_len > 2) {
+          my $return_code = ord(substr($buffer, $pos + 2, 1));
+          if ($return_code > 2) {  # QoS > 2 means failure
+            die "MQTT: Subscription failed with code $return_code\n";
+          }
+        }
+        
+        # Successfully subscribed
+        print "MQTT: Subscribed to topic: $topic\n" if $debug;
+        return;
+      }
+    }
+  }
+  
+  # If we get here, we timed out waiting for SUBACK
+  die "MQTT: Timeout waiting for SUBACK\n";
 }
 
 # MQTT PINGREQ packet
@@ -596,6 +775,8 @@ sub usage {
       --priority=PRIO     Priority to use in hex (default: 6)
       --mqtt=SERVER       MQTT server address (default: localhost)
       --mqttport=PORT     MQTT server port (default: 1883)
+      --user=USER         MQTT username if authentication is required
+      --password=PASS     MQTT password if authentication is required
   };
   print "\n";
   

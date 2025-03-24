@@ -20,9 +20,20 @@ echo "starting health check..."
 /coachproxy/rv-c/healthcheck.pl &
 HEALTHCHECK_PID=$!
 
-# Start rvc2mqtt in the background
+# Start rvc2mqtt in the background with MQTT credentials
 echo "starting rvc2mqtt..."
-/coachproxy/rv-c/rvc2mqtt.pl &
+# Get MQTT credentials from Home Assistant config if available
+MQTT_USER=$(jq --raw-output ".mqtt_user // empty" /data/options.json 2>/dev/null || echo "")
+MQTT_PASSWORD=$(jq --raw-output ".mqtt_password // empty" /data/options.json 2>/dev/null || echo "")
+
+# Use credentials if they're available
+if [ -n "$MQTT_USER" ] && [ -n "$MQTT_PASSWORD" ]; then
+  echo "Using MQTT authentication"
+  /coachproxy/rv-c/mqtt2rvc.pl --user="$MQTT_USER" --password="$MQTT_PASSWORD" &
+else
+  echo "No MQTT credentials found, connecting without authentication"
+  /coachproxy/rv-c/mqtt2rvc.pl &
+fi
 
 sleep 5
 jobs
