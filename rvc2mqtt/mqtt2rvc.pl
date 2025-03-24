@@ -213,7 +213,7 @@ sub send_mqtt_connect {
     
     my $chunk;
     my $bytes = $socket->recv($chunk, 2 - length($buffer));
-    if (!defined $bytes || $bytes == 0) {
+    if (!defined $bytes || !defined $chunk || $bytes =~ /^0+$/ || $bytes eq '') {
       die "MQTT: Connection closed by broker during connection handshake\n";
     }
     $buffer .= $chunk;
@@ -239,7 +239,7 @@ sub send_mqtt_connect {
     
     my $chunk;
     my $bytes = $socket->recv($chunk, (2 + $remain_len) - length($buffer));
-    if (!defined $bytes || $bytes == 0) {
+    if (!defined $bytes || !defined $chunk || $bytes =~ /^0+$/ || $bytes eq '') {
       die "MQTT: Connection closed by broker during connection handshake\n";
     }
     $buffer .= $chunk;
@@ -307,7 +307,7 @@ sub mqtt_subscribe {
     
     my $tmp;
     my $bytes = $socket->recv($tmp, 1);
-    if (!defined $bytes || $bytes == 0) {
+    if (!defined $bytes || !defined $tmp || $bytes =~ /^0+$/ || $bytes eq '') {
       die "MQTT: Connection closed by broker during subscribe\n";
     }
     
@@ -332,7 +332,7 @@ sub mqtt_subscribe {
           
           my $byte;
           $bytes = $socket->recv($byte, 1);
-          if (!defined $bytes || $bytes == 0) {
+          if (!defined $bytes || !defined $byte || $bytes =~ /^0+$/ || $bytes eq '') {
             die "MQTT: Connection closed by broker during subscribe\n";
           }
           
@@ -354,7 +354,7 @@ sub mqtt_subscribe {
           
           my $chunk;
           $bytes = $socket->recv($chunk, $pos + $rem_len - length($buffer));
-          if (!defined $bytes || $bytes == 0) {
+          if (!defined $bytes || !defined $chunk || $bytes =~ /^0+$/ || $bytes eq '') {
             die "MQTT: Connection closed by broker during subscribe\n";
           }
           
@@ -416,7 +416,7 @@ sub process_mqtt_data {
   my $buffer;
   my $bytes_read = $socket->recv($buffer, 2);
   
-  if (!$bytes_read) {
+  if (!defined $bytes_read || !defined $buffer || $bytes_read =~ /^0+$/ || $bytes_read eq '') {
     die "MQTT: Connection closed by broker\n";
   }
   
@@ -431,7 +431,10 @@ sub process_mqtt_data {
     my $byte;
     
     do {
-      $socket->recv($byte, 1);
+      my $recv_result = $socket->recv($byte, 1);
+      if (!defined $recv_result || !defined $byte || $recv_result =~ /^0+$/ || $recv_result eq '') {
+        die "MQTT: Connection closed by broker while reading packet length\n";
+      }
       my $byte_val = ord($byte);
       $remaining_length += ($byte_val & 0x7F) * $multiplier;
       $multiplier *= 128;
@@ -440,18 +443,27 @@ sub process_mqtt_data {
     
     # Read the topic
     my $topic_len_bytes;
-    $socket->recv($topic_len_bytes, 2);
+    my $recv_result = $socket->recv($topic_len_bytes, 2);
+    if (!defined $recv_result || !defined $topic_len_bytes || $recv_result =~ /^0+$/ || $recv_result eq '') {
+      die "MQTT: Connection closed by broker while reading topic length\n";
+    }
     my $topic_len = unpack("n", $topic_len_bytes);
     
     my $topic;
-    $socket->recv($topic, $topic_len);
+    $recv_result = $socket->recv($topic, $topic_len);
+    if (!defined $recv_result || !defined $topic || $recv_result =~ /^0+$/ || $recv_result eq '') {
+      die "MQTT: Connection closed by broker while reading topic\n";
+    }
     
     # Calculate message length
     my $message_len = $remaining_length - 2 - $topic_len;
     
     # Read the message
     my $message;
-    $socket->recv($message, $message_len);
+    $recv_result = $socket->recv($message, $message_len);
+    if (!defined $recv_result || !defined $message || $recv_result =~ /^0+$/ || $recv_result eq '') {
+      die "MQTT: Connection closed by broker while reading message\n";
+    }
     
     # Process the message
     print "MQTT: Received message on topic $topic: $message\n" if $debug;
