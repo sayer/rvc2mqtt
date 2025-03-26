@@ -26,21 +26,23 @@ echo "starting rvc2mqtt..."
 MQTT_USER=$(jq --raw-output ".mqtt_user // empty" /data/options.json 2>/dev/null || echo "")
 MQTT_PASSWORD=$(jq --raw-output ".mqtt_password // empty" /data/options.json 2>/dev/null || echo "")
 
-# Start mqtt2rvc without authentication since Net::MQTT::Simple doesn't support
-# password authentication on non-TLS connections
-echo "Starting mqtt2rvc without authentication (Net::MQTT::Simple limitation)"
+# Start rvc2mqtt in the background
+echo "Starting rvc2mqtt without authentication (Net::MQTT::Simple limitation)"
 /coachproxy/rv-c/rvc2mqtt.pl &
+RVC2MQTT_PID=$!
 
 sleep 5
 jobs
 
-#Start mqtt_rvc_set in the foreground
+# Start mqtt_rvc_set in the background with the credentials
 echo "starting mqtt_rvc_set..."
-/coachproxy/rv-c/mqtt_rvc_set.pl
+/coachproxy/rv-c/mqtt_rvc_set.pl --user "$MQTT_USER" --password "$MQTT_PASSWORD" --debug &
+MQTT_RVC_SET_PID=$!
 
-#
+# Start mqtt2rvc in the background with credentials
 echo "starting mqtt2rvc..."
-/coachproxy/rv-c/mqtt2rvc.pl --debug &
+/coachproxy/rv-c/mqtt2rvc.pl --debug --mqtt="localhost" --user "$MQTT_USER" --password "$MQTT_PASSWORD" &
+MQTT2RVC_PID=$!
 
 # Function to clean up processes
 cleanup() {
