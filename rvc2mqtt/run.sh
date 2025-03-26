@@ -40,7 +40,7 @@ echo "starting mqtt_rvc_set..."
 
 #
 echo "starting mqtt2rvc..."
-/coachproxy/rv-c/mqtt2rvc.pl &
+/coachproxy/rv-c/mqtt2rvc.pl --debug &
 
 # Function to clean up processes
 cleanup() {
