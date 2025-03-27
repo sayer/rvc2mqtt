@@ -41,7 +41,7 @@ MQTT_RVC_SET_PID=$!
 
 # Start mqtt2rvc in the background with credentials
 echo "starting mqtt2rvc..."
-/coachproxy/rv-c/mqtt2rvc.pl --debug --mqtt="localhost" --user "$MQTT_USER" --password "$MQTT_PASSWORD" &
+/coachproxy/rv-c/mqtt2rvc.pl --debug  &
 MQTT2RVC_PID=$!
 
 # Function to clean up processes
@@ -53,8 +53,44 @@ cleanup() {
 # Trap SIGTERM and SIGINT
 trap cleanup SIGTERM SIGINT
 
-#Wait for any process to exit
-wait -n
-
-# Exit with status of process that exited first
-exit $?
+# Monitor and restart any process that exits
+while true; do
+  # Wait for any process to exit
+  wait -n
+  EXIT_STATUS=$?
+  
+  echo "A process has exited with status $EXIT_STATUS"
+  
+  # Check which process exited and restart it
+  if ! kill -0 $HEALTHCHECK_PID 2>/dev/null; then
+    echo "Healthcheck process exited. Restarting in 5 seconds..."
+    sleep 5
+    /coachproxy/rv-c/healthcheck.pl &
+    HEALTHCHECK_PID=$!
+    echo "Healthcheck restarted with PID $HEALTHCHECK_PID"
+  fi
+  
+  if ! kill -0 $RVC2MQTT_PID 2>/dev/null; then
+    echo "RVC2MQTT process exited. Restarting in 5 seconds..."
+    sleep 5
+    /coachproxy/rv-c/rvc2mqtt.pl &
+    RVC2MQTT_PID=$!
+    echo "RVC2MQTT restarted with PID $RVC2MQTT_PID"
+  fi
+  
+  if ! kill -0 $MQTT_RVC_SET_PID 2>/dev/null; then
+    echo "MQTT_RVC_SET process exited. Restarting in 5 seconds..."
+    sleep 5
+    /coachproxy/rv-c/mqtt_rvc_set.pl --user "$MQTT_USER" --password "$MQTT_PASSWORD" --debug &
+    MQTT_RVC_SET_PID=$!
+    echo "MQTT_RVC_SET restarted with PID $MQTT_RVC_SET_PID"
+  fi
+  
+  if ! kill -0 $MQTT2RVC_PID 2>/dev/null; then
+    echo "MQTT2RVC process exited. Restarting in 5 seconds..."
+    sleep 5
+    /coachproxy/rv-c/mqtt2rvc.pl --debug  &
+    MQTT2RVC_PID=$!
+    echo "MQTT2RVC restarted with PID $MQTT2RVC_PID"
+  fi
+done

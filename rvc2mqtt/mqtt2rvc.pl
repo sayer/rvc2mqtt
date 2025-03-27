@@ -177,9 +177,29 @@ sub process_mqtt_message {
   
   # Special handling for FLOOR_HEAT_COMMAND (DGN 1FEFB)
   if ($dgn eq "1FEFB") {
-    # Force Dead band to be "n/a" and fill remaining bytes with FF
-    $data =~ s/^(.{8})(.{2})(.{6})$/$1FF$3/;  # Replace byte 4 with FF
-    $data =~ s/^(.{10})(.{6})$/$1FFFFFF/;     # Replace bytes 5-7 with FFFFFF
+    print "Original FLOOR_HEAT_COMMAND data: $data\n" if $debug;
+    
+    # Convert hex string to bytes for safer handling
+    my @bytes = unpack("(A2)*", $data);
+    
+    # Ensure we have 8 bytes (pad if needed)
+    while (scalar(@bytes) < 8) {
+      push(@bytes, "00");
+    }
+    
+    # Preserve bytes 0-3 (instance, operating mode, and set point)
+    # Force Dead band (byte 4) to be "n/a" (0xFF)
+    $bytes[4] = "FF";
+    
+    # Fill remaining bytes 5-7 with FF
+    $bytes[5] = "FF";
+    $bytes[6] = "FF";
+    $bytes[7] = "FF";
+    
+    # Rebuild the data string
+    $data = join("", @bytes);
+    
+    print "Modified FLOOR_HEAT_COMMAND data: $data\n" if $debug;
   }
   
   # Send to CAN bus
@@ -303,7 +323,9 @@ sub build_data_packet {
 sub encode_value {
   my ($value, $unit, $type) = @_;
   
-  return $value if (!defined $unit || $value eq 'n/a');
+  # Only return early if no unit is defined
+  return $value if (!defined $unit);
+  # n/a values will be handled in the unit-specific code below
   
   my $encoded_value = $value;
   
