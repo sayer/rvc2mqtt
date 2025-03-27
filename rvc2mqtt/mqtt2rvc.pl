@@ -195,6 +195,11 @@ sub process_mqtt_message {
     
     print "Fixed FLOOR_HEAT_COMMAND for instance $instance. State: " .
           ($is_off ? "OFF" : "ON") . "\n" if $debug;
+  } else {
+    # Format all other messages according to RVC specification
+    # This ensures undefined bits/bytes are properly set to FF
+    $data = format_rvc_message($dgn, $data);
+    print "Applied RVC formatting for DGN $dgn\n" if $debug;
   }
   
   # Send to CAN bus
@@ -209,8 +214,8 @@ sub process_mqtt_message {
 sub build_data_packet {
   my ($parameters, $json, $instance) = @_;
   
-  # Initialize 8-byte data array with zeros
-  my @bytes = (0, 0, 0, 0, 0, 0, 0, 0);
+  # Initialize 8-byte data array with FF (following RVC convention for undefined bytes/bits)
+  my @bytes = (0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF);
   
   # Set instance if needed
   foreach my $param (@$parameters) {
@@ -331,9 +336,9 @@ sub format_rvc_message {
   # Convert hex string to bytes for safer handling
   my @bytes = unpack("(A2)*", $data);
   
-  # Ensure we have 8 bytes (pad if needed)
+  # Ensure we have 8 bytes (pad with FF if needed, following RVC convention)
   while (scalar(@bytes) < 8) {
-    push(@bytes, "00");
+    push(@bytes, "FF");
   }
   
   # Get the encoder parameters for this DGN
