@@ -24,6 +24,7 @@ use YAML::Tiny;
 use JSON;
 use Switch;
 use Time::HiRes qw(time sleep);
+use Scalar::Util qw(looks_like_number);
 
 my $debug;
 my $spec_file = '/coachproxy/etc/rvc-spec.yml';
@@ -219,7 +220,9 @@ sub process_mqtt_message {
       'toggle reverse' => 69,
       'forward' => 129,
       'reverse' => 65,
-      'stop' => 4
+      'stop' => 4,
+      'open' => 129,    # Map 'open' to 'forward'
+      'close' => 65     # Map 'close' to 'reverse'
     );
     
     # Log the input values for debugging
@@ -239,10 +242,20 @@ sub process_mqtt_message {
       print "  Using command from 'command definition': " .
             $json->{'command definition'} . " -> $command_value\n" if $debug;
     }
-    # Otherwise use command value if it's valid (non-zero)
-    elsif (defined $json->{'command'} && $json->{'command'} != 0) {
+    # Check if command value is a string - map it to a command code if possible
+    elsif (defined $json->{'command'} && !looks_like_number($json->{'command'})) {
+      my $cmd_str = lc($json->{'command'});
+      if (exists $cmd_map{$cmd_str}) {
+        $command_value = $cmd_map{$cmd_str};
+        print "  Mapped string command '$cmd_str' to value $command_value\n" if $debug;
+      } else {
+        print "  Unknown string command '$cmd_str', defaulting to stop (4)\n" if $debug;
+      }
+    }
+    # Otherwise use numeric command value if it's valid (non-zero)
+    elsif (defined $json->{'command'} && looks_like_number($json->{'command'}) && $json->{'command'} != 0) {
       $command_value = $json->{'command'};
-      print "  Using command value directly: $command_value\n" if $debug;
+      print "  Using numeric command value directly: $command_value\n" if $debug;
     }
     # Default to stop command (4) if we have motor duty specified
     elsif (defined $json->{'motor duty'}) {
@@ -255,7 +268,7 @@ sub process_mqtt_message {
     }
     
     # Sanity check - never allow command value of 0 (not valid in RVC spec)
-    if ($command_value == 0) {
+    if (looks_like_number($command_value) && $command_value == 0) {
       $command_value = 4; # Force to stop if somehow still 0
       print "  Corrected invalid command value 0 to stop (4)\n" if $debug;
     }
@@ -480,16 +493,32 @@ sub build_data_packet {
       }
       
       # Ensure bit_value is numeric
-      $bit_value = ($bit_value =~ /^[01]+$/) ? oct("0b$bit_value") : int($bit_value);
+      if ($bit_value =~ /^[01]+$/) {
+        # Binary string - convert to numeric
+        $bit_value = oct("0b$bit_value");
+      } elsif (!looks_like_number($bit_value)) {
+        # Non-numeric, non-binary string - convert to 0 to avoid errors
+        print "  Warning: Non-numeric value '$bit_value' for bit field, defaulting to 0\n" if $debug;
+        $bit_value = 0;
+      } else {
+        # Numeric string or number - convert to integer
+        $bit_value = int($bit_value);
+      }
       
       # Create a mask for these bits
       my $mask = ((1 << $num_bits) - 1) << $bit_start;
       
+      # Make sure the byte value is numeric before bitwise operations
+      my $byte_value = hex($bytes[$start_byte]);
+      
       # Clear bits in byte
-      $bytes[$start_byte] &= ~$mask;
+      $byte_value &= ~$mask;
       
       # Set bits with new value
-      $bytes[$start_byte] |= ($bit_value << $bit_start) & $mask;
+      $byte_value |= ($bit_value << $bit_start) & $mask;
+      
+      # Convert back to hex string
+      $bytes[$start_byte] = sprintf("%02X", $byte_value);
     } 
     # Handle multi-byte values
     elsif ($start_byte != $end_byte) {
@@ -693,8 +722,8 @@ sub encode_value {
     return oct("0b$value");
   }
   
-  # Handle special command translations
-  if (defined $type && $type eq 'command' && defined $value && !($value =~ /^-?\d+$/)) {
+  # Handle string command values regardless of the type - use a standard command map
+  if (defined $value && !looks_like_number($value)) {
     # Map command textual definitions to their numeric values
     my %command_map = (
       'toggle reverse' => 69,
@@ -704,17 +733,26 @@ sub encode_value {
       'stop' => 4,
       'tilt' => 16,
       'lock' => 33,
-      'unlock' => 34
+      'unlock' => 34,
+      'open' => 129,      # Map open to forward
+      'close' => 65       # Map close to reverse
     );
     
-    if (exists $command_map{lc($value)}) {
-      print "  Mapped command text '$value' to numeric value " . $command_map{lc($value)} . "\n" if $debug;
-      return $command_map{lc($value)};
+    my $lc_value = lc($value);
+    if (exists $command_map{$lc_value}) {
+      print "  Mapped command text '$value' to numeric value " . $command_map{$lc_value} . "\n" if $debug;
+      return $command_map{$lc_value};
+    }
+    
+    # If command string not found in map, default to stop (4)
+    if ($type eq 'command' || $value =~ /^(open|close|stop|forward|reverse|toggle)/) {
+      print "  Unknown command text '$value', defaulting to stop (4)\n" if $debug;
+      return 4; # Default to stop for unknown command strings
     }
   }
   
-  # Only return early if no unit is defined
-  return $value if (!defined $unit);
+  # Only return early if no unit is defined and value is numeric
+  return $value if (!defined $unit && looks_like_number($value));
   # n/a values will be handled in the unit-specific code below
   
   my $encoded_value = $value;

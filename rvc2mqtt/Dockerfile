@@ -37,7 +37,8 @@ RUN cpanm --force Net::MQTT::Simple && \
     cpanm --force YAML::Tiny && \
     cpanm --force AnyEvent && \
     cpanm --force AnyEvent::MQTT && \
-    cpanm --force Term::ReadKey
+    cpanm --force Term::ReadKey && \
+    cpanm --force Scalar::Util
 
 # Create app directory
 WORKDIR /coachproxy
