@@ -297,15 +297,16 @@ sub build_data_packet {
 # Encode a value according to unit and data type
 # --------------------------------------------------------------
 # --------------------------------------------------------------
-# Format RV-C message according to DGN-specific rules
+# --------------------------------------------------------------
+# Format RV-C message according to the specification
 # --------------------------------------------------------------
 sub format_rvc_message {
   my ($dgn, $data) = @_;
   
-  # Return data as-is if no special formatting is needed
-  return $data unless defined $dgn;
+  # Return data as-is if no special formatting is needed or no spec exists
+  return $data unless (defined $dgn && defined $encoders->{$dgn});
   
-  print "Applying format rules for DGN $dgn\n" if $debug;
+  print "Formatting message for DGN $dgn using specification\n" if $debug;
   print "Original data: $data\n" if $debug;
   
   # Convert hex string to bytes for safer handling
@@ -316,28 +317,99 @@ sub format_rvc_message {
     push(@bytes, "00");
   }
   
-  # Apply DGN-specific formatting
-  if ($dgn eq "1FEFB") {  # FLOOR_HEAT_COMMAND
-    print "Formatting FLOOR_HEAT_COMMAND message\n" if $debug;
-    
-    # Preserve bytes 0, 2-3 (instance and set point)
-    
-    # For byte 1, preserve operating mode bits (0-1) and set upper bits
-    # to match RV-C implementation standard
-    my $original_byte1 = hex($bytes[1]);
-    my $operating_mode = $original_byte1 & 0x03;  # Keep only bits 0-1
-    my $new_byte1 = 0xD0 | $operating_mode;       # Set upper bits to pattern 1101xxxx
-    $bytes[1] = sprintf("%02X", $new_byte1);
-    
-    # Force Dead band (byte 4) to be "n/a" (0xFF)
-    $bytes[4] = "FF";
-    
-    # Fill remaining bytes 5-7 with FF
-    $bytes[5] = "FF";
-    $bytes[6] = "FF";
-    $bytes[7] = "FF";
+  # Get the encoder parameters for this DGN
+  my $encoder = $encoders->{$dgn};
+  my @parameters;
+  
+  # Handle aliases - if this is an alias, get the original parameters
+  if (defined $encoder->{alias}) {
+    my $alias_dgn = $encoder->{alias};
+    if (defined $encoders->{$alias_dgn}->{parameters}) {
+      push(@parameters, @{$encoders->{$alias_dgn}->{parameters}});
+    }
   }
-  # Add more DGN-specific formatting rules here as needed
+  
+  # Add the parameters from this DGN
+  if (defined $encoder->{parameters}) {
+    push(@parameters, @{$encoder->{parameters}});
+  }
+  
+  # Create a map of defined bytes and bits
+  my %defined_bytes;
+  my %defined_bits;
+  
+  # Mark which bytes and bits are defined in the spec
+  foreach my $param (@parameters) {
+    next unless defined $param->{byte};
+    
+    my $byte_spec = $param->{byte};
+    my ($start_byte, $end_byte) = split(/-/, $byte_spec);
+    $end_byte = $start_byte if !defined $end_byte;
+    
+    # Mark these bytes as defined
+    for my $b ($start_byte..$end_byte) {
+      $defined_bytes{$b} = 1;
+      
+      # If bit field is specified, mark which bits are defined
+      if (defined $param->{bit}) {
+        my $bit_spec = $param->{bit};
+        my ($start_bit, $end_bit) = split(/-/, $bit_spec);
+        $end_bit = $start_bit if !defined $end_bit;
+        
+        # Create a mask for the defined bits
+        my $mask = 0;
+        for my $bit ($start_bit..$end_bit) {
+          $mask |= (1 << $bit);
+        }
+        
+        # Initialize bit mask for this byte if not already set
+        $defined_bits{$b} = 0 unless exists $defined_bits{$b};
+        
+        # Add these bits to the mask
+        $defined_bits{$b} |= $mask;
+      }
+    }
+  }
+  
+  # Process each byte according to spec
+  for my $b (0..7) {
+    # If byte is not defined in spec, set to FF
+    if (!exists $defined_bytes{$b}) {
+      $bytes[$b] = "FF";
+      print "  Byte $b not defined in spec, setting to FF\n" if $debug;
+    }
+    # If byte has bit definitions, set undefined bits to 1
+    elsif (exists $defined_bits{$b}) {
+      my $mask = $defined_bits{$b};
+      my $byte_value = hex($bytes[$b]);
+      
+      # Keep defined bits as is, set undefined bits to 1
+      # ~mask gives 1s for undefined bits, & 0xFF keeps within byte range
+      $byte_value = ($byte_value & $mask) | (~$mask & 0xFF);
+      $bytes[$b] = sprintf("%02X", $byte_value);
+      
+      print "  Byte $b has bit mask " . sprintf("%08b", $mask) .
+            ", setting undefined bits to 1\n" if $debug;
+    }
+  }
+  
+  # Special handling for unit-specific values
+  foreach my $param (@parameters) {
+    next unless (defined $param->{byte} && defined $param->{unit});
+    
+    my $byte_spec = $param->{byte};
+    my ($start_byte, $end_byte) = split(/-/, $byte_spec);
+    $end_byte = $start_byte if !defined $end_byte;
+    
+    # Special handling for temperature Dead band fields
+    if ($param->{unit} =~ /deg c/i && $param->{name} eq "Dead band") {
+      # Force Dead band to be "n/a" (0xFF) for certain messages
+      for my $b ($start_byte..$end_byte) {
+        $bytes[$b] = "FF";
+        print "  Setting $param->{name} (byte $b) to FF (n/a)\n" if $debug;
+      }
+    }
+  }
   
   # Rebuild the data string
   my $formatted_data = join("", @bytes);
