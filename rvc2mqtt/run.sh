@@ -41,27 +41,20 @@ MQTT_RVC_SET_PID=$!
 
 # Start mqtt2rvc in the background with credentials
 echo "starting mqtt2rvc..."
-/coachproxy/rv-c/mqtt2rvc.pl --debug &
+/coachproxy/rv-c/mqtt2rvc.pl --debug --mqtt="localhost" --user "$MQTT_USER" --password "$MQTT_PASSWORD" &
 MQTT2RVC_PID=$!
 
-# Function to clean up all processes
+# Function to clean up processes
 cleanup() {
-    echo "Cleaning up all processes..."
     kill $HEALTHCHECK_PID 2>/dev/null
-    kill $RVC2MQTT_PID 2>/dev/null
-    kill $MQTT_RVC_SET_PID 2>/dev/null
-    kill $MQTT2RVC_PID 2>/dev/null
     exit 0
 }
 
 # Trap SIGTERM and SIGINT
 trap cleanup SIGTERM SIGINT
 
-echo "All services started. Waiting for processes to complete..."
+#Wait for any process to exit
+wait -n
 
-# Keep the script running indefinitely
-# Using wait with no arguments will wait for all child processes
-wait
-
-# This point should only be reached if all background processes exit on their own
-echo "All processes have exited."
+# Exit with status of process that exited first
+exit $?

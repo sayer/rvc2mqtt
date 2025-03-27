@@ -4,19 +4,44 @@ use strict;
 use warnings;
 use AnyEvent;
 use AnyEvent::MQTT;
+use Getopt::Long qw(GetOptions);
 
+# Default values
 my $broker = 'localhost';
 my $port = 1883;
-my $username = 'sayer';
-my $password = 'bmw540xi';
+my $username = '';
+my $password = '';
 my $topic = 'RVCSET/#';
+my $debug = 0;
 
-my $mqtt = AnyEvent::MQTT->new(
+# Parse command line arguments
+GetOptions(
+    'debug' => \$debug,
+    'mqtt=s' => \$broker,
+    'mqttport=i' => \$port,
+    'user=s' => \$username,
+    'password=s' => \$password,
+    'topic=s' => \$topic,
+) or die "Usage: $0 [--debug] [--mqtt=hostname] [--mqttport=port] [--user=username] [--password=password] [--topic=topic]\n";
+
+print "Connecting to MQTT broker at $broker:$port\n" if $debug;
+if ($username) {
+    print "Using MQTT authentication with username: $username\n" if $debug;
+}
+
+# Create MQTT client
+my $mqtt_options = {
     host => $broker,
     port => $port,
-    user_name => $username,
-    password => $password,
-);
+};
+
+# Add authentication if provided
+if ($username) {
+    $mqtt_options->{user_name} = $username;
+    $mqtt_options->{password} = $password;
+}
+
+my $mqtt = AnyEvent::MQTT->new(%$mqtt_options);
 
 my $cv = AnyEvent->condvar;
 

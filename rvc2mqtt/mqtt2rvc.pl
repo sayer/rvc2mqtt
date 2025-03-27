@@ -175,6 +175,13 @@ sub process_mqtt_message {
   # Build the data packet
   my $data = build_data_packet(\@parameters, $json, $instance);
   
+  # Special handling for FLOOR_HEAT_COMMAND (DGN 1FEFB)
+  if ($dgn eq "1FEFB") {
+    # Force Dead band to be "n/a" and fill remaining bytes with FF
+    $data =~ s/^(.{8})(.{2})(.{6})$/$1FF$3/;  # Replace byte 4 with FF
+    $data =~ s/^(.{10})(.{6})$/$1FFFFFF/;     # Replace bytes 5-7 with FFFFFF
+  }
+  
   # Send to CAN bus
   send_can_message($dgn, $data);
   
@@ -307,8 +314,20 @@ sub encode_value {
     }
     case 'deg c' {
       switch ($type) {
-        case 'uint8'  { $encoded_value = $value + 40; $encoded_value = 255 if ($value eq 'n/a'); }
-        case 'uint16' { $encoded_value = int(($value + 273) / 0.03125); $encoded_value = 65535 if ($value eq 'n/a'); }
+        case 'uint8'  {
+          if ($value eq 'n/a') {
+            $encoded_value = 255;  # Special value for n/a
+          } else {
+            $encoded_value = $value + 40;
+          }
+        }
+        case 'uint16' {
+          if ($value eq 'n/a') {
+            $encoded_value = 65535;  # Special value for n/a
+          } else {
+            $encoded_value = int(($value + 273) / 0.03125);
+          }
+        }
       }
     }
     case "v" {
