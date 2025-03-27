@@ -209,8 +209,8 @@ sub process_mqtt_message {
       'forward' => 129,
       'reverse' => 65,
       'stop' => 4,
-      'open' => 129,    # Map 'open' to 'forward'
-      'close' => 65     # Map 'close' to 'reverse'
+      'open' => 133,    # Map 'open' to 'toggle forward' (not 'forward')
+      'close' => 69     # Map 'close' to 'toggle reverse' (not 'reverse')
     );
     
     # Log the input values for debugging
@@ -264,15 +264,17 @@ sub process_mqtt_message {
     print "  Final command value: $command_value\n" if $debug;
     
     # Get motor duty - handle 'n/a' and defaults
-    my $motor_duty = 100; # default to 100%
+    my $motor_duty = 200; # default to 100% (which is 200 in protocol format)
     if (defined $json->{'motor duty'}) {
       if ($json->{'motor duty'} eq 'n/a') {
-        $motor_duty = 100;
+        $motor_duty = 200; # 100% duty
       } else {
-        $motor_duty = $json->{'motor duty'};
+        # Motor duty in JSON is in percentage (0-100)
+        # Protocol requires this to be stored as percentage * 2 (0-200)
+        $motor_duty = $json->{'motor duty'} * 2;
       }
     }
-    print "  Motor duty: $motor_duty\n" if $debug;
+    print "  Motor duty: " . ($motor_duty/2) . "%\n" if $debug;
     
     # Get duration - handle 'n/a' and defaults
     my $duration = 30; # default to 30 seconds
@@ -722,8 +724,8 @@ sub encode_value {
       'tilt' => 16,
       'lock' => 33,
       'unlock' => 34,
-      'open' => 129,      # Map open to forward
-      'close' => 65       # Map close to reverse
+      'open' => 133,      # Map open to toggle forward (133)
+      'close' => 69       # Map close to toggle reverse (69)
     );
     
     my $lc_value = lc($value);
