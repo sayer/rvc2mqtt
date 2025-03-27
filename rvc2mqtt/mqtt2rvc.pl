@@ -213,29 +213,65 @@ sub process_mqtt_message {
     # Extract instance byte
     my $instance_byte = substr($data, 0, 2);
     
-    # Get command from JSON - use command value directly if available
+    # Define command mappings
+    my %cmd_map = (
+      'toggle forward' => 133,
+      'toggle reverse' => 69,
+      'forward' => 129,
+      'reverse' => 65,
+      'stop' => 4
+    );
+    
+    # Get command from JSON - check both fields regardless of order
     my $command_value = 0;
-    if (defined $json->{'command'}) {
-      $command_value = $json->{'command'};
-    }
-    # Or translate from command definition
-    elsif (defined $json->{'command definition'}) {
-      my %cmd_map = (
-        'toggle forward' => 133,
-        'toggle reverse' => 69,
-        'forward' => 129,
-        'reverse' => 65,
-        'stop' => 4
-      );
+    
+    # First check command definition if it exists and isn't "undefined"
+    if (defined $json->{'command definition'} && $json->{'command definition'} ne "undefined") {
       $command_value = $cmd_map{lc($json->{'command definition'})} // 0;
+      print "  Using command from 'command definition': " .
+            $json->{'command definition'} . " -> $command_value\n" if $debug;
+    }
+    # Otherwise use command value if it's not 0
+    elsif (defined $json->{'command'} && $json->{'command'} != 0) {
+      $command_value = $json->{'command'};
+      print "  Using command value directly: $command_value\n" if $debug;
+    }
+    # Default to stop command (4) if we have motor duty but no command
+    elsif (defined $json->{'motor duty'} && $json->{'motor duty'} > 0) {
+      $command_value = 4; # stop
+      print "  No command but motor duty specified, defaulting to stop (4)\n" if $debug;
     }
     
-    # Format data using known working pattern
+    print "  Final command value: $command_value\n" if $debug;
+    
+    # Get motor duty - handle 'n/a' and defaults
+    my $motor_duty = 100; # default to 100%
+    if (defined $json->{'motor duty'}) {
+      if ($json->{'motor duty'} eq 'n/a') {
+        $motor_duty = 100;
+      } else {
+        $motor_duty = $json->{'motor duty'};
+      }
+    }
+    print "  Motor duty: $motor_duty\n" if $debug;
+    
+    # Get duration - handle 'n/a' and defaults
+    my $duration = 30; # default to 30 seconds
+    if (defined $json->{'duration'}) {
+      if ($json->{'duration'} eq 'n/a') {
+        $duration = 30;
+      } else {
+        $duration = $json->{'duration'};
+      }
+    }
+    print "  Duration: $duration\n" if $debug;
+    
+    # Format data using known working pattern - command 0 should still produce valid format
     $data = sprintf("%02XFF%02X%02X%02X00FFFF",
-      $json->{'instance'} || 1,                  # instance
-      ($json->{'motor duty'} eq 'n/a') ? 100 : ($json->{'motor duty'} || 100),  # motor duty
-      $command_value,                            # command
-      ($json->{'duration'} eq 'n/a') ? 30 : ($json->{'duration'} || 30)         # duration
+      $json->{'instance'} || 1,  # instance
+      $motor_duty,               # motor duty
+      $command_value,            # command
+      $duration                  # duration
     );
     
     print "Fixed WINDOW_SHADE_CONTROL_COMMAND: $data\n" if $debug;
