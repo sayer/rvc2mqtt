@@ -198,10 +198,21 @@ sub process_mqtt_message {
   }
   # Hard-coded fix for AUTOFILL_COMMAND data format - RVC standard needs undefined bits set to 1
   elsif ($dgn eq "1FFB0") {
+    # Print JSON payload for debugging
+    print "AUTOFILL_COMMAND JSON payload: " if $debug;
+    if ($debug) {
+      foreach my $key (sort keys %$json) {
+        print "$key => " . (defined $json->{$key} ? $json->{$key} : "undef") . ", ";
+      }
+      print "\n";
+    }
+    print "Command field: " . (defined $json->{'command'} ? $json->{'command'} : "undefined") . "\n" if $debug;
+    print "Command definition field: " . (defined $json->{'command definition'} ? $json->{'command definition'} : "undefined") . "\n" if $debug;
+    
     # Determine if command is off or on
-    my $is_off = ($json->{'command'} == 0 ||
-                  (defined $json->{'command definition'} &&
-                   lc($json->{'command definition'}) eq 'off'));
+    my $is_off = (defined $json->{'command'} && $json->{'command'} == 0) ||
+                 (defined $json->{'command definition'} &&
+                  lc($json->{'command definition'}) eq 'off');
     
     # Format data according to RVC convention
     # For OFF: bits 0-1 are 00, bits 2-7 and other bytes are 1
@@ -213,6 +224,7 @@ sub process_mqtt_message {
     }
     
     print "Fixed AUTOFILL_COMMAND. Command: " . ($is_off ? "OFF" : "ON") . "\n" if $debug;
+    print "Final AUTOFILL_COMMAND data: $data\n" if $debug;
   }
   
   # Send to CAN bus
