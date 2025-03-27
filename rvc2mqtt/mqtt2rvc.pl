@@ -209,18 +209,46 @@ sub process_mqtt_message {
     print "Command field: " . (defined $json->{'command'} ? $json->{'command'} : "undefined") . "\n" if $debug;
     print "Command definition field: " . (defined $json->{'command definition'} ? $json->{'command definition'} : "undefined") . "\n" if $debug;
     
-    # Determine if command is off or on
-    my $is_off = (defined $json->{'command'} && $json->{'command'} == 0) ||
-                 (defined $json->{'command definition'} &&
-                  lc($json->{'command definition'}) eq 'off');
+    # Check which fields are present in the JSON
+    my $cmd_value = undef;
+    my $cmd_def = undef;
+    
+    if (defined $json->{'command'}) {
+      $cmd_value = $json->{'command'};
+      print "Found command value: $cmd_value\n" if $debug;
+    }
+    
+    if (defined $json->{'command definition'}) {
+      $cmd_def = $json->{'command definition'};
+      print "Found command definition: $cmd_def\n" if $debug;
+    }
+    
+    # Determine if command is off or on - be very explicit
+    my $is_off = 0;  # Default to ON if we can't determine
+    
+    # Check command field first
+    if (defined $cmd_value) {
+      if ($cmd_value eq "0" || $cmd_value == 0) {
+        $is_off = 1;
+        print "Command is OFF based on command field\n" if $debug;
+      }
+    }
+    
+    # Then check command definition field
+    if (defined $cmd_def) {
+      if (lc($cmd_def) eq "off") {
+        $is_off = 1;
+        print "Command is OFF based on command definition field\n" if $debug;
+      }
+    }
     
     # Format data according to RVC convention
-    # For OFF: bits 0-1 are 00, bits 2-7 and other bytes are 1
-    # For ON: bits 0-1 are 01, bits 2-7 and other bytes are 1
     if ($is_off) {
       $data = "FCFFFFFFFFFFFFFF"; # OFF (command=0)
+      print "Using OFF format for AUTOFILL_COMMAND\n" if $debug;
     } else {
       $data = "FDFFFFFFFFFFFFFF"; # ON (command=1)
+      print "Using ON format for AUTOFILL_COMMAND\n" if $debug;
     }
     
     print "Fixed AUTOFILL_COMMAND. Command: " . ($is_off ? "OFF" : "ON") . "\n" if $debug;

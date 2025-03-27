@@ -41,7 +41,7 @@ MQTT_RVC_SET_PID=$!
 
 # Start mqtt2rvc in the background with credentials
 echo "starting mqtt2rvc..."
-/coachproxy/rv-c/mqtt2rvc.pl --debug --mqtt="localhost" --user "$MQTT_USER" --password "$MQTT_PASSWORD" &
+/coachproxy/rv-c/mqtt2rvc.pl --debug  &
 MQTT2RVC_PID=$!
 
 # Function to clean up processes
@@ -89,7 +89,7 @@ while true; do
   if ! kill -0 $MQTT2RVC_PID 2>/dev/null; then
     echo "MQTT2RVC process exited. Restarting in 5 seconds..."
     sleep 5
-    /coachproxy/rv-c/mqtt2rvc.pl --debug --mqtt="localhost" --user "$MQTT_USER" --password "$MQTT_PASSWORD" &
+    /coachproxy/rv-c/mqtt2rvc.pl --debug  &
     MQTT2RVC_PID=$!
     echo "MQTT2RVC restarted with PID $MQTT2RVC_PID"
   fi
