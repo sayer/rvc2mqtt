@@ -175,32 +175,8 @@ sub process_mqtt_message {
   # Build the data packet
   my $data = build_data_packet(\@parameters, $json, $instance);
   
-  # Special handling for FLOOR_HEAT_COMMAND (DGN 1FEFB)
-  if ($dgn eq "1FEFB") {
-    print "Original FLOOR_HEAT_COMMAND data: $data\n" if $debug;
-    
-    # Convert hex string to bytes for safer handling
-    my @bytes = unpack("(A2)*", $data);
-    
-    # Ensure we have 8 bytes (pad if needed)
-    while (scalar(@bytes) < 8) {
-      push(@bytes, "00");
-    }
-    
-    # Preserve bytes 0-3 (instance, operating mode, and set point)
-    # Force Dead band (byte 4) to be "n/a" (0xFF)
-    $bytes[4] = "FF";
-    
-    # Fill remaining bytes 5-7 with FF
-    $bytes[5] = "FF";
-    $bytes[6] = "FF";
-    $bytes[7] = "FF";
-    
-    # Rebuild the data string
-    $data = join("", @bytes);
-    
-    print "Modified FLOOR_HEAT_COMMAND data: $data\n" if $debug;
-  }
+  # Apply RV-C specific formatting rules based on DGN
+  $data = format_rvc_message($dgn, $data);
   
   # Send to CAN bus
   send_can_message($dgn, $data);
@@ -315,6 +291,59 @@ sub build_data_packet {
   }
   
   return $data;
+}
+
+# --------------------------------------------------------------
+# Encode a value according to unit and data type
+# --------------------------------------------------------------
+# --------------------------------------------------------------
+# Format RV-C message according to DGN-specific rules
+# --------------------------------------------------------------
+sub format_rvc_message {
+  my ($dgn, $data) = @_;
+  
+  # Return data as-is if no special formatting is needed
+  return $data unless defined $dgn;
+  
+  print "Applying format rules for DGN $dgn\n" if $debug;
+  print "Original data: $data\n" if $debug;
+  
+  # Convert hex string to bytes for safer handling
+  my @bytes = unpack("(A2)*", $data);
+  
+  # Ensure we have 8 bytes (pad if needed)
+  while (scalar(@bytes) < 8) {
+    push(@bytes, "00");
+  }
+  
+  # Apply DGN-specific formatting
+  if ($dgn eq "1FEFB") {  # FLOOR_HEAT_COMMAND
+    print "Formatting FLOOR_HEAT_COMMAND message\n" if $debug;
+    
+    # Preserve bytes 0, 2-3 (instance and set point)
+    
+    # For byte 1, preserve operating mode bits (0-1) and set upper bits
+    # to match RV-C implementation standard
+    my $original_byte1 = hex($bytes[1]);
+    my $operating_mode = $original_byte1 & 0x03;  # Keep only bits 0-1
+    my $new_byte1 = 0xD0 | $operating_mode;       # Set upper bits to pattern 1101xxxx
+    $bytes[1] = sprintf("%02X", $new_byte1);
+    
+    # Force Dead band (byte 4) to be "n/a" (0xFF)
+    $bytes[4] = "FF";
+    
+    # Fill remaining bytes 5-7 with FF
+    $bytes[5] = "FF";
+    $bytes[6] = "FF";
+    $bytes[7] = "FF";
+  }
+  # Add more DGN-specific formatting rules here as needed
+  
+  # Rebuild the data string
+  my $formatted_data = join("", @bytes);
+  
+  print "Formatted data: $formatted_data\n" if $debug;
+  return $formatted_data;
 }
 
 # --------------------------------------------------------------
