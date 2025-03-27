@@ -200,7 +200,7 @@ sub process_mqtt_message {
           ($is_off ? "OFF" : "ON") . "\n" if $debug;
     $apply_standard_formatting = 0;  # Skip standard formatting since we have a custom format
   }
-  # Debug output for any special commands of interest
+  # Special handling for WINDOW_SHADE_CONTROL_COMMAND
   elsif ($dgn eq "1FEDF") {
     print "Window Shade Control Command JSON payload: " if $debug;
     if ($debug) {
@@ -209,6 +209,37 @@ sub process_mqtt_message {
       }
       print "\n";
     }
+    
+    # Extract instance byte
+    my $instance_byte = substr($data, 0, 2);
+    
+    # Get command from JSON - use command value directly if available
+    my $command_value = 0;
+    if (defined $json->{'command'}) {
+      $command_value = $json->{'command'};
+    }
+    # Or translate from command definition
+    elsif (defined $json->{'command definition'}) {
+      my %cmd_map = (
+        'toggle forward' => 133,
+        'toggle reverse' => 69,
+        'forward' => 129,
+        'reverse' => 65,
+        'stop' => 4
+      );
+      $command_value = $cmd_map{lc($json->{'command definition'})} // 0;
+    }
+    
+    # Format data using known working pattern
+    $data = sprintf("%02XFF%02X%02X%02X00FFFF",
+      $json->{'instance'} || 1,                  # instance
+      ($json->{'motor duty'} eq 'n/a') ? 100 : ($json->{'motor duty'} || 100),  # motor duty
+      $command_value,                            # command
+      ($json->{'duration'} eq 'n/a') ? 30 : ($json->{'duration'} || 30)         # duration
+    );
+    
+    print "Fixed WINDOW_SHADE_CONTROL_COMMAND: $data\n" if $debug;
+    $apply_standard_formatting = 0;  # Skip standard formatting since we've manually formatted
   }
   # Hard-coded fix for AUTOFILL_COMMAND data format - RVC standard needs undefined bits set to 1
   elsif ($dgn eq "1FFB0") {
