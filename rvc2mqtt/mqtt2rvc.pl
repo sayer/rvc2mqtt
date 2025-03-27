@@ -411,8 +411,11 @@ sub format_rvc_message {
     }
   }
   
-  # Special case for FLOOR_HEAT_COMMAND byte 1
+  # Special case for FLOOR_HEAT_COMMAND
   if ($dgn eq "1FEFB") {
+    # Get instance number from byte 0
+    my $instance = hex($bytes[0]);
+    
     # Check if heat is being turned off (set point bytes are 0000)
     my $is_heat_off = ($bytes[2] eq "00" && $bytes[3] eq "00");
     
@@ -424,15 +427,15 @@ sub format_rvc_message {
     # For "on" state, use D4 pattern
     if ($is_heat_off) {
       $bytes[1] = sprintf("%02X", 0xC0 | $operating_mode);
-      print "  FLOOR_HEAT_COMMAND is OFF, setting byte 1 to C0 pattern\n" if $debug;
+      print "  FLOOR_HEAT_COMMAND instance $instance is OFF, setting byte 1 to C0 pattern\n" if $debug;
     } else {
       $bytes[1] = sprintf("%02X", 0xD4 | $operating_mode);
-      print "  FLOOR_HEAT_COMMAND is ON, setting byte 1 to D4 pattern\n" if $debug;
+      print "  FLOOR_HEAT_COMMAND instance $instance is ON, setting byte 1 to D4 pattern\n" if $debug;
     }
     
-    print "  Original value: " . sprintf("%02X", $byte_value) .
+    print "  Instance: $instance, Original byte1: " . sprintf("%02X", $byte_value) .
           ", Operating mode: " . sprintf("%02X", $operating_mode) .
-          ", Final value: " . $bytes[1] . "\n" if $debug;
+          ", Final byte1: " . $bytes[1] . "\n" if $debug;
   }
   
   # Rebuild the data string
