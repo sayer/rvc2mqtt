@@ -195,11 +195,24 @@ sub process_mqtt_message {
     
     print "Fixed FLOOR_HEAT_COMMAND for instance $instance. State: " .
           ($is_off ? "OFF" : "ON") . "\n" if $debug;
-  } else {
-    # Format all other messages according to RVC specification
-    # This ensures undefined bits/bytes are properly set to FF
-    $data = format_rvc_message($dgn, $data);
-    print "Applied RVC formatting for DGN $dgn\n" if $debug;
+  }
+  # Hard-coded fix for AUTOFILL_COMMAND data format - RVC standard needs undefined bits set to 1
+  elsif ($dgn eq "1FFB0") {
+    # Determine if command is off or on
+    my $is_off = ($json->{'command'} == 0 ||
+                  (defined $json->{'command definition'} &&
+                   lc($json->{'command definition'}) eq 'off'));
+    
+    # Format data according to RVC convention
+    # For OFF: bits 0-1 are 00, bits 2-7 and other bytes are 1
+    # For ON: bits 0-1 are 01, bits 2-7 and other bytes are 1
+    if ($is_off) {
+      $data = "FCFFFFFFFFFFFFFF"; # OFF (command=0)
+    } else {
+      $data = "FDFFFFFFFFFFFFFF"; # ON (command=1)
+    }
+    
+    print "Fixed AUTOFILL_COMMAND. Command: " . ($is_off ? "OFF" : "ON") . "\n" if $debug;
   }
   
   # Send to CAN bus
@@ -214,8 +227,8 @@ sub process_mqtt_message {
 sub build_data_packet {
   my ($parameters, $json, $instance) = @_;
   
-  # Initialize 8-byte data array with FF (following RVC convention for undefined bytes/bits)
-  my @bytes = (0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF);
+  # Initialize 8-byte data array with zeros
+  my @bytes = (0, 0, 0, 0, 0, 0, 0, 0);
   
   # Set instance if needed
   foreach my $param (@$parameters) {
@@ -336,9 +349,9 @@ sub format_rvc_message {
   # Convert hex string to bytes for safer handling
   my @bytes = unpack("(A2)*", $data);
   
-  # Ensure we have 8 bytes (pad with FF if needed, following RVC convention)
+  # Ensure we have 8 bytes (pad if needed)
   while (scalar(@bytes) < 8) {
-    push(@bytes, "FF");
+    push(@bytes, "00");
   }
   
   # Get the encoder parameters for this DGN
