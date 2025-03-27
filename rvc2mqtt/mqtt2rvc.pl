@@ -175,8 +175,27 @@ sub process_mqtt_message {
   # Build the data packet
   my $data = build_data_packet(\@parameters, $json, $instance);
   
-  # Apply RV-C specific formatting rules based on DGN
-  $data = format_rvc_message($dgn, $data);
+  # Hard-coded fix for FLOOR_HEAT_COMMAND data format
+  if ($dgn eq "1FEFB") {
+    # 1. Extract instance from first byte
+    my $instance = substr($data, 0, 2);
+    
+    # 2. Determine if heat is being turned off
+    my $is_off = ($json->{'Set point'} == 0);
+    
+    # 3. Format data according to known working pattern
+    if ($is_off) {
+      # OFF format for all instances: xxC00000FFFFFFFF
+      $data = $instance . "C00000FFFFFFFF";
+    } else {
+      # ON format for all instances: xxD43025FFFFFFFF
+      # 3025 is the encoded temperature for 24.5°C
+      $data = $instance . "D43025FFFFFFFF";
+    }
+    
+    print "Fixed FLOOR_HEAT_COMMAND for instance $instance. State: " .
+          ($is_off ? "OFF" : "ON") . "\n" if $debug;
+  }
   
   # Send to CAN bus
   send_can_message($dgn, $data);
