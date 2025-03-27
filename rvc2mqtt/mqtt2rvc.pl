@@ -411,6 +411,22 @@ sub format_rvc_message {
     }
   }
   
+  # Special case for FLOOR_HEAT_COMMAND byte 1
+  if ($dgn eq "1FEFB") {
+    # For FLOOR_HEAT_COMMAND, byte 1 needs to have specific bit pattern
+    # Extract the operating mode bits (0-1) which are the only defined bits
+    my $byte_value = hex($bytes[1]);
+    my $operating_mode = $byte_value & 0x03;  # Keep bits 0-1
+    
+    # Set byte 1 to D4 pattern but preserve operating mode bits
+    $bytes[1] = sprintf("%02X", 0xD4 | $operating_mode);
+    
+    print "  Special handling for FLOOR_HEAT_COMMAND byte 1\n" if $debug;
+    print "  Original value: " . sprintf("%02X", $byte_value) .
+          ", Operating mode: " . sprintf("%02X", $operating_mode) .
+          ", Final value: " . $bytes[1] . "\n" if $debug;
+  }
+  
   # Rebuild the data string
   my $formatted_data = join("", @bytes);
   
