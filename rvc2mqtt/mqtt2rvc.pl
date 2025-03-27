@@ -200,6 +200,40 @@ sub process_mqtt_message {
           ($is_off ? "OFF" : "ON") . "\n" if $debug;
     $apply_standard_formatting = 0;  # Skip standard formatting since we have a custom format
   }
+  # Hard-coded fix for WINDOW_SHADE_CONTROL_COMMAND format
+  elsif ($dgn eq "1FEDF") {
+    print "Window Shade Control Command JSON payload: " if $debug;
+    if ($debug) {
+      foreach my $key (sort keys %$json) {
+        print "$key => " . (defined $json->{$key} ? $json->{$key} : "undef") . ", ";
+      }
+      print "\n";
+    }
+    
+    # Extract instance byte
+    my $instance_byte = substr($data, 0, 2);
+    
+    # Set proper values for each field based on specification
+    my $group_byte = "FF";  # group (full bitmap)
+    my $motor_duty_byte = "C8"; # motor duty (100%)
+    my $command_byte = sprintf("%02X", $json->{'command'} || 0);
+    my $duration_byte = sprintf("%02X", $json->{'duration'} || 30);
+    my $interlock_byte = "00"; # interlock bitmap
+    
+    # For toggle reverse (command 69), use 45 hex
+    if (($json->{'command'} || 0) == 69 ||
+        (defined $json->{'command definition'} &&
+         lc($json->{'command definition'}) eq "toggle reverse")) {
+        $command_byte = "45";
+    }
+    
+    # Build correct data string
+    $data = $instance_byte . $group_byte . $motor_duty_byte . $command_byte .
+            $duration_byte . $interlock_byte . "FFFF";
+    
+    print "Fixed WINDOW_SHADE_CONTROL_COMMAND: $data\n" if $debug;
+    $apply_standard_formatting = 0;  # Skip standard formatting since we've manually formatted
+  }
   # Hard-coded fix for AUTOFILL_COMMAND data format - RVC standard needs undefined bits set to 1
   elsif ($dgn eq "1FFB0") {
     # Print JSON payload for debugging
@@ -310,10 +344,30 @@ sub build_data_packet {
     my $name = $param->{name};
     my $value;
     
-    # Skip if parameter is not in JSON
-    next unless defined $json->{$name};
-    
-    $value = $json->{$name};
+    # More robust checking for JSON parameters
+    # Check for direct name match first
+    if (defined $json->{$name}) {
+      $value = $json->{$name};
+      print "  Found parameter '$name' with value '$value'\n" if $debug;
+    }
+    # Check for case-insensitive match
+    else {
+      my $found = 0;
+      foreach my $key (keys %$json) {
+        if (lc($key) eq lc($name)) {
+          $value = $json->{$key};
+          print "  Found parameter '$name' via case-insensitive match on '$key' with value '$value'\n" if $debug;
+          $found = 1;
+          last;
+        }
+      }
+      
+      # If parameter is still not found, skip this parameter
+      if (!$found) {
+        print "  Parameter '$name' not found in JSON, skipping\n" if $debug;
+        next;
+      }
+    }
     
     # Get byte range
     my $byte_spec = $param->{byte};
