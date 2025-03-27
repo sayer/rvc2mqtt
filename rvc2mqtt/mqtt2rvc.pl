@@ -413,29 +413,42 @@ sub format_rvc_message {
   
   # Special case for FLOOR_HEAT_COMMAND
   if ($dgn eq "1FEFB") {
-    # Get instance number from byte 0
-    my $instance = hex($bytes[0]);
+    # Make a copy of the original data for debugging
+    my $original_data = join("", @bytes);
+    
+    # For FLOOR_HEAT_COMMAND, we need to reproduce the exact known working patterns
+    # based on the instance and whether heat is on or off
+    
+    # Get instance number from byte 0 (keep as-is)
+    my $instance = $bytes[0];
     
     # Check if heat is being turned off (set point bytes are 0000)
     my $is_heat_off = ($bytes[2] eq "00" && $bytes[3] eq "00");
     
-    # Extract the operating mode bits (0-1) which are the only defined bits
-    my $byte_value = hex($bytes[1]);
-    my $operating_mode = $byte_value & 0x03;  # Keep bits 0-1
-    
-    # For "off" state, use C0 pattern for byte 1
-    # For "on" state, use D4 pattern
+    # Simple approach: reproduce exact known working patterns
     if ($is_heat_off) {
-      $bytes[1] = sprintf("%02X", 0xC0 | $operating_mode);
-      print "  FLOOR_HEAT_COMMAND instance $instance is OFF, setting byte 1 to C0 pattern\n" if $debug;
+      # Heat OFF pattern: xxC00000FFFFFFFF (where xx is the instance)
+      $bytes[1] = "C0";
+      $bytes[2] = "00";
+      $bytes[3] = "00";
+      $bytes[4] = "FF";
+      $bytes[5] = "FF";
+      $bytes[6] = "FF";
+      $bytes[7] = "FF";
+      print "  FLOOR_HEAT_COMMAND instance $instance is OFF\n" if $debug;
     } else {
-      $bytes[1] = sprintf("%02X", 0xD4 | $operating_mode);
-      print "  FLOOR_HEAT_COMMAND instance $instance is ON, setting byte 1 to D4 pattern\n" if $debug;
+      # Heat ON pattern: xxD4yy25FFFFFFFF (where xx is the instance, yy are bytes 2-3 from input)
+      $bytes[1] = "D4";
+      # Keep bytes 2-3 (set point) from the original data
+      $bytes[4] = "FF";
+      $bytes[5] = "FF";
+      $bytes[6] = "FF";
+      $bytes[7] = "FF";
+      print "  FLOOR_HEAT_COMMAND instance $instance is ON\n" if $debug;
     }
     
-    print "  Instance: $instance, Original byte1: " . sprintf("%02X", $byte_value) .
-          ", Operating mode: " . sprintf("%02X", $operating_mode) .
-          ", Final byte1: " . $bytes[1] . "\n" if $debug;
+    print "  Original data: $original_data\n" if $debug;
+    print "  Modified data: " . join("", @bytes) . "\n" if $debug;
   }
   
   # Rebuild the data string
