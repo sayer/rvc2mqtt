@@ -200,7 +200,7 @@ sub process_mqtt_message {
           ($is_off ? "OFF" : "ON") . "\n" if $debug;
     $apply_standard_formatting = 0;  # Skip standard formatting since we have a custom format
   }
-  # Hard-coded fix for WINDOW_SHADE_CONTROL_COMMAND format
+  # Debug output for any special commands of interest
   elsif ($dgn eq "1FEDF") {
     print "Window Shade Control Command JSON payload: " if $debug;
     if ($debug) {
@@ -209,30 +209,6 @@ sub process_mqtt_message {
       }
       print "\n";
     }
-    
-    # Extract instance byte
-    my $instance_byte = substr($data, 0, 2);
-    
-    # Set proper values for each field based on specification
-    my $group_byte = "FF";  # group (full bitmap)
-    my $motor_duty_byte = "C8"; # motor duty (100%)
-    my $command_byte = sprintf("%02X", $json->{'command'} || 0);
-    my $duration_byte = sprintf("%02X", $json->{'duration'} || 30);
-    my $interlock_byte = "00"; # interlock bitmap
-    
-    # For toggle reverse (command 69), use 45 hex
-    if (($json->{'command'} || 0) == 69 ||
-        (defined $json->{'command definition'} &&
-         lc($json->{'command definition'}) eq "toggle reverse")) {
-        $command_byte = "45";
-    }
-    
-    # Build correct data string
-    $data = $instance_byte . $group_byte . $motor_duty_byte . $command_byte .
-            $duration_byte . $interlock_byte . "FFFF";
-    
-    print "Fixed WINDOW_SHADE_CONTROL_COMMAND: $data\n" if $debug;
-    $apply_standard_formatting = 0;  # Skip standard formatting since we've manually formatted
   }
   # Hard-coded fix for AUTOFILL_COMMAND data format - RVC standard needs undefined bits set to 1
   elsif ($dgn eq "1FFB0") {
@@ -317,6 +293,9 @@ sub process_mqtt_message {
     }
   }
   
+  # Validate data before sending
+  $data = validate_rvc_data($dgn, $data, $json);
+  
   # Send to CAN bus
   send_can_message($dgn, $data);
   
@@ -329,8 +308,8 @@ sub process_mqtt_message {
 sub build_data_packet {
   my ($parameters, $json, $instance) = @_;
   
-  # Initialize 8-byte data array with zeros
-  my @bytes = (0, 0, 0, 0, 0, 0, 0, 0);
+  # Initialize 8-byte data array with FF (undefined bytes in RVC should be FF, not zeros)
+  my @bytes = (0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF);
   
   # Set instance if needed
   foreach my $param (@$parameters) {
@@ -471,9 +450,9 @@ sub format_rvc_message {
   # Convert hex string to bytes for safer handling
   my @bytes = unpack("(A2)*", $data);
   
-  # Ensure we have 8 bytes (pad if needed)
+  # Ensure we have 8 bytes (pad with FF if needed as per RVC convention)
   while (scalar(@bytes) < 8) {
-    push(@bytes, "00");
+    push(@bytes, "FF");
   }
   
   # Get the encoder parameters for this DGN
@@ -623,6 +602,32 @@ sub format_rvc_message {
 sub encode_value {
   my ($value, $unit, $type) = @_;
   
+  # Handle binary string representations (convert "11111111" to numeric)
+  if (defined $value && $value =~ /^[01]+$/ && length($value) == 8) {
+    print "  Converting binary string '$value' to numeric\n" if $debug;
+    return oct("0b$value");
+  }
+  
+  # Handle special command translations
+  if (defined $type && $type eq 'command' && defined $value && !($value =~ /^-?\d+$/)) {
+    # Map command textual definitions to their numeric values
+    my %command_map = (
+      'toggle reverse' => 69,
+      'forward' => 129,
+      'reverse' => 65,
+      'toggle forward' => 133,
+      'stop' => 4,
+      'tilt' => 16,
+      'lock' => 33,
+      'unlock' => 34
+    );
+    
+    if (exists $command_map{lc($value)}) {
+      print "  Mapped command text '$value' to numeric value " . $command_map{lc($value)} . "\n" if $debug;
+      return $command_map{lc($value)};
+    }
+  }
+  
   # Only return early if no unit is defined
   return $value if (!defined $unit);
   # n/a values will be handled in the unit-specific code below
@@ -742,4 +747,80 @@ sub usage {
   print "  --user=<username>     MQTT username if required\n";
   print "  --password=<pass>     MQTT password if required\n";
   exit(1);
+}
+
+# --------------------------------------------------------------
+# Validate RVC data to ensure it follows protocol requirements
+# --------------------------------------------------------------
+sub validate_rvc_data {
+  my ($dgn, $data, $json) = @_;
+  
+  print "Validating data for DGN $dgn: $data\n" if $debug;
+  
+  # Get expected data structure from spec
+  return $data unless (defined $dgn && defined $encoders->{$dgn});
+  
+  # Extract bytes from data string
+  my @bytes = unpack("(A2)*", $data);
+  
+  # Ensure we have 8 bytes
+  while (scalar(@bytes) < 8) {
+    push(@bytes, "FF");
+  }
+  
+  # Get parameters from the RVC specification
+  my $encoder = $encoders->{$dgn};
+  my @parameters;
+  
+  # Handle aliases
+  if (defined $encoder->{alias}) {
+    my $alias_dgn = $encoder->{alias};
+    if (defined $encoders->{$alias_dgn}->{parameters}) {
+      push(@parameters, @{$encoders->{$alias_dgn}->{parameters}});
+    }
+  }
+  
+  # Add parameters from this DGN
+  if (defined $encoder->{parameters}) {
+    push(@parameters, @{$encoder->{parameters}});
+  }
+  
+  # Create a map of which bytes are defined
+  my %defined_bytes;
+  
+  # Check which bytes are defined in the specification
+  if ($debug) {
+    print "  Checking parameters:\n";
+  }
+  
+  foreach my $param (@parameters) {
+    next unless defined $param->{byte};
+    
+    my $byte_spec = $param->{byte};
+    my ($start_byte, $end_byte) = split(/-/, $byte_spec);
+    $end_byte = $start_byte if !defined $end_byte;
+    
+    for my $b ($start_byte..$end_byte) {
+      $defined_bytes{$b} = 1;
+      if ($debug) {
+        print "    Byte $b is defined by parameter '$param->{name}'\n";
+      }
+    }
+  }
+  
+  # Ensure all undefined bytes are set to FF per RVC spec
+  for my $b (0..7) {
+    if (!exists $defined_bytes{$b}) {
+      if ($bytes[$b] ne "FF") {
+        print "  Correcting undefined byte $b from $bytes[$b] to FF\n" if $debug;
+        $bytes[$b] = "FF";
+      }
+    }
+  }
+  
+  # Rebuild data string
+  my $new_data = join('', @bytes);
+  
+  # Return original data if no changes were made
+  return $new_data;
 }
