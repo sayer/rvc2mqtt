@@ -175,6 +175,9 @@ sub process_mqtt_message {
   # Build the data packet
   my $data = build_data_packet(\@parameters, $json, $instance);
   
+  # Apply standard RVC formatting to all commands, with exceptions for special cases
+  my $apply_standard_formatting = 1;
+  
   # Hard-coded fix for FLOOR_HEAT_COMMAND data format
   if ($dgn eq "1FEFB") {
     # 1. Extract instance from first byte
@@ -195,6 +198,7 @@ sub process_mqtt_message {
     
     print "Fixed FLOOR_HEAT_COMMAND for instance $instance. State: " .
           ($is_off ? "OFF" : "ON") . "\n" if $debug;
+    $apply_standard_formatting = 0;  # Skip standard formatting since we have a custom format
   }
   # Hard-coded fix for AUTOFILL_COMMAND data format - RVC standard needs undefined bits set to 1
   elsif ($dgn eq "1FFB0") {
@@ -253,6 +257,30 @@ sub process_mqtt_message {
     
     print "Fixed AUTOFILL_COMMAND. Command: " . ($is_off ? "OFF" : "ON") . "\n" if $debug;
     print "Final AUTOFILL_COMMAND data: $data\n" if $debug;
+    $apply_standard_formatting = 0;  # Skip standard formatting since we have a custom format
+  }
+  
+  # Apply standard RVC formatting if needed (set undefined bytes to FF)
+  if ($apply_standard_formatting) {
+    my $original_data = $data;
+    
+    # Use the format_rvc_message function which sets undefined bits/bytes to FF
+    # according to the RVC specification for this DGN
+    $data = format_rvc_message($dgn, $data);
+    
+    print "Applied standard RVC formatting for DGN $dgn\n" if $debug;
+    print "  Original data: $original_data\n" if $debug;
+    print "  Formatted data: $data\n" if $debug;
+    
+    # Special debug for light commands (DC_DIMMER_COMMAND_2)
+    if ($dgn eq "1FEDB" && $debug) {
+      print "  DC_DIMMER_COMMAND_2 - This is a light control command\n";
+      print "  Instance: " . substr($data, 0, 2) . "\n";
+      print "  Group: " . substr($data, 2, 2) . "\n";
+      print "  Level: " . substr($data, 4, 2) . "\n";
+      print "  Command: " . substr($data, 6, 2) . "\n";
+      print "  Duration: " . substr($data, 8, 2) . "\n";
+    }
   }
   
   # Send to CAN bus
