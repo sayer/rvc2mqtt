@@ -222,24 +222,42 @@ sub process_mqtt_message {
       'stop' => 4
     );
     
+    # Log the input values for debugging
+    if ($debug) {
+      print "  Input command definition: " . (defined $json->{'command definition'} ? $json->{'command definition'} : "undef") . "\n";
+      print "  Input command value: " . (defined $json->{'command'} ? $json->{'command'} : "undef") . "\n";
+      print "  Input motor duty: " . (defined $json->{'motor duty'} ? $json->{'motor duty'} : "undef") . "\n";
+    }
+    
     # Get command from JSON - check both fields regardless of order
-    my $command_value = 0;
+    # Initialize to 4 (stop) to ensure a valid default
+    my $command_value = 4;
     
     # First check command definition if it exists and isn't "undefined"
     if (defined $json->{'command definition'} && $json->{'command definition'} ne "undefined") {
-      $command_value = $cmd_map{lc($json->{'command definition'})} // 0;
+      $command_value = $cmd_map{lc($json->{'command definition'})} // 4; # Default to stop if not in map
       print "  Using command from 'command definition': " .
             $json->{'command definition'} . " -> $command_value\n" if $debug;
     }
-    # Otherwise use command value if it's not 0
+    # Otherwise use command value if it's valid (non-zero)
     elsif (defined $json->{'command'} && $json->{'command'} != 0) {
       $command_value = $json->{'command'};
       print "  Using command value directly: $command_value\n" if $debug;
     }
-    # Default to stop command (4) if we have motor duty but no command
-    elsif (defined $json->{'motor duty'} && $json->{'motor duty'} > 0) {
+    # Default to stop command (4) if we have motor duty specified
+    elsif (defined $json->{'motor duty'}) {
       $command_value = 4; # stop
-      print "  No command but motor duty specified, defaulting to stop (4)\n" if $debug;
+      print "  No valid command but motor duty specified, defaulting to stop (4)\n" if $debug;
+    }
+    # For any other condition, ensure we have a valid command (stop = 4)
+    else {
+      print "  No valid command information found, defaulting to stop (4)\n" if $debug;
+    }
+    
+    # Sanity check - never allow command value of 0 (not valid in RVC spec)
+    if ($command_value == 0) {
+      $command_value = 4; # Force to stop if somehow still 0
+      print "  Corrected invalid command value 0 to stop (4)\n" if $debug;
     }
     
     print "  Final command value: $command_value\n" if $debug;
