@@ -4294,6 +4294,59 @@ API_VERSION: 1
         1: on
 
 
+1FFAE:
+  name: WASTEDUMP_COMMAND
+  parameters:
+    - byte: 0
+      name: Command - Black tank
+      type: uint8
+      values:
+        0: Close dump valve
+        1: Open dump valve
+        2: Stop tank flush
+        3: Start tank flush
+        4: Dispense additive
+        5: Start Automatic Dump Cycle
+    - byte: 1
+      name: Command - Gray tank
+      type: uint8
+      values:
+        0: Close dump valve
+        1: Open dump valve
+        2: Stop tank flush
+        3: Start tank flush
+        4: Dispense additive
+        5: Start Automatic Dump Cycle
+    - byte: 2
+      name: Command - Hose extension
+      type: uint8
+      values:
+        0: Stop extension/retraction
+        1: Begin extension
+        2: Begin retraction
+    - byte: 3
+      name: AutoDump command - Black
+      type: uint8
+      values:
+        0: End automatic mode
+        1: Start automatic mode no additive
+        2: Start automatic mode with additive
+    - byte: 4
+      name: AutoDump command - Gray
+      type: uint8
+      values:
+        0: End automatic mode
+        1: Start automatic mode no additive
+        2: Start automatic mode with additive
+    - byte: 5
+      name: AutoDump level - Black
+      type: uint8
+      unit: pct
+    - byte: 6
+      name: AutoDump level - Gray
+      type: uint8
+      unit: pct
+
 1FFAF:
   name: WASTEDUMP_STATUS
   parameters:
@@ -4320,8 +4373,6 @@ API_VERSION: 1
       unit: pct
       type: uint8
 
-1FFAE:
-  name: WASTEDUMP_COMMAND
 
 1FFAD:
   name: ATS_AC_STATUS_1
