@@ -357,6 +357,63 @@ sub process_mqtt_message {
     print "Final AUTOFILL_COMMAND data: $data\n" if $debug;
     $apply_standard_formatting = 0;  # Skip standard formatting since we have a custom format
   }
+  # Hard-coded fix for WATER_PUMP_COMMAND data format - RVC standard needs undefined bits set to 1
+  elsif ($dgn eq "1FFB2") {
+    # Print JSON payload for debugging
+    print "WATER_PUMP_COMMAND JSON payload: " if $debug;
+    if ($debug) {
+      foreach my $key (sort keys %$json) {
+        print "$key => " . (defined $json->{$key} ? $json->{$key} : "undef") . ", ";
+      }
+      print "\n";
+    }
+    
+    # Check which fields are present in the JSON
+    my $cmd_value = undef;
+    my $cmd_def = undef;
+    
+    if (defined $json->{'command'}) {
+      $cmd_value = $json->{'command'};
+      print "Found command value: $cmd_value\n" if $debug;
+    }
+    
+    if (defined $json->{'command definition'}) {
+      $cmd_def = $json->{'command definition'};
+      print "Found command definition: $cmd_def\n" if $debug;
+    }
+    
+    # Determine if command is off or on - be very explicit
+    my $is_off = 0;  # Default to ON if we can't determine
+    
+    # Check command field first
+    if (defined $cmd_value) {
+      if ($cmd_value eq "0" || $cmd_value == 0) {
+        $is_off = 1;
+        print "Command is OFF based on command field\n" if $debug;
+      }
+    }
+    
+    # Then check command definition field
+    if (defined $cmd_def) {
+      if (lc($cmd_def) eq "off") {
+        $is_off = 1;
+        print "Command is OFF based on command definition field\n" if $debug;
+      }
+    }
+    
+    # Format data according to RVC convention
+    if ($is_off) {
+      $data = "FCFFFFFFFFFFFFFF"; # OFF (command=0)
+      print "Using OFF format for WATER_PUMP_COMMAND\n" if $debug;
+    } else {
+      $data = "FDFFFFFFFFFFFFFF"; # ON (command=1)
+      print "Using ON format for WATER_PUMP_COMMAND\n" if $debug;
+    }
+    
+    print "Fixed WATER_PUMP_COMMAND. Command: " . ($is_off ? "OFF" : "ON") . "\n" if $debug;
+    print "Final WATER_PUMP_COMMAND data: $data\n" if $debug;
+    $apply_standard_formatting = 0;  # Skip standard formatting since we have a custom format
+  }
   
   # Apply standard RVC formatting if needed (set undefined bytes to FF)
   if ($apply_standard_formatting) {
