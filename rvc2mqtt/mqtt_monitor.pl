@@ -55,7 +55,7 @@ if (@dgn_filters) {
 }
 
 # Create JSON handler
-my $json = JSON->new->utf8;
+my $json = JSON->new->utf8->canonical(1);  # Sort keys alphabetically
 $json->pretty if $json_pretty;
 
 # Connect to MQTT broker
