@@ -38,16 +38,30 @@ GetOptions(
     "host=s"      => \$mqtt_host,
     "dgn=s"       => \@dgn_filters,
     "pretty!"     => \$json_pretty,
+    "raw"         => \my $show_raw,  # Add option to show raw data for unrecognized DGNs
     "help|h"      => \$help
 ) or usage();
 
 # Show usage if requested
 usage() if $help;
-
 # Create a hash for faster DGN lookup
 my %dgn_filter_map;
+my %instance_filter_map;  # New hash for instance filters
+
 if (@dgn_filters) {
-    %dgn_filter_map = map { uc($_) => 1 } @dgn_filters;
+    foreach my $filter (@dgn_filters) {
+        # Check if the filter includes a specific instance (e.g., "DIGITAL_INPUT_STATUS/70")
+        if ($filter =~ m|^([^/]+)/(\d+)$|) {
+            my $dgn = uc($1);
+            my $instance = $2;
+            $dgn_filter_map{$dgn} = 1;
+            $instance_filter_map{"$dgn/$instance"} = 1;
+        } else {
+            # Standard DGN filter without instance
+            $dgn_filter_map{uc($filter)} = 1;
+        }
+    }
+    
     my $dgn_list = join(", ", @dgn_filters);
     print "${color_magenta}Filtering for specific DGNs: $dgn_list${color_reset}\n";
 } else {
@@ -70,12 +84,26 @@ $mqtt->subscribe("RVC/#", \&message_callback);
 sub message_callback {
     my ($topic, $message) = @_;
     
-    # Extract DGN name from topic
-    my ($dgn_name) = $topic =~ m|^RVC/([^/]+)|;
+    # Extract DGN name and instance from topic (e.g., "RVC/DIGITAL_INPUT_STATUS/70")
+    my ($dgn_name, $instance) = $topic =~ m|^RVC/([^/]+)(?:/(\d+))?|;
     
-    # Skip if we're filtering and this DGN is not in our filter list
-    if (@dgn_filters && !$dgn_filter_map{uc($dgn_name || '')}) {
-        return;
+    # Skip if we're filtering and this message doesn't match our filters
+    if (@dgn_filters) {
+        # Convert to uppercase for case-insensitive matching
+        my $uc_dgn = uc($dgn_name || '');
+        
+        # Check if we have an instance-specific filter
+        if ($instance && $instance_filter_map{"$uc_dgn/$instance"}) {
+            # This specific instance is allowed
+        }
+        # Check if we have a general DGN filter
+        elsif ($dgn_filter_map{$uc_dgn}) {
+            # This DGN is allowed (any instance)
+        }
+        else {
+            # No match, skip this message
+            return;
+        }
     }
     
     my ($sec, $usec) = gettimeofday();
@@ -113,6 +141,35 @@ sub message_callback {
         # Valid JSON, pretty print
         print "${color_yellow}Message (JSON):${color_reset}\n";
         
+        # Check if this is an unrecognized DGN (contains UNKNOWN in the topic)
+        my $is_unknown = ($topic =~ /UNKNOWN/i);
+        
+        # If we're showing raw data bytes or this is an unrecognized DGN
+        if ($show_raw || $is_unknown) {
+            # Always show the DGN number prominently for unknown DGNs
+            if (exists $parsed->{dgn}) {
+                print "${color_yellow}  DGN: ${color_reset}${color_red}" . $parsed->{dgn} . "${color_reset}\n";
+            }
+            
+            # Make sure we display the data field prominently if it exists
+            if (exists $parsed->{data}) {
+                print "${color_yellow}  Raw Data: ${color_reset}${color_cyan}" . $parsed->{data} . "${color_reset}\n";
+                
+                # Attempt to decode hexadecimal data for better analysis
+                if ($parsed->{data} =~ /^[0-9A-Fa-f]+$/) {
+                    my $hex_data = $parsed->{data};
+                    my $byte_str = "";
+                    
+                    # Format as byte pairs with spaces
+                    while ($hex_data =~ s/^(..)//i) {
+                        $byte_str .= "$1 ";
+                    }
+                    
+                    print "${color_yellow}  Bytes: ${color_reset}${color_cyan}" . $byte_str . "${color_reset}\n";
+                }
+            }
+        }
+        
         if ($json_pretty) {
             my $formatted = $json->encode($parsed);
             # Indent each line
@@ -137,13 +194,16 @@ Options:
   --dgn=NAME          Filter for specific DGN name (can be used multiple times)
   --pretty            Format JSON with pretty printing (default: enabled)
   --no-pretty         Disable JSON pretty printing
+  --raw               Always show raw data bytes for unrecognized DGNs
   --help, -h          Show this help message
 
 Examples:
   $0                                      # Monitor all RVC topics
   $0 --dgn=DC_DIMMER                      # Monitor only DC_DIMMER related messages
   $0 --dgn=DC_DIMMER --dgn=THERMOSTAT     # Monitor multiple DGNs
+  $0 --dgn=DIGITAL_INPUT_STATUS/70        # Monitor only instance 70 of DIGITAL_INPUT_STATUS
   $0 --host=192.168.1.100 --dgn=LOCK      # Use a different MQTT broker
+  $0 --raw                                # Show raw data bytes for all messages
 
 EOF
     exit(0);
