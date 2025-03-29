@@ -4237,8 +4237,8 @@ API_VERSION: 1
       name: operating status
       type: uint2
       values:
-        0: pump disabled
-        1: pump enabled
+        0: off
+        1: on
     - byte: 0
       bit: 2-3
       name: pump status
