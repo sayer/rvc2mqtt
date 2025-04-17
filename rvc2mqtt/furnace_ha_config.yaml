@@ -1,0 +1,121 @@
+# Home Assistant configuration for FURNACE_STATUS (DGN 1FFE4)
+# Add these entries to your configuration.yaml
+
+mqtt:
+  sensor:
+    # Furnace Operating Mode
+    - name: "RVC Furnace Mode"
+      unique_id: rvc_furnace_mode
+      state_topic: "RVC/FURNACE_STATUS/+/operating_mode"
+      value_template: "{{ value }}"
+      device_class: "enum"
+      icon: "mdi:hvac"
+      options:
+        - "off"
+        - "cool"
+        - "heat"
+        - "auto"
+        - "fan only"
+      
+    # Furnace Fan Mode
+    - name: "RVC Furnace Fan Mode"
+      unique_id: rvc_furnace_fan_mode
+      state_topic: "RVC/FURNACE_STATUS/+/fan_mode"
+      value_template: "{{ value }}"
+      device_class: "enum"
+      icon: "mdi:fan"
+      options:
+        - "auto"
+        - "on"
+      
+    # Furnace Schedule Mode
+    - name: "RVC Furnace Schedule Mode"
+      unique_id: rvc_furnace_schedule_mode
+      state_topic: "RVC/FURNACE_STATUS/+/schedule_mode"
+      value_template: "{{ value }}"
+      device_class: "enum"
+      icon: "mdi:calendar-clock"
+      options:
+        - "disabled"
+        - "enabled"
+      
+    # Furnace Fan Speed
+    - name: "RVC Furnace Fan Speed"
+      unique_id: rvc_furnace_fan_speed
+      state_topic: "RVC/FURNACE_STATUS/+/fan_speed"
+      value_template: "{{ value }}"
+      unit_of_measurement: "%"
+      state_class: "measurement"
+      icon: "mdi:fan-speed-1"
+      
+    # Furnace Heat Setpoint
+    - name: "RVC Furnace Heat Setpoint"
+      unique_id: rvc_furnace_heat_setpoint
+      state_topic: "RVC/FURNACE_STATUS/+/setpoint_temp_heat"
+      value_template: "{{ value }}"
+      device_class: "temperature"
+      state_class: "measurement"
+      unit_of_measurement: "°C"
+      icon: "mdi:thermometer-heating"
+      
+    # Furnace Cool Setpoint
+    - name: "RVC Furnace Cool Setpoint"
+      unique_id: rvc_furnace_cool_setpoint
+      state_topic: "RVC/FURNACE_STATUS/+/setpoint_temp_cool"
+      value_template: "{{ value }}"
+      device_class: "temperature"
+      state_class: "measurement"
+      unit_of_measurement: "°C"
+      icon: "mdi:thermometer-cooling"
+
+  # Climate entity integration for better control
+  climate:
+    - name: "RVC Furnace"
+      unique_id: rvc_furnace_climate
+      modes:
+        - "off"
+        - "cool"
+        - "heat"
+        - "auto"
+        - "fan_only"
+      mode_state_topic: "RVC/FURNACE_STATUS/+/operating_mode"
+      mode_command_topic: "RVC/FURNACE_COMMAND/set"
+      mode_command_template: >
+        {"instance": 1, "operating_mode": 
+          {% if value == "off" %} "0" 
+          {% elif value == "cool" %} "1" 
+          {% elif value == "heat" %} "2" 
+          {% elif value == "auto" %} "3" 
+          {% elif value == "fan_only" %} "4" 
+          {% endif %}
+        }
+      
+      fan_modes:
+        - "auto"
+        - "on"
+      fan_mode_state_topic: "RVC/FURNACE_STATUS/+/fan_mode"
+      fan_mode_command_topic: "RVC/FURNACE_COMMAND/set"
+      fan_mode_command_template: >
+        {"instance": 1, "fan_mode": 
+          {% if value == "auto" %} "0" 
+          {% elif value == "on" %} "1" 
+          {% endif %}
+        }
+      
+      temperature_state_topic: "RVC/FURNACE_STATUS/+/setpoint_temp_heat"
+      temperature_command_topic: "RVC/FURNACE_COMMAND/set"
+      temperature_command_template: >
+        {"instance": 1, "setpoint_temp_heat": "{{ value }}"}
+      
+      current_temperature_topic: "RVC/THERMOSTAT_AMBIENT_STATUS/+/ambient_temp"
+      
+      min_temp: 10
+      max_temp: 32
+      temp_step: 0.5
+      
+      payload_on: "on"
+      payload_off: "off"
+      
+# Custom dashboard card suggestion
+# type: thermostat
+# entity: climate.rvc_furnace
