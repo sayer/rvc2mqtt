@@ -6002,171 +6002,199 @@ Z0005:
       type: uint8
       values:
         0: all
-        "1-250": Instance number
+        1-250: Instance number
     - byte: 1
       bit: 0-3
       name: Electric Element Level
       type: uint4
       values:
-        "1-13": Desired Level
+        1-13: Desired Level
     - byte: 1
       bit: 4-7
       name: Max Electric Element Level
       type: uint4
       values:
-        "1-13": Desired Level # Typically 1 (single element) or 2 (dual low/high element)
+        1-13: Desired Level # Typically 1 (single element) or 2 (dual low/high element)
     - byte: 2
       bit: 0-3
       name: Engine Preheat
       type: uint4
       values:
-        "0000": Off
-        "0001": On
-        "0101": Test (Forced On)
+        0000: Off
+        0001: On
+        0101: Test (Forced On)
     - byte: 2
       bit: 4-5
       name: Coolant Level Warning
       type: uint2
       values:
-        "00": Coolant level sufficient
-        "01": Coolant level low
+        00: Coolant level sufficient
+        01: Coolant level low
     - byte: 2
       bit: 6-7
       name: Hot Water Priority
       type: uint2
       values:
-        "00": Domestic water priority
-        "01": Heating priority
+        00: Domestic water priority
+        01: Heating priority
     - byte: 3
       bit: 0-1
       name: Output Status:Burner
       type: uint2
       values:
-        "00": Off
-        "01": On
+        00: Off
+        01: On
     - byte: 3
       bit: 2-3
       name: Output Status:Burner Indicator
       type: uint2
       values:
-        "00": Off
-        "01": On
+        00: Off
+        01: On
     - byte: 3
       bit: 4-5
       name: Output Status:Electric Low
       type: uint2
       values:
-        "00": Off
-        "01": On
+        00: Off
+        01: On
     - byte: 3
       bit: 6-7
       name: Output Status:Electric High
       type: uint2
       values:
-        "00": Off
-        "01": On
+        00: Off
+        01: On
     - byte: 4
       bit: 0-1
       name: Burner Overcurrent Status
       type: uint2
       values:
-        "00": No overcurrent detected
-        "01": Overcurrent detected
+        00: No overcurrent detected
+        01: Overcurrent detected
     - byte: 4
       bit: 2-3
       name: Burner Undercurrent Status
       type: uint2
       values:
-        "00": No undercurrent detected
-        "01": Undercurrent detected
+        00: No undercurrent detected
+        01: Undercurrent detected
     - byte: 4
       bit: 4-5
       name: Burner Temperature Status
       type: uint2
       values:
-        "00": Temperature normal
-        "01": Temperature warning
+        00: Temperature normal
+        01: Temperature warning
     - byte: 4
       bit: 6-7
       name: Burner Input Status
       type: uint2
       values:
-        "00": Off (Inactive)
-        "01": On (Active)
+        00: Off (Inactive)
+        01: On (Active)
     - byte: 5
       bit: 0-1
       name: Burner Indicator Overcurrent Status
       type: uint2
       values:
-        "00": No overcurrent detected
-        "01": Overcurrent detected
+        00: No overcurrent detected
+        01: Overcurrent detected
     - byte: 5
       bit: 2-3
       name: Burner Indicator Undercurrent Status
       type: uint2
       values:
-        "00": No undercurrent detected
-        "01": Undercurrent detected
+        00: No undercurrent detected
+        01: Undercurrent detected
     - byte: 5
       bit: 4-5
       name: Burner Indicator Temperature Status
       type: uint2
       values:
-        "00": Temperature normal
-        "01": Temperature warning
+        00: Temperature normal
+        01: Temperature warning
     - byte: 6
       bit: 0-1
       name: Electric Low Element Overcurrent Status
       type: uint2
       values:
-        "00": No overcurrent detected
-        "01": Overcurrent detected
+        00: No overcurrent detected
+        01: Overcurrent detected
     - byte: 6
       bit: 2-3
       name: Electric Low Element Undercurrent Status
       type: uint2
       values:
-        "00": No undercurrent detected
-        "01": Undercurrent detected
+        00: No undercurrent detected
+        01: Undercurrent detected
     - byte: 6
       bit: 4-5
       name: Electric Low Element Temperature Status
       type: uint2
       values:
-        "00": Temperature normal
-        "01": Temperature warning
+        00: Temperature normal
+        01: Temperature warning
     - byte: 6
       bit: 6-7
       name: Electric Low Element Input Status
       type: uint2
       values:
-        "00": Off (Inactive)
-        "01": On (Active)
-    - byte: 7
+        00: Off (Inactive)
+        01: On (Active)
+
+1FE97:
+  name: CIRCULATION_PUMP_STATUS
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+      values:
+        0: all
+        1-250: Instance number
+    - byte: 1
+      bit: 0-3
+      name: Output Status
+      type: uint4
+      values:
+        0000: Off
+        0001: On
+        0101: Test (Forced On)
+    - byte: 2
       bit: 0-1
-      name: Electric High Element Overcurrent Status
+      name: Pump Overcurrent Status
       type: uint2
       values:
-        "00": No overcurrent detected
-        "01": Overcurrent detected
-    - byte: 7
+        00: No overcurrent detected
+        01: Overcurrent detected
+    - byte: 2
       bit: 2-3
-      name: Electric High Element Undercurrent Status
+      name: Pump Undercurrent Status
       type: uint2
       values:
-        "00": No undercurrent detected
-        "01": Undercurrent detected
-    - byte: 7
+        00: No undercurrent detected
+        01: Undercurrent detected
+    - byte: 2
       bit: 4-5
-      name: Electric High Element Temperature Status
+      name: Pump Temperature Status
       type: uint2
       values:
-        "00": Temperature normal
-        "01": Temperature warning
-    - byte: 7
-      bit: 6-7
-      name: Electric High Element Input Status
-      type: uint2
+        00: Temperature normal
+        01: Temperature warning
+
+1FE96:
+  name: CIRCULATION_PUMP_COMMAND
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
       values:
-        "00": Off (Inactive)
-        "01": On (Active)
+        0: all
+        1-250: Instance number
+    - byte: 1
+      bit: 0-3
+      name: Output Mode
+      type: uint4
+      values:
+        0000: Off (End of Test)
+        0101: Test (Forced On)
