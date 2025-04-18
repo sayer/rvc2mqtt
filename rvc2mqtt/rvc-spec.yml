@@ -3653,15 +3653,15 @@ API_VERSION: 1
       name: desired operating mode
       type: bit2
       values:
-        00: automatic
-        01: manual
+        0: automatic
+        1: manual
     - byte: 3
       bit: 2-3
       name: interlock
       type: bit2
       values:
-        00: no interlock active
-        01: interlock a
+        0: no interlock active
+        1: interlock a
         10: interlock b
     - byte: 4
       name: command
@@ -3740,29 +3740,29 @@ API_VERSION: 1
       name: master fault
       type: bit
       values:
-        00: no fault
-        01: burnt bulb
+        0: no fault
+        1: burnt bulb
     - byte: 5
       bit: 2-3
       name: red fault
       type: bit
       values:
-        00: no fault
-        01: burnt bulb
+        0: no fault
+        1: burnt bulb
     - byte: 5
       bit: 4-5
       name: green fault
       type: bit
       values:
-        00: no fault
-        01: Burnt bulb
+        0: no fault
+        1: Burnt bulb
     - byte: 5
       bit: 6-7
       name: blue fault
       type: bit
       values:
-        00: no fault
-        01: Burnt bulb
+        0: no fault
+        1: Burnt bulb
 
 1FEDA:
   name: DC_DIMMER_STATUS_3
@@ -3783,32 +3783,32 @@ API_VERSION: 1
       type: bit2
       bit: 0-1
       values:
-        00: load is unlocked
-        01: load is locked
+        0: load is unlocked
+        1: load is locked
         11: lock command is not supported
     - byte: 3
       name: overcurrent status
       type: bit2
       bit: 2-3
       values:
-        00: load is not in overcurrent
-        01: load is in overcurrent
+        0: load is not in overcurrent
+        1: load is in overcurrent
         11: overcurrent status is unavailable or not supported
     - byte: 3
       name: override status
       type: bit2
       bit: 4-5
       values:
-        00: external override is inactive
-        01: external override is active
+        0: external override is inactive
+        1: external override is active
         11: override status is unavailable or not supported
     - byte: 3
       name: enable status
       type: bit2
       bit: 6-7
       values:
-        00: load is enabled
-        01: load is disabled
+        0: load is enabled
+        1: load is disabled
         11: enable status is unavailable or not supported
     - byte: 4
       name: delay/duration
@@ -3838,16 +3838,16 @@ API_VERSION: 1
       type: bit2
       bit: 0-1
       values:
-        00: interlock command is not active
-        01: interlock command is active
+        0: interlock command is not active
+        1: interlock command is active
         11: interlock command is not supported
     - byte: 6
       name: load status
       type: bit2
       bit: 2-3
       values:
-        00: operating status is zero
-        01: operating status is non-zero or flashing
+        0: operating status is zero
+        1: operating status is non-zero or flashing
         11: interlock command is not supported
 
 1FFB9:
@@ -3896,8 +3896,8 @@ API_VERSION: 1
       name: interlock
       type: bit2
       values:
-        00: no interlock active
-        01: interlock a
+        0: no interlock active
+        1: interlock a
         10: interlock b
 
 1FFB8:
@@ -4008,30 +4008,30 @@ API_VERSION: 1
       name: lock status
       type: bit2
       values:
-        00: unlocked
-        01: locked
+        0: unlocked
+        1: locked
         11: lock command not supported
     - byte: 3
       bit: 2-3
       name: motor status
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        0: active
     - byte: 3
       bit: 4-5
       name: forward status
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 3
       bit: 6-7
       name: reverse status
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 4
       name: duration
       type: uint8
@@ -4054,32 +4054,32 @@ API_VERSION: 1
       name: overcurrent status
       type: bit2
       values:
-        00: not in overcurrent
-        01: in overcurrent
+        0: not in overcurrent
+        1: in overcurrent
         11: overcurrent status unavailable
     - byte: 6
       bit: 2-3
       name: override status
       type: bit2
       values:
-        00: override inactive
-        01: override active
+        0: override inactive
+        1: override active
         11: override status unavailable
     - byte: 6
       bit: 4-5
       name: disable1 status
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
         11: not supported
     - byte: 6
       bit: 6-7
       name: disable2 status
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
         11: not supported
 
 1FEE1:
@@ -4394,8 +4394,8 @@ API_VERSION: 1
       name: source
       type: bit3
       values:
-        000: primary
-        001: secondary
+        0: primary
+        1: secondary
         111: invalid
     - byte: 0
       bit: 7
@@ -4425,8 +4425,8 @@ API_VERSION: 1
       name: source
       type: bit3
       values:
-        000: primary
-        001: secondary
+        0: primary
+        1: secondary
         111: invalid
     - byte: 0
       bit: 7
@@ -4456,8 +4456,8 @@ API_VERSION: 1
       name: source
       type: bit3
       values:
-        000: primary
-        001: secondary
+        0: primary
+        1: secondary
         111: invalid
     - byte: 0
       bit: 7
@@ -4487,8 +4487,8 @@ API_VERSION: 1
       name: source
       type: bit3
       values:
-        000: primary
-        001: secondary
+        0: primary
+        1: secondary
         111: invalid
     - byte: 0
       bit: 7
@@ -4533,8 +4533,8 @@ API_VERSION: 1
       name: source
       type: bit3
       values:
-        000: primary
-        001: secondary
+        0: primary
+        1: secondary
         111: invalid
     - byte: 0
       bit: 7
@@ -4563,8 +4563,8 @@ API_VERSION: 1
       name: source
       type: bit3
       values:
-        000: primary
-        001: secondary
+        0: primary
+        1: secondary
         111: invalid
     - byte: 0
       bit: 7
@@ -4599,15 +4599,15 @@ API_VERSION: 1
       name: air temperature alarm
       type: uint2
       values:
-        00: alarm inactive
-        01: alarm active
+        0: alarm inactive
+        1: alarm active
     - byte: 7
       bit: 2-3
       name: relative humidity alarm
       type: uint2
       values:
-        00: alarm inactive
-        01: alarm active
+        0: alarm inactive
+        1: alarm active
 
 1FFA4:
   name: WEATHER_STATUS_2
@@ -4721,29 +4721,29 @@ API_VERSION: 1
       name: generator demand
       type: bit2
       values:
-        00: no demand for generator
-        01: generator is demanded
+        0: no demand for generator
+        1: generator is demanded
     - byte: 0
       bit: 2-3
       name: internal generator demand
       type: bit2
       values:
-        00: no internal demand
-        01: internal ags criterion is demanding generator
+        0: no internal demand
+        1: internal ags criterion is demanding generator
     - byte: 0
       bit: 4-5
       name: network generator demand
       type: bit2
       values:
-        00: no demand from other network nodes
-        01: network device is demanding generator
+        0: no demand from other network nodes
+        1: network device is demanding generator
     - byte: 0
       bit: 6-7
       name: external activity detected
       type: bit2
       values:
-        00: automatic starting is allowed
-        01: automatic starting is disabled due to external activity
+        0: automatic starting is allowed
+        1: automatic starting is disabled due to external activity
 
 
 1FEFF:
@@ -4813,30 +4813,30 @@ API_VERSION: 1
       name: lock status
       type: bit2
       values:
-        00: unlocked
-        01: locked
+        0: unlocked
+        1: locked
         11: lock command not supported
     - byte: 3
       bit: 2-3
       name: motor status
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 3
       bit: 4-5
       name: forward status
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 3
       bit: 6-7
       name: reverse status
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 4
       name: duration
       type: uint8
@@ -4857,32 +4857,32 @@ API_VERSION: 1
       name: overcurrent status
       type: bit2
       values:
-        00: not in overcurrent
-        01: has drawn overcurrent
+        0: not in overcurrent
+        1: has drawn overcurrent
         11: overcurrent status unavailable
     - byte: 6
       bit: 2-3
       name: override status
       type: bit2
       values:
-        00: external override inactive
-        01: external override active
+        0: external override inactive
+        1: external override active
         11: override status unavailable
     - byte: 6
       bit: 4-5
       name: disable1 status
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
         11: not supported
     - byte: 6
       bit: 6-7
       name: disable2 status
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
         11: not supported
 
 1FEDF:
@@ -5034,29 +5034,29 @@ Z0000:
       name: fault open ground
       type: bit2
       values:
-        00: no fault
-        01: open ground fault detected
+        0: no fault
+        1: open ground fault detected
     - byte: 7
       bit: 2-3
       name: fault open neutral
       type: bit2
       values:
-        00: no fault
-        01: open neutral fault detected
+        0: no fault
+        1: open neutral fault detected
     - byte: 7
       bit: 4-5
       name: fault reverse polarity
       type: bit2
       values:
-        00: no fault
-        01: reverse polarity fault detected
+        0: no fault
+        1: reverse polarity fault detected
     - byte: 7
       bit: 6-7
       name: fault ground current
       type: bit2
       values:
-        00: no fault
-        01: ground current fault detected
+        0: no fault
+        1: ground current fault detected
 
 Z0001:
   name: AC_STATUS_2
@@ -5092,15 +5092,15 @@ Z0002:
       name: waveform
       type: bit2
       values:
-        00: sine wave
-        01: not true sine wave
+        0: sine wave
+        1: not true sine wave
     - byte: 1
       bit: 2-5
       name: phase status
       type: bit4
       values:
-        0000: no complementary leg
-        0001: in phase
+        0: no complementary leg
+        1: in phase
         0010: 180 degrees out of phase
         0011: phase relationship is variable
         1110: error
@@ -5150,22 +5150,22 @@ Z0003:
       name: fault high frequency
       type: bit2
       values:
-        00: no fault
-        01: frequency over high limit
+        0: no fault
+        1: frequency over high limit
     - byte: 2
       bit: 4-5
       name: fault how frequency
       type: bit2
       values:
-        00: no fault
-        01: frequency below low limit
+        0: no fault
+        1: frequency below low limit
     - byte: 2
       bit: 6-7
       name: bypass mode active
       type: bit2
       values:
-        00: normal mode
-        01: bypass mode
+        0: normal mode
+        1: bypass mode
     - byte: 3
       bit: 0-3
       name: qualification Status
@@ -5251,15 +5251,15 @@ Z0005:
       name: air temperature alarm
       type: uint2
       values:
-        00: alarm inactive
-        01: alarm active
+        0: alarm inactive
+        1: alarm active
     - byte: 7
       bit: 2-3
       name: relative humidity alarm
       type: uint2
       values:
-        00: alarm inactive
-        01: alarm active
+        0: alarm inactive
+        1: alarm active
 
 1FEA7:
   name: ROOF_FAN_STATUS_1
@@ -5273,36 +5273,36 @@ Z0005:
       name: System Status
       type: uint2
       values:
-        00: "Off"
-        01: "On"
+        0: "Off"
+        1: "On"
     - byte: 2
       bit: 0-3
       name: Fan Mode
       type: uint2
       values:
-        0000: "Auto"
-        0001: "Forced On"
+        0: "Auto"
+        1: "Forced On"
     - byte: 2
       bit: 4-5
       name: Speed Mode
       type: uint2
       values:
-        00: "Auto (Variable)"
-        01: "Manual"
+        0: "Auto (Variable)"
+        1: "Manual"
     - byte: 2
       bit: 6-7
       name: Light
       type: uint2
       values:
-        00: "Off"
-        01: "On"
+        0: "Off"
+        1: "On"
     - byte: 3
       bit: 0-1
       name: Wind Direction Switch
       type: uint2
       values:
-        00: "Air Out"
-        01: "Air In"
+        0: "Air Out"
+        1: "Air In"
     - byte: 4-5
       name: Ambient Temperature
       type: uint16
@@ -5338,36 +5338,36 @@ Z0005:
       name: Rain Sensor
       type: uint2
       values:
-        00: "No Rain Detected"
-        01: "Rain Detected"
+        0: "No Rain Detected"
+        1: "Rain Detected"
     - byte: 3
       bit: 2-3
       name: Rain Sensor Override
       type: uint2
       values:
-        00: "Rain Sensor Used (dome will automatically close when rain is detected)"
-        01: "Rain Sensor Overridden (dome will not automatically close due to rain or can be raised despite the rain)"
+        0: "Rain Sensor Used (dome will automatically close when rain is detected)"
+        1: "Rain Sensor Overridden (dome will not automatically close due to rain or can be raised despite the rain)"
     - byte: 4
       bit: 0-1
       name: Pump Overcurrent Status
       type: uint2
       values:
-        00: No overcurrent detected
-        01: Overcurrent detected
+        0: No overcurrent detected
+        1: Overcurrent detected
     - byte: 4
       bit: 2-3
       name: Pump Undercurrent Status
       type: uint2
       values:
-        00: No undercurrent detected
-        01: Undercurrent detected
+        0: No undercurrent detected
+        1: Undercurrent detected
     - byte: 4
       bit: 4-5
       name: Pump Temperature Status
       type: uint2
       values:
-        00: Temperature normal
-        01: Temperature warning
+        0: Temperature normal
+        1: Temperature warning
 
 1FE9F:
   name: GENERIC_ALARM_STATUS
@@ -5447,29 +5447,29 @@ Z0005:
       name: System Status
       type: uint2
       values:
-        00: "Off"
-        01: "On"
+        0: "Off"
+        1: "On"
     - byte: 1
       bit: 2-3
       name: Fan Mode
       type: uint2
       values:
-        00: "Auto"
-        01: "Force On"
+        0: "Auto"
+        1: "Force On"
     - byte: 1
       bit: 4-5
       name: Speed Mode
       type: uint2
       values:
-        00: "Auto (Variable)"
-        01: "Manual"
+        0: "Auto (Variable)"
+        1: "Manual"
     - byte: 1
       bit: 6-7
       name: Light
       type: uint2
       values:
-        00: "Off"
-        01: "On"
+        0: "Off"
+        1: "On"
     - byte: 2
       name: Fan Speed Setting
       type: uint8
@@ -5480,8 +5480,8 @@ Z0005:
       name: Wind Direction Switch
       type: uint2
       values:
-        00: "Air Out"
-        01: "Air In"
+        0: "Air Out"
+        1: "Air In"
     - byte: 3
       bit: 2-5
       name: Dome Position [Deprecated]
@@ -5534,36 +5534,36 @@ Z0005:
       name: Rain Sensor Override
       type: uint2
       values:
-        00: "Use Rain Sensor (dome will automatically close when rain is detected)"
-        01: "Override Rain Sensor (dome will not automatically close due to rain or can be raised despite the rain)"
+        0: "Use Rain Sensor (dome will automatically close when rain is detected)"
+        1: "Override Rain Sensor (dome will not automatically close due to rain or can be raised despite the rain)"
     - byte: 3
       bit: 2-3
       name: Desired Setpoint Controlled
       type: uint2
       values:
-        00: "Dome will not be automatically controlled"
-        01: "Dome will be automatically controlled (Lid will automatically open/close as needed to maintain setpoint)"
+        0: "Dome will not be automatically controlled"
+        1: "Dome will be automatically controlled (Lid will automatically open/close as needed to maintain setpoint)"
     - byte: 3
       bit: 4-5
       name: Auto Close Dome on Fan Off
       type: uint2
       values:
-        00: "Leave dome open when fan shuts off"
-        01: "Automatically close dome when fan shuts off"
+        0: "Leave dome open when fan shuts off"
+        1: "Automatically close dome when fan shuts off"
     - byte: 3
       bit: 6-7
       name: Auto Fan Off on Dome Close
       type: uint2
       values:
-        00: "Leave fan on when dome is closed"
-        01: "Automatically shut fan off when dome is closed"
+        0: "Leave fan on when dome is closed"
+        1: "Automatically shut fan off when dome is closed"
     - byte: 4
       bit: 0-1
       name: Fan Speed Increment/Decrement
       type: uint2
       values:
-        00: "Decrement fan speed"
-        01: "Increment fan speed"
+        0: "Decrement fan speed"
+        1: "Increment fan speed"
       comment: "Step size is defined by Increment/Decrement Step or the fan itself where speeds are fixed (For example a 3 speed fan)"
     - byte: 4
       bit: 2-7
