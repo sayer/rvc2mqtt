@@ -5265,7 +5265,7 @@ Z0005:
   name: ROOF_FAN_STATUS_1
   parameters:
     - byte: 0
-      name: Instance
+      name: instance
       type: uint8
       comment: "1-250"
     - byte: 1
@@ -5320,7 +5320,7 @@ Z0005:
   name: ROOF_FAN_STATUS_2
   parameters:
     - byte: 0
-      name: Instance
+      name: instance
       type: uint8
     - byte: 1
       name: Dome Mode
@@ -5439,27 +5439,148 @@ Z0005:
   name: ROOF_FAN_COMMAND_1
   parameters:
     - byte: 0
-      name: Instance
+      name: instance
       type: uint8
       comment: "1-250"
     - byte: 1
       bit: 0-1
-      name: Direction of movement
-      type: bit2
+      name: System Status
+      type: uint2
       values:
-        0: stop
-        1: extend
-        2: retract
-    - byte: 3
-      name: Move to Position
+        00: "Off"
+        01: "On"
+    - byte: 1
+      bit: 2-3
+      name: Fan Mode
+      type: uint2
+      values:
+        00: "Auto"
+        01: "Force On"
+    - byte: 1
+      bit: 4-5
+      name: Speed Mode
+      type: uint2
+      values:
+        00: "Auto (Variable)"
+        01: "Manual"
+    - byte: 1
+      bit: 6-7
+      name: Light
+      type: uint2
+      values:
+        00: "Off"
+        01: "On"
+    - byte: 2
+      name: Fan Speed Setting
       type: uint8
-      unit: Pct
+      unit: "%"
+      comment: "see Table 5.3"
+    - byte: 3
+      bit: 0-1
+      name: Wind Direction Switch
+      type: uint2
+      values:
+        00: "Air Out"
+        01: "Air In"
+    - byte: 3
+      bit: 2-5
+      name: Dome Position [Deprecated]
+      type: uint4
+      values:
+        0000: "Close"
+        0001: "¼ Open"
+        0010: "½ Open"
+        0011: "¾ Open"
+        0100: "Open"
+        0101: "Stop"
+      comment: "Recommend to use Desired Dome Position under ROOF_FAN_COMMAND_2 for new development."
+    - byte: 3
+      bit: 6-7
+      name: Rain Sensor [Deprecated]
+      type: uint2
+      comment: "Deprecated and replaced under ROOF_FAN_COMMAND_2"
+    - byte: 4-5
+      name: Ambient Temperature
+      type: uint16
+      unit: Deg C
+      comment: "see Table 5.3"
+    - byte: 6-7
+      name: Set Point
+      type: uint16
+      unit: Deg C
+      comment: "see Table 5.3"
+
+1FDE2:
+  name: ROOF_FAN_COMMAND_2
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+      comment: "1-250"
+    - byte: 1
+      name: Dome Command
+      type: uint8
+      values:
+        0: Stop
+        1: Open (Raise)
+        2: Close (Lower)
+    - byte: 2
+      name: Desired Dome Position
+      type: uint8
+      unit: "%"
+      comment: "0-200, 250=Momentary operation - When received, run in the requested direction for one second. As long as this is received once per second the dome will continue to run."
+    - byte: 3
+      bit: 0-1
+      name: Rain Sensor Override
+      type: uint2
+      values:
+        00: "Use Rain Sensor (dome will automatically close when rain is detected)"
+        01: "Override Rain Sensor (dome will not automatically close due to rain or can be raised despite the rain)"
+    - byte: 3
+      bit: 2-3
+      name: Desired Setpoint Controlled
+      type: uint2
+      values:
+        00: "Dome will not be automatically controlled"
+        01: "Dome will be automatically controlled (Lid will automatically open/close as needed to maintain setpoint)"
+    - byte: 3
+      bit: 4-5
+      name: Auto Close Dome on Fan Off
+      type: uint2
+      values:
+        00: "Leave dome open when fan shuts off"
+        01: "Automatically close dome when fan shuts off"
+    - byte: 3
+      bit: 6-7
+      name: Auto Fan Off on Dome Close
+      type: uint2
+      values:
+        00: "Leave fan on when dome is closed"
+        01: "Automatically shut fan off when dome is closed"
+    - byte: 4
+      bit: 0-1
+      name: Fan Speed Increment/Decrement
+      type: uint2
+      values:
+        00: "Decrement fan speed"
+        01: "Increment fan speed"
+      comment: "Step size is defined by Increment/Decrement Step or the fan itself where speeds are fixed (For example a 3 speed fan)"
+    - byte: 4
+      bit: 2-7
+      name: Fan Speed Increment/Decrement Step
+      type: uint6
+      values:
+        0: "Directly to 0%/100%"
+        1: "One step"
+        2-50: "Number of steps for increment/decrement command"
+        63: "One step"
+      comment: "This would typically be used on fans that support a broad range of possible speeds. When adjusting fixed speed fans this value would typically be set to 63 (111111b)"
 
 1FDB1:
   name: BROKER_CONNECTION_COMMAND
   parameters:
     - byte: 0
-      name: Broker Instance
+      name: Broker instance
       type: uint8
       comment: "1-250"
     - byte: 1
@@ -5474,7 +5595,7 @@ Z0005:
   name: WINDOW_STATUS
   parameters:
     - byte: 0
-      name: Instance
+      name: instance
       type: uint8
       comment: "1-250"
     - byte: 1
@@ -5521,7 +5642,7 @@ Z0005:
   name: WINDOW_COMMAND
   parameters:
     - byte: 0
-      name: Instance
+      name: instance
       type: uint8
     - byte: 1
       bit: 0-1
@@ -5965,7 +6086,7 @@ Z0005:
   name: WATERHEATER_COMMAND_2
   parameters:
     - byte: 0
-      name: Instance
+      name: instance
       type: uint8
       comment: Corresponds to "Zones" in user terminology.
     - byte: 2
@@ -5998,7 +6119,7 @@ Z0005:
   name: WATERHEATER_STATUS_2
   parameters:
     - byte: 0
-      name: Instance
+      name: instance
       type: uint8
       values:
         0: all

@@ -80,7 +80,9 @@ sub processPacket {
       $result{timestamp} = $pkttime;
       my $result_json = JSON->new->utf8->canonical->encode(\%result);
       my $topic = "RVC/$result{name}";
-      $topic .= '/' . $result{instance} if (defined($result{instance}));
+      if (defined($result{instance})) {
+        $topic .= '/' . $result{instance};
+      }
       publish $topic => $result_json if (!$debug);
       printf("%4d-%02d-%02d %02d:%02d:%02d.%05d %s %s %s %s\n", $year, $mon, $mday, $hour, $min, $sec, $partsec, $src, $data, $topic, $result_json);
     }
