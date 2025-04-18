@@ -421,7 +421,7 @@ sub process_mqtt_message {
     
     # Use the format_rvc_message function which sets undefined bits/bytes to FF
     # according to the RVC specification for this DGN
-    $data = format_rvc_message($dgn, $data);
+    $data = format_rvc_message($dgn, $data, $json);
     
     print "Applied standard RVC formatting for DGN $dgn\n" if $debug;
     print "  Original data: $original_data\n" if $debug;
@@ -600,7 +600,7 @@ sub build_data_packet {
 # Format RV-C message according to the specification
 # --------------------------------------------------------------
 sub format_rvc_message {
-  my ($dgn, $data) = @_;
+  my ($dgn, $data, $json) = @_;
   
   # Return data as-is if no special formatting is needed or no spec exists
   return $data unless (defined $dgn && defined $encoders->{$dgn});
@@ -677,18 +677,67 @@ sub format_rvc_message {
       $bytes[$b] = "FF";
       print "  Byte $b not defined in spec, setting to FF\n" if $debug;
     }
-    # If byte has bit definitions, set undefined bits to 1
+    # If byte has bit definitions, we need to handle defined vs undefined bits
     elsif (exists $defined_bits{$b}) {
       my $mask = $defined_bits{$b};
       my $byte_value = hex($bytes[$b]);
       
-      # Keep defined bits as is, set undefined bits to 1
-      # ~mask gives 1s for undefined bits, & 0xFF keeps within byte range
-      $byte_value = ($byte_value & $mask) | (~$mask & 0xFF);
+      # Find parameters that affect this byte and are in the JSON
+      my $json_defined_bits = 0;
+      
+      # Only proceed with JSON check if we have JSON data
+      if (defined $json) {
+        # Get all parameters affecting this byte
+        my @params_for_byte = grep {
+          next unless defined $_->{byte};
+          my ($start, $end) = split(/-/, $_->{byte});
+          $end = $start unless defined $end;
+          $b >= $start && $b <= $end && defined $_->{bit};
+        } @parameters;
+        
+        # Check which parameters are in the JSON
+        foreach my $param (@params_for_byte) {
+          my $name = $param->{name};
+          my $in_json = 0;
+          
+          # Check for parameter in JSON (case-insensitive)
+          foreach my $key (keys %$json) {
+            if (lc($key) eq lc($name)) {
+              $in_json = 1;
+              last;
+            }
+          }
+          
+          # If parameter is in JSON, add its bits to json_defined_bits
+          if ($in_json) {
+            my ($start_bit, $end_bit) = split(/-/, $param->{bit});
+            $end_bit = $start_bit unless defined $end_bit;
+            
+            # Add these bits to json_defined_bits
+            for my $bit ($start_bit..$end_bit) {
+              $json_defined_bits |= (1 << $bit);
+            }
+          }
+        }
+      }
+      
+      # For bits defined in spec but NOT in JSON, set them to 1
+      # For bits defined in spec AND in JSON, keep original value
+      # For bits NOT defined in spec, set them to 1
+      my $bits_to_preserve = $json_defined_bits & $mask;
+      my $bits_to_set_to_1 = (~$bits_to_preserve) & 0xFF;
+      
+      $byte_value = ($byte_value & $bits_to_preserve) | $bits_to_set_to_1;
       $bytes[$b] = sprintf("%02X", $byte_value);
       
-      print "  Byte $b has bit mask " . sprintf("%08b", $mask) .
-            ", setting undefined bits to 1\n" if $debug;
+      if ($debug) {
+        print "  Byte $b processing:\n";
+        print "    Defined bits mask: " . sprintf("%08b", $mask) . "\n";
+        print "    JSON-defined bits: " . sprintf("%08b", $json_defined_bits) . "\n";
+        print "    Bits to preserve:  " . sprintf("%08b", $bits_to_preserve) . "\n";
+        print "    Bits to set to 1:  " . sprintf("%08b", $bits_to_set_to_1) . "\n";
+        print "    Final byte value:  " . sprintf("%08b", $byte_value) . " ($bytes[$b])\n";
+      }
     }
   }
   

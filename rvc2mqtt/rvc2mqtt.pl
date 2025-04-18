@@ -22,6 +22,7 @@ use Getopt::Long qw(GetOptions);
 use YAML::Tiny;
 use JSON;
 use Switch;
+use Scalar::Util qw(looks_like_number);
 
 my $debug;
 GetOptions(
@@ -158,7 +159,43 @@ sub decode() {
     # Decode value definitions, if provided.
     if ($values) {
       my $value_def = 'undefined';
-      $value_def = $values->{$value} if ($values->{$value});
+      
+      # Try direct lookup first
+      if ($values->{$value}) {
+        $value_def = $values->{$value};
+      }
+      # Then try string conversion lookup - most values in YAML are stored as strings like "0", "1"
+      elsif (looks_like_number($value)) {
+        # Format single digit values as strings like "0", "1"
+        my $key = "$value";
+        $value_def = $values->{$key} if ($values->{$key});
+        
+        # Also try formatted strings (00, 01, 0000, 0001, etc.) for bit values
+        if ($value_def eq 'undefined' && $value < 16) {
+          # Try 2-digit format (00, 01, etc.)
+          $key = sprintf("%02d", $value);
+          $value_def = $values->{$key} if ($values->{$key});
+          
+          # Try 4-digit format (0000, 0001, etc.) if 2-digit didn't work
+          if ($value_def eq 'undefined') {
+            $key = sprintf("%04d", $value);
+            $value_def = $values->{$key} if ($values->{$key});
+          }
+          
+          # Try binary format (00, 01, 10, 11) for 2-bit values
+          if ($value_def eq 'undefined' && $value < 4) {
+            $key = sprintf("%02b", $value);
+            $value_def = $values->{$key} if ($values->{$key});
+          }
+          
+          # Try binary format (0000, 0001, 0010, etc.) for 4-bit values
+          if ($value_def eq 'undefined' && $value < 16) {
+            $key = sprintf("%04b", $value);
+            $value_def = $values->{$key} if ($values->{$key});
+          }
+        }
+      }
+      
       $result{"$name definition"} = $value_def;
     }
 
