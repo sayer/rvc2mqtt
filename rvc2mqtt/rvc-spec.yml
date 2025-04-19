@@ -632,7 +632,7 @@ API_VERSION: 1
         132: forward 7
         251: park
 
-1FEFD:
+1FEA8:
   name: CHASSIS_MOBILITY_STATUS_2
   parameters:
     - byte: 0-1
@@ -1827,30 +1827,6 @@ API_VERSION: 1
   name: HEAT_PUMP_COMMAND
   alias: 1FF9B
 
-1FEA8:
-  name: CHASSIS_MOTION_STATUS_2
-  parameters:
-    - byte: 0-1
-      name: Steering Wheel Angle
-      type: uint16
-      unit: rad
-      comment: "Positive values indicate turning to the left (counter-clockwise)"
-    - byte: 2
-      name: Headlight Switch
-      type: uint2
-      values:
-        0: "Headlight Switch Off"
-        1: "Headlight Switch On"
-    - byte: 3
-      name: Fuel Level Percent
-      type: uint8
-      unit: "%"
-      comment: "The amount of fuel in the tank relative to capacity (see Table 5.3)"
-    - byte: 4-7
-      name: Odometer
-      type: uint32
-      unit: m
-      comment: "0 = 0 m; Value Range = 0 m to 21,474,836,465 m; scaling identical to SAE J1939 Total Vehicle Distance (High Resolution)"
 
 1FFDF:
   name: GENERATOR_AC_STATUS_1
@@ -5329,6 +5305,7 @@ Z0005:
         0: Stopped
         1: Opening (Raising)
         2: Closing (Lowering)
+        255: Not Available or Error
     - byte: 2
       name: Dome Position
       type: uint8
@@ -5340,6 +5317,7 @@ Z0005:
       values:
         0: "No Rain Detected"
         1: "Rain Detected"
+        3: "Error or Not Available"
     - byte: 3
       bit: 2-3
       name: Rain Sensor Override
@@ -5347,6 +5325,7 @@ Z0005:
       values:
         0: "Rain Sensor Used (dome will automatically close when rain is detected)"
         1: "Rain Sensor Overridden (dome will not automatically close due to rain or can be raised despite the rain)"
+        3: "Error or Not Available"
     - byte: 4
       bit: 0-1
       name: Pump Overcurrent Status
@@ -5354,6 +5333,7 @@ Z0005:
       values:
         0: No overcurrent detected
         1: Overcurrent detected
+        3: Error or Not Available
     - byte: 4
       bit: 2-3
       name: Pump Undercurrent Status
@@ -5361,6 +5341,7 @@ Z0005:
       values:
         0: No undercurrent detected
         1: Undercurrent detected
+        3: Error or Not Available
     - byte: 4
       bit: 4-5
       name: Pump Temperature Status
@@ -5368,6 +5349,7 @@ Z0005:
       values:
         0: Temperature normal
         1: Temperature warning
+        3: Error or Not Available
 
 1FE9F:
   name: GENERIC_ALARM_STATUS
@@ -5509,6 +5491,40 @@ Z0005:
       type: uint16
       unit: Deg C
       comment: "see Table 5.3"
+
+1FEFD:
+  name: AGS_CRITERION_COMMAND
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+      comment: "1-250"
+    - byte: 1
+      bit: 0-1
+      name: Command
+      type: uint2
+      values:
+        0: "Add or edit this criterion"
+        1: "Delete this criterion"
+    - byte: 1
+      bit: 2-3
+      name: Active status
+      type: uint2
+      values:
+        0: "Deactivate criterion"
+        1: "Activate criterion"
+    - byte: 2
+      name: Criterion type
+      type: uint8
+      values:
+        0: "DC voltage"
+        1: "DC state of charge"
+        2: "DC current"
+        3: "Ambient temperature"
+        4: "Transfer switch AC point voltage"
+        5: "Quiet Time"
+        6: "Timed Start"
+        128: "Proprietary"
 
 1FDE2:
   name: ROOF_FAN_COMMAND_2
