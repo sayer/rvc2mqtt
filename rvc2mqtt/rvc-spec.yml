@@ -6319,3 +6319,507 @@ Z0005:
       values:
         0: Off (End of Test)
         5: Test (Forced On)
+
+# Multi-packet messages
+ECFF:
+  name: INITIAL_PACKET
+  # section 3.2.7
+  parameters:
+    - byte: 0
+      name: reserved
+      type: uint8
+    - byte: 1
+      name: packet_length_lsb
+      type: uint8
+    - byte: 2
+      name: packet_length_msb
+      type: uint8
+    - byte: 3
+      name: packet_count
+      type: uint8
+    - byte: 4
+      name: reserved2
+      type: uint8
+    - byte: 5
+      name: target_dgn_lsb
+      type: uint8
+    - byte: 6
+      name: target_dgn_mid
+      type: uint8
+    - byte: 7
+      name: target_dgn_msb
+      type: uint8
+
+0EBFF:
+  name: DATA_PACKET
+  # section 3.2.7
+  parameters:
+    - byte: 0
+      name: sequence_number
+      type: uint8
+    - byte: 1
+      name: data_byte_1
+      type: uint8
+    - byte: 2
+      name: data_byte_2
+      type: uint8
+    - byte: 3
+      name: data_byte_3
+      type: uint8
+    - byte: 4
+      name: data_byte_4
+      type: uint8
+    - byte: 5
+      name: data_byte_5
+      type: uint8
+    - byte: 6
+      name: data_byte_6
+      type: uint8
+    - byte: 7
+      name: data_byte_7
+      type: uint8
+
+EF00:
+  name: PROPRIETARY_MESSAGE
+  # section 6.7
+  parameters:
+    - byte: 0
+      name: payload_byte_0
+      type: uint8
+    - byte: 1
+      name: payload_byte_1
+      type: uint8
+    - byte: 2
+      name: payload_byte_2
+      type: uint8
+    - byte: 3
+      name: payload_byte_3
+      type: uint8
+    - byte: 4
+      name: payload_byte_4
+      type: uint8
+    - byte: 5
+      name: payload_byte_5
+      type: uint8
+    - byte: 6
+      name: payload_byte_6
+      type: uint8
+    - byte: 7
+      name: payload_byte_7
+      type: uint8
+
+# Broker connectivity (no aliases)
+1FDB6:
+  name: BROKER_STATUS
+  # section 6.44.1
+  parameters:
+    - byte: 0
+      name: broker_instance
+      type: uint8
+    - byte: 1
+      name: paired_device_count
+      type: uint8
+    - byte: 2
+      name: active_device_count
+      type: uint8
+
+1FDB5:
+  name: BROKER_INITIATOR_COMMAND
+  # section 6.44.2
+  parameters:
+    - byte: 0
+      name: broker_instance
+      type: uint8
+    - byte: 1
+      name: connection_instance
+      type: uint8
+    - byte: 2
+      name: connection_type
+      type: uint8
+    - byte: 3
+      name: secured_connections
+      type: uint2
+    - byte: 4
+      name: search_for_device
+      type: uint2
+    - byte: 5
+      name: pairing
+      type: uint8
+
+1FDB4:
+  name: BROKER_INITIATOR_STATUS
+  # section 6.44.3
+  parameters:
+    - byte: 0
+      name: broker_instance
+      type: uint8
+    - byte: 1
+      name: connection_instance
+      type: uint8
+    - byte: 2
+      name: connection_type
+      type: uint8
+    - byte: 3
+      name: secured_connections
+      type: uint2
+    - byte: 4
+      name: search_for_device
+      type: uint2
+    - byte: 5
+      name: pairing
+      type: uint8
+
+1FDB3:
+  name: BROKER_RESPONDER_COMMAND
+  # section 6.44.4
+  parameters:
+    - byte: 0
+      name: broker_instance
+      type: uint8
+    - byte: 1
+      name: connection_instance
+      type: uint8
+    - byte: 2
+      name: connection_type
+      type: uint8
+    - byte: 3
+      name: secured_connections
+      type: uint2
+    - byte: 4
+      name: search_for_device
+      type: uint2
+    - byte: 5
+      name: pairing
+      type: uint8
+
+1FDB2:
+  name: BROKER_RESPONDER_STATUS
+  # section 6.44.5
+  parameters:
+    - byte: 0
+      name: broker_instance
+      type: uint8
+    - byte: 1
+      name: connection_instance
+      type: uint8
+    - byte: 2
+      name: connection_type
+      type: uint8
+    - byte: 3
+      name: secured_connections
+      type: uint2
+    - byte: 4
+      name: search_for_device
+      type: uint2
+    - byte: 5
+      name: pairing
+      type: uint8
+
+1FDB1:
+  name: BROKER_CONNECTION_COMMAND
+  # section 6.44.6
+  parameters:
+    - byte: 0
+      name: broker_instance
+      type: uint8
+    - byte: 1
+      name: connection_instance
+      type: uint8
+    - byte: 2
+      name: connection_type
+      type: uint8
+    - byte: 3
+      name: secured_connections
+      type: uint2
+    - byte: 4
+      name: search_for_device
+      type: uint2
+    - byte: 5
+      name: pairing
+      type: uint8
+
+1FDB0:
+  name: BROKER_CONNECTION_STATUS
+  # section 6.44.7
+  parameters:
+    - byte: 0
+      name: broker_instance
+      type: uint8
+    - byte: 1
+      name: connection_instance
+      type: uint8
+    - byte: 2
+      name: connection_type
+      type: uint8
+    - byte: 3
+      name: secured_connections
+      type: uint2
+    - byte: 4
+      name: search_for_device
+      type: uint2
+    - byte: 5
+      name: pairing
+      type: uint8
+
+1FDAF:
+  name: BROKER_CONNECTION_TEXT_COMMAND
+  # section 6.44.8
+  parameters:
+    - byte: 0
+      name: broker_instance
+      type: uint8
+    - byte: 1
+      name: connection_instance
+      type: uint8
+    - byte: 2
+      name: text_byte_0
+      type: uint8
+    - byte: 3
+      name: text_byte_1
+      type: uint8
+    - byte: 4
+      name: text_byte_2
+      type: uint8
+    - byte: 5
+      name: text_byte_3
+      type: uint8
+    - byte: 6
+      name: text_byte_4
+      type: uint8
+    - byte: 7
+      name: text_byte_5
+      type: uint8
+
+1FDAE:
+  name: BROKER_CONNECTION_TEXT_STATUS
+  # section 6.44.9
+  parameters:
+    - byte: 0
+      name: broker_instance
+      type: uint8
+    - byte: 1
+      name: connection_instance
+      type: uint8
+    - byte: 2
+      name: text_byte_0
+      type: uint8
+    - byte: 3
+      name: text_byte_1
+      type: uint8
+    - byte: 4
+      name: text_byte_2
+      type: uint8
+    - byte: 5
+      name: text_byte_3
+      type: uint8
+    - byte: 6
+      name: text_byte_4
+      type: uint8
+    - byte: 7
+      name: text_byte_5
+      type: uint8
+
+# Instancing & download
+17C00:
+  name: INSTANCE_ASSIGNMENT
+  # section 6.2.4
+  parameters:
+    - byte: 0
+      name: password
+      type: uint8
+    - byte: 1
+      name: instance_value
+      type: uint8
+
+17D00:
+  name: DOWNLOAD
+  # section 6.2.2
+  parameters:
+    - byte: 0-7
+      name: data
+      type: bytes
+
+1FDD1:
+  name: DEVICE_STATE_SYNCHRONIZATION
+  # section 6.2.5
+  parameters:
+    - byte: 0
+      name: sync_command
+      type: uint8
+      values:
+        0: request
+        1: begin
+        2: complete
+
+# Generic revision
+1FD97:
+  name: GENERIC_REVISION_STATUS
+  # section 6.2.6
+  parameters:
+    - byte: 0-3
+      name: revision_number
+      type: uint32
+    - byte: 4-7
+      name: extra_data
+      type: bytes
+
+1FD96:
+  name: GENERIC_REVISION_REQUEST
+  # section 6.2.7
+  parameters:
+    - byte: 0
+      name: request_level
+      type: uint8
+
+1FDAF:
+  name: BROKER_CONNECTION_TEXT_COMMAND
+  # section 6.44.8
+  parameters:
+    - byte: 0
+      name: broker_instance
+      type: uint8
+    - byte: 1
+      name: connection_instance
+      type: uint8
+    - byte: 2-7
+      name: text
+      type: ascii
+
+# Air-conditioner component
+1FDAD:
+  name: AIR_CONDITIONER_COMPONENT_STATUS
+  # section 6.17.7
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      name: cooling_state
+      type: uint8
+      values:
+        0: off
+        1: on
+    - byte: 2
+      name: fan_speed
+      type: uint8
+    - byte: 3-4
+      name: temperature
+      type: uint16
+      unit: Deg C
+
+1FDAC:
+  name: AIR_CONDITIONER_COMPONENT_COMMAND
+  # section 6.17.8
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      name: cooling_state
+      type: uint8
+      values:
+        0: off
+        1: on
+    - byte: 2
+      name: fan_speed
+      type: uint8
+    - byte: 3-4
+      name: temperature
+      type: uint16
+      unit: Deg C
+
+1FDAB:
+  name: AIR_CONDITIONER_COMPONENT_STATUS_2
+  # section 6.17.9
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      name: cooling_state
+      type: uint8
+      values:
+        0: off
+        1: on
+    - byte: 2
+      name: fan_speed
+      type: uint8
+    - byte: 3-4
+      name: temperature
+      type: uint16
+      unit: Deg C
+
+# Charger properties
+1FDAA:
+  name: CHARGER_PROPERTIES
+  # section 6.20.24
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      name: max_charge_current
+      type: uint8
+    - byte: 2
+      name: min_equalization_current
+      type: uint8
+    - byte: 3
+      name: current_resolution
+      type: uint8
+    - byte: 4
+      name: supported_battery_types_0
+      type: uint8
+    - byte: 5
+      name: supported_battery_types_1
+      type: uint8
+    - byte: 6
+      name: vendor_defined_type1
+      type: uint2
+    - byte: 6
+      name: vendor_defined_type2
+      type: uint2
+
+# DC source load control
+1FDA9:
+  name: DC_SOURCE_LOAD_CONTROL
+  # section 6.5.24
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      name: control_bits
+      type: uint8
+    - byte: 2-7
+      name: reserved
+      type: bytes
+
+# DC source configuration
+1FDA7:
+  name: DC_SOURCE_CONFIGURATION_COMMAND_4
+  # section 6.5.25
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1-2
+      name: minimum_cycle_time
+      type: uint16
+    - byte: 2
+      name: reserved
+      type: uint8
+
+1FDA6:
+  name: DC_SOURCE_CONFIGURATION_STATUS_4
+  # section 6.5.26
+  parameters: 
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1-2
+      name: minimum_cycle_time
+      type: uint16
+    - byte: 2
+      name: reserved
+      type: uint8
+
