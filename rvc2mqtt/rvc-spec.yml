@@ -6823,3 +6823,174 @@ EF00:
       name: reserved
       type: uint8
 
+# DC Component Driver Status 1 (DGN 16F00h – 16FFFh)  
+# section 6.50.1 V-C Specification Full Layer 12-20-24 Final-3.pdf](file-service://file-1LZVkWbLLoomsprD6jMTmF)
+16F00:
+  name: DC_COMPONENT_DRIVER_STATUS_1
+  parameters:
+    - byte: 0
+      name: device_instance
+      type: uint8
+    - byte: 1
+      name: driver_index
+      type: uint8
+    - byte: 2-3
+      name: voltage
+      type: uint16
+      unit: V
+    - byte: 4-5
+      name: current
+      type: uint16
+      unit: A
+    - byte: 6
+      bit: 0-1
+      name: output_status
+      type: uint2
+      values:
+        0: off
+        1: on
+    - byte: 6
+      bit: 2-3
+      name: desired_status
+      type: uint2
+      values:
+        0: off
+        1: on
+    - byte: 6
+      bit: 4-5
+      name: shutdown_status
+      type: uint2
+      values:
+        0: ok
+        1: output_disabled
+    - byte: 6
+      bit: 6-7
+      name: reset_type
+      type: uint2
+      values:
+        0: manual
+        1: automatic
+    - byte: 7
+      name: shutdown_reason
+      type: uint8
+      values:
+        0: output_not_disabled
+        1: over_current
+        2: short_circuit
+        3: over_voltage
+        4: under_voltage
+        5: under_current
+        6: over_temperature
+        7: hardware_disabled
+        8: driver_fault
+        9: max_on_time_exceeded
+        10: fault_recovery_period_active
+        11: driver_supply_loss
+
+# DC Component Driver Status 2 (DGN 16E00h – 16EFFh)  
+# section 6.50.2 V-C Specification Full Layer 12-20-24 Final-3.pdf](file-service://file-1LZVkWbLLoomsprD6jMTmF)
+16E00:
+  name: DC_COMPONENT_DRIVER_STATUS_2
+  parameters:
+    - byte: 0
+      name: device_instance
+      type: uint8
+    - byte: 1
+      name: driver_index
+      type: uint8
+    - byte: 2-3
+      name: temperature
+      type: uint16
+      unit: Deg C
+    - byte: 4
+      bit: 0-3
+      name: temperature_warning
+      type: uint4
+      values:
+        0: temp_normal
+        1: temp_warning
+        2: temp_failure
+    - byte: 4
+      bit: 4-7
+      name: driver_type
+      type: uint4
+      values:
+        0: high_side
+        1: low_side
+        2: h_bridge
+        3: half_bridge
+        4: breaker
+    - byte: 5
+      bit: 0-1
+      name: undercurrent
+      type: uint2
+      values:
+        0: normal
+        1: undercurrent_condition
+    - byte: 6-7
+      name: peak_temperature_last_shutdown
+      type: uint16
+      unit: Deg C
+
+# DC Component Driver Status 6 (DGN 16300h – 163FFh)  
+# section 6.50.11 V-C Specification Full Layer 12-20-24 Final-3.pdf](file-service://file-1LZVkWbLLoomsprD6jMTmF)
+16300:
+  name: DC_COMPONENT_DRIVER_STATUS_6
+  parameters:
+    - byte: 0
+      name: device_instance
+      type: uint8
+    - byte: 1
+      name: driver_index
+      type: uint8
+    - byte: 2
+      bit: 0-1
+      name: driver_direction
+      type: uint2
+      values:
+        0: reverse
+        1: forward
+        3: not_active
+    - byte: 2
+      bit: 2-3
+      name: driver_pulsing
+      type: uint2
+      values:
+        0: not_pulsing
+        1: pulsing
+        3: not_supported
+    - byte: 2
+      bit: 4-5
+      name: lock_status
+      type: uint2
+      values:
+        0: not_locked
+        1: locked
+        3: not_supported
+    - byte: 2
+      bit: 6-7
+      name: command_timeout
+      type: uint2
+      values:
+        0: no_timeout_active
+        1: timeout_occurred
+        3: not_supported
+    - byte: 3
+      name: pwm_duty
+      type: uint8
+      unit: pct
+    - byte: 4
+      name: delay_remaining
+      type: uint8
+      unit: sec
+    - byte: 5
+      name: duration_remaining
+      type: uint8
+      unit: sec
+    - byte: 6
+      bit: 0-1
+      name: override_input
+      type: uint2
+      values:
+        0: inactive
+        1: active
