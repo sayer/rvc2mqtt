@@ -602,6 +602,9 @@ sub build_data_packet {
 sub format_rvc_message {
   my ($dgn, $data, $json) = @_;
   
+  # Skip formatting for hardcoded raw messages (which don't have JSON)
+  return $data unless defined $json;
+  
   # Return data as-is if no special formatting is needed or no spec exists
   return $data unless (defined $dgn && defined $encoders->{$dgn});
   

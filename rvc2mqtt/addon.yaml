@@ -1,5 +1,5 @@
 name: "RVC to MQTT Bridge"
-version: "1.0.64"
+version: "1.0.65"
 slug: "rvc2mqtt"
 description: "Bridging RVC CAN bus data to MQTT for Home Assistant."
 arch:
