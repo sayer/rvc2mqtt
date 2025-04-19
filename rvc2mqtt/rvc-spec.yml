@@ -30,29 +30,29 @@ API_VERSION: 1
       name: reboot
       type: bit
       values:
-        00: no action
-        01: Reboot
+        0: no action
+        1: Reboot
     - byte: 0
       bit: 2-3
       name: clear faults
       type: bit
       values:
-        00: no action
-        01: clear faults
+        0: no action
+        1: clear faults
     - byte: 0
       bit: 4-5
       name: reset to default settings
       type: bit
       values:
-        00: no action
-        01: reset to default settings
+        0: no action
+        1: reset to default settings
     - byte: 0
       bit: 6-7
       name: reset statistics
       type: bit
       values:
-        00: no action
-        01: reset statistics
+        0: no action
+        1: reset statistics
 
 17E00:
   name: TERMINAL
@@ -341,29 +341,29 @@ API_VERSION: 1
       name: high voltage limit status
       type: bit
       values:
-        00: not reached
-        01: limit reached
+        0: not reached
+        1: limit reached
     - byte: 2
       bit: 2-3
       name: high voltage disconnect status
       type: bit
       values:
-        00: connected
-        01: charge bus disconnected
+        0: connected
+        1: charge bus disconnected
     - byte: 2
       bit: 4-5
       name: low voltage limit status
       type: bit
       values:
-        00: not reached
-        01: limit reached
+        0: not reached
+        1: limit reached
     - byte: 2
       bit: 6-7
       name: low voltage disconnect status
       type: bit
       values:
-        00: connected
-        01: charge bus disconnected
+        0: connected
+        1: charge bus disconnected
 
 10FFD:
   name: DC_SOURCE_STATUS_SPYDER
@@ -437,50 +437,50 @@ API_VERSION: 1
       name: thermostat status
       type: bit
       values:
-        00: set point met
-        01: set point not met
+        0: set point met
+        1: set point not met
     - byte: 6
       bit: 2-3
       name: burner status
       type: bit
       values:
-        00: off
-        01: ac element is active
+        0: off
+        1: ac element is active
     - byte: 6
       bit: 4-5
       name: ac element status
       type: bit
       values:
-        00: no fault
-        01: open neutral fault detected
+        0: no fault
+        1: open neutral fault detected
     - byte: 6
       bit: 6-7
       name: high temperature limit switch status
       type: bit
       values:
-        00: limit switch not tripped
-        01: limit switch tripped
+        0: limit switch not tripped
+        1: limit switch tripped
     - byte: 7
       bit: 0-1
       name: failure to ignite status
       type: bit
       values:
-        00: no failure
-        01: failed to ignite
+        0: no failure
+        1: failed to ignite
     - byte: 7
       bit: 2-3
       name: ac power failure status
       type: bit
       values:
-        00: ac power present
-        01: ac power not present
+        0: ac power present
+        1: ac power not present
     - byte: 7
       bit: 4-5
       name: dc power failure status
       type: bit
       values:
-        00: dc power present
-        01: dc power not present
+        0: dc power present
+        1: dc power not present
 
 1FFF6:
   name: WATERHEATER_COMMAND
@@ -533,29 +533,29 @@ API_VERSION: 1
       name: alarm
       unit: bit
       values:
-        00: no alarm
-        01: alarm
+        0: no alarm
+        1: alarm
     - byte: 4
       bit: 2-3
       name: warning
       unit: bit
       values:
-        00: no warning
-        01: warning
+        0: no warning
+        1: warning
     - byte: 4
       bit: 4-5
       name: dc supply failure
       unit: bit
       values:
-        00: no failure
-        01: failure
+        0: no failure
+        1: failure
     - byte: 4
       bit: 6-7
       name: sensor failure
       unit: bit
       values:
-        00: no failure
-        01: failure
+        0: no failure
+        1: failure
 
 1FFF4:
   name: CHASSIS_MOBILITY_STATUS
@@ -573,36 +573,36 @@ API_VERSION: 1
       name: park brake status
       type: bit
       values:
-        00: park brake released
-        01: park brake engaged
+        0: park brake released
+        1: park brake engaged
     - byte: 4
       bit: 2-3
       name: transmission lock status
       type: bit
       values:
-        00: transmission not locked
-        01: transmission locked
+        0: transmission not locked
+        1: transmission locked
     - byte: 4
       bit: 4-5
       name: engine lock status
       type: bit
       values:
-        00: engine free to start
-        01: engine locked
+        0: engine free to start
+        1: engine locked
     - byte: 5
       bit: 0-1
       name: ignition switch status
       type: bit
       values:
-        00: off
-        01: on
+        0: off
+        1: on
     - byte: 5
       bit: 2-4
       name: accessory switch status
       type: bit
       values:
-        00: off
-        01: on
+        0: off
+        1: on
     - byte: 6
       name: transmission current gear
       type: byte
@@ -645,8 +645,8 @@ API_VERSION: 1
       name: Headlight Switch
       type: uint2
       values:
-        00: "Headlight Switch Off"
-        01: "Headlight Switch On"
+        0: "Headlight Switch Off"
+        1: "Headlight Switch On"
     - byte: 3
       name: Fuel Level Percent
       type: uint8
@@ -666,55 +666,55 @@ API_VERSION: 1
       name: park brake command
       type: bit
       values:
-        00: please release chassis
-        01: please immobilize chassis
-        10: error
-        11: do not care about status
+        0: please release chassis
+        1: please immobilize chassis
+        2: error
+        3: do not care about status
     - byte: 0
       bit: 2-3
       name: park brake user override
       type: bit
       values:
-        00: normal priority
-        01: override
-        10: error
-        11: na
+        0: normal priority
+        1: override
+        2: error
+        3: na
     - byte: 1
       bit: 0-1
       name: transmission command
       type: bit
       values:
-        00: please release transmission
-        01: please lock transmission
-        10: error
-        11: do not care about status
+        0: please release transmission
+        1: please lock transmission
+        2: error
+        3: do not care about status
     - byte: 1
       bit: 2-3
       name: transmission lock user override
       type: bit
       values:
-        00: normal priority
-        01: override
-        10: error
-        11: na
+        0: normal priority
+        1: override
+        2: error
+        3: na
     - byte: 2
       bit: 0-1
       name: engine lock command
       type: bit
       values:
-        00: please release engine
-        01: please lock engine
-        10: error
-        11: do not care about status
+        0: please release engine
+        1: please lock engine
+        2: error
+        3: do not care about status
     - byte: 2
       bit: 2-3
       name: engine lock user override
       type: bit
       values:
-        00: normal priority
-        01: override
-        10: error
-        11: na
+        0: normal priority
+        1: override
+        2: error
+        3: na
 
 1FFF2:
   name: AAS_CONFIG_STATUS
@@ -756,16 +756,16 @@ API_VERSION: 1
       name: aas operating status
       type: bit
       values:
-        00: off
-        01: on
+        0: off
+        1: on
     - byte: 0
       bit: 2-5
       name: aas mode
       type: uint4
       values:
-        0000: normal
-        0001: fly mode
-        0010: reset
+        0: normal
+        1: fly mode
+        2: reset
         1110: error
         1111: na
     - byte: 1
@@ -789,8 +789,8 @@ API_VERSION: 1
       name: tag axle position
       type: bit
       values:
-        00: down
-        01: up
+        0: down
+        1: up
 
 1FFEF:
   name: AAS_SENSOR_STATUS
@@ -982,99 +982,99 @@ API_VERSION: 1
       name: jack retracting -or- air spring dumping - left rear
       type: uint2
       values:
-        00: Off
-        01: On
+        0: Off
+        1: On
     - byte: 0
       bit: 2-3
       name: jack extending -or- air spring filling - left rear
       type: uint2
       values:
-        00: Off
-        01: On
+        0: Off
+        1: On
     - byte: 0
       bit: 4-5
       name: jack retracting -or- air spring dumping - right front - n/a (three point)
       type: bit2
       values:
-        00: Off
-        01: On
+        0: Off
+        1: On
     - byte: 0
       bit: 6-7
       name: jack extending -or- air spring filling - right front - n/a (three point)
       type: bit2
       values:
-        00: Off
-        01: On
+        0: Off
+        1: On
     - byte: 1
       bit: 0-1
       name: jack retracting -or- air spring dumping - right rear
       type: bit2
       values:
-        00: Off
-        01: On
+        0: Off
+        1: On
     - byte: 1
       bit: 2-3
       name: jack extending -or- air spring filling - right rear
       type: bit2
       values:
-        00: Off
-        01: On
+        0: Off
+        1: On
     - byte: 1
       bit: 4-5
       name: jack retracting -or- air spring dumping - left front - front (three point)
       type: bit2
       values:
-        00: Off
-        01: On
+        0: Off
+        1: On
     - byte: 1
       bit: 6-7
       name: jack extending -or- air spring filling - left front - front (three point)
       type: bit2
       values:
-        00: Off
-        01: On
+        0: Off
+        1: On
     - byte: 2
       bit: 0-1
       name: jack retracting -or- air spring dumping -left middle
       type: bit2
       values:
-        00: Off
-        01: On
+        0: Off
+        1: On
     - byte: 2
       bit: 2-3
       name: jack extending -or- air spring filling - left middle
       type: bit2
       values:
-        00: Off
-        01: On
+        0: Off
+        1: On
     - byte: 2
       bit: 4-5
       name: jack retracting -or- air spring dumping - right middle
       type: bit2
       values:
-        00: Off
-        01: On
+        0: Off
+        1: On
     - byte: 2
       bit: 6-7
       name: jack extending -or- air spring filling - right middle
       type: bit2
       values:
-        00: Off
-        01: On
+        0: Off
+        1: On
     - byte: 3
       bit: 0-1
       name: jack retracting - tongue (multi point)
       type: bit2
       values:
-        00: Off
-        01: On
+        0: Off
+        1: On
     - byte: 3
       bit: 2-3
       name: jack extending - tongue (multi point)
       type: bit2
       values:
-        00: Off
-        01: On
+        0: Off
+        1: On
 
 
 1FFEB:
@@ -1282,16 +1282,16 @@ API_VERSION: 1
       name: aas operating status
       type: bit2
       values:
-        00: off
-        01: on
+        0: off
+        1: on
     - byte: 0
       bit: 2-5
       name: aas mode
       type: bit4
       values:
-        0000: normal
-        0001: fly mode
-        0010: reset
+        0: normal
+        1: fly mode
+        2: reset
         1110: error
         1111: na
     - byte: 1
@@ -1315,8 +1315,8 @@ API_VERSION: 1
       name: tag axle position
       type: bit
       values:
-        00: down
-        01: up
+        0: down
+        1: up
 
 1FFE8:
   name: SLIDE_STATUS
@@ -1340,29 +1340,29 @@ API_VERSION: 1
       name: lock status
       type: uint2
       values:
-        00: unlocked
-        01: locked
+        0: unlocked
+        1: locked
     - byte: 3
       bit: 2-3
       name: unlock status
       type: uint2
       values:
-        00: unlocked
-        01: locked
+        0: unlocked
+        1: locked
     - byte: 3
       bit: 4-5
       name: user lock status
       type: uint2
       values:
-        00: unlocked
-        01: locked
+        0: unlocked
+        1: locked
     - byte: 3
       bit: 6-7
       name: brake status
       type: uint2
       values:
-        00: all motor brakes not locked
-        01: one or more motor brakes locked
+        0: all motor brakes not locked
+        1: one or more motor brakes locked
 
 1FFE7:
   name: SLIDE_COMMAND
@@ -1405,29 +1405,29 @@ API_VERSION: 1
       name: fault surge protection
       type: bit2
       values:
-        00: no fault
-        01: surge fault detected
+        0: no fault
+        1: surge fault detected
     - byte: 2
       bit: 2-3
       name: fault high frequency
       type: bit2
       values:
-        00: no fault
-        01: frequency over high limit
+        0: no fault
+        1: frequency over high limit
     - byte: 2
       bit: 4-5
       name: fault low frequency
       type: bit2
       values:
-        00: no fault
-        01: frequency below low limit
+        0: no fault
+        1: frequency below low limit
     - byte: 2
       bit: 6-7
       name: bypass mode active
       type: bit2
       values:
-        00: normal mode
-        01: bypass mode
+        0: normal mode
+        1: bypass mode
     - byte: 3
       bit: 0-3
       name: qualification Status
@@ -1486,15 +1486,15 @@ API_VERSION: 1
       name: polarity fault
       type: bit2
       values:
-        00: polarity ok
-        01: reverse polarity detected
+        0: polarity ok
+        1: reverse polarity detected
     - byte: 2
       bit: 6-7
       name: ground fault
       type: bit2
       values:
-        00: no fault
-        01: ground fault detected
+        0: no fault
+        1: ground fault detected
 
 1FFE4:
   name: FURNACE_STATUS
@@ -1508,26 +1508,26 @@ API_VERSION: 1
       name: operating mode
       type: bit4
       values:
-        0000: off
-        0001: cool
-        0010: heat
-        0011: auto
-        0100: fan only
+        0: off
+        1: cool
+        2: heat
+        3: auto
+        4: fan only
     - byte: 1
       bit: 4-5
       name: fan mode
       type: bit
       values:
-        00: auto
-        01: on
+        0: auto
+        1: on
       comment: This forces the fan to be on all the time, but allows heat and cool to turn on and off according to the Operating Mode.
     - byte: 1
       bit: 6-7
       name: schedule mode
       type: bit
       values:
-        00: disabled
-        01: enabled
+        0: disabled
+        1: enabled
       comment: If enabled, the set point will change according to programmed scheduled.
     - byte: 2
       name: fan speed
@@ -1559,26 +1559,26 @@ API_VERSION: 1
       name: operating mode
       type: bit4
       values:
-        0000: off
-        0001: cool
-        0010: heat
-        0011: auto
-        0100: fan only
+        0: off
+        1: cool
+        2: heat
+        3: auto
+        4: fan only
     - byte: 1
       bit: 4-5
       name: fan mode
       type: bit
       values:
-        00: auto
-        01: on
+        0: auto
+        1: on
       comment: This forces the fan to be on all the time, but allows heat and cool to turn on and off according to the Operating Mode.
     - byte: 1
       bit: 6-7
       name: schedule mode
       type: bit
       values:
-        00: disabled
-        01: enabled
+        0: disabled
+        1: enabled
       comment: If enabled, the set point will change according to programmed scheduled.
     - byte: 2
       name: fan speed
@@ -1680,50 +1680,50 @@ API_VERSION: 1
       name: sunday
       type: bit2
       values:
-        00: not scheduled for this day
-        01: schedule applies to this day
+        0: not scheduled for this day
+        1: schedule applies to this day
     - byte: 2
       bit: 2-3
       name: monday
       type: bit2
       values:
-        00: not scheduled for this day
-        01: schedule applies to this day
+        0: not scheduled for this day
+        1: schedule applies to this day
     - byte: 2
       bit: 4-5
       name: tuesday
       type: bit2
       values:
-        00: not scheduled for this day
-        01: schedule applies to this day
+        0: not scheduled for this day
+        1: schedule applies to this day
     - byte: 2
       bit: 6-7
       name: wednesday
       type: bit2
       values:
-        00: not scheduled for this day
-        01: schedule applies to this day
+        0: not scheduled for this day
+        1: schedule applies to this day
     - byte: 3
       bit: 0-2
       name: thursday
       type: bit2
       values:
-        00: not scheduled for this day
-        01: schedule applies to this day
+        0: not scheduled for this day
+        1: schedule applies to this day
     - byte: 3
       bit: 2-3
       name: friday
       type: bit2
       values:
-        00: not scheduled for this day
-        01: schedule applies to this day
+        0: not scheduled for this day
+        1: schedule applies to this day
     - byte: 3
       bit: 4-5
       name: saturday
       type: bit2
       values:
-        00: not scheduled for this day
-        01: schedule applies to this day
+        0: not scheduled for this day
+        1: schedule applies to this day
 
 1FEF5:
   name: THERMOSTAT_SCHEDULE_COMMAND_1
@@ -1839,8 +1839,8 @@ API_VERSION: 1
       name: Headlight Switch
       type: uint2
       values:
-        00: "Headlight Switch Off"
-        01: "Headlight Switch On"
+        0: "Headlight Switch Off"
+        1: "Headlight Switch On"
     - byte: 3
       name: Fuel Level Percent
       type: uint8
@@ -2251,15 +2251,15 @@ API_VERSION: 1
       name: line
       type: bit2
       values:
-        00: 1
-        01: 2
+        0: 1
+        1: 2
     - byte: 0
       bit: 6-7
       name: input/output
       type: bit2
       values:
-        00: input
-        01: output
+        0: input
+        1: output
 
 1FFD6:
   name: INVERTER_AC_STATUS_2
@@ -2274,15 +2274,15 @@ API_VERSION: 1
       name: line
       type: bit2
       values:
-        00: 1
-        01: 2
+        0: 1
+        1: 2
     - byte: 0
       bit: 6-7
       name: input/output
       type: bit2
       values:
-        00: input
-        01: output
+        0: input
+        1: output
 
 1FFD5:
   name: INVERTER_AC_STATUS_3
@@ -2297,15 +2297,15 @@ API_VERSION: 1
       name: line
       type: bit2
       values:
-        00: 1
-        01: 2
+        0: 1
+        1: 2
     - byte: 0
       bit: 6-7
       name: input/output
       type: bit2
       values:
-        00: input
-        01: output
+        0: input
+        1: output
 
 1FF8F:
   name: INVERTER_AC_STATUS_4
@@ -2320,15 +2320,15 @@ API_VERSION: 1
       name: line
       type: bit2
       values:
-        00: 1
-        01: 2
+        0: 1
+        1: 2
     - byte: 0
       bit: 6-7
       name: input/output
       type: bit2
       values:
-        00: input
-        01: output
+        0: input
+        1: output
 
 1FF8E:
   name: INVERTER_ACFAULT_CONFIGURATION_STATUS_1
@@ -2368,15 +2368,15 @@ API_VERSION: 1
       name: battery temperature sensor present
       type: bit2
       values:
-        00: no sensor in use
-        01: sensor present and active
+        0: no sensor in use
+        1: sensor present and active
     - byte: 2
       bit: 2-3
       name: load sense enabled
       type: bit2
       values:
-        00: load sense disabled
-        01: load sense enabled
+        0: load sense disabled
+        1: load sense enabled
 
 1FFD3:
   name: INVERTER_COMMAND
@@ -2389,43 +2389,43 @@ API_VERSION: 1
       name: inverter enable
       type: bit
       values:
-        00: disable
-        01: enable
+        0: disable
+        1: enable
     - byte: 1
       bit: 2-3
       name: load sense enable
       type: bit
       values:
-        00: disable
-        01: enable
+        0: disable
+        1: enable
     - byte: 1
       bit: 4-5
       name: pass-through enable
       type: bit
       values:
-        00: disable
-        01: enable
+        0: disable
+        1: enable
     - byte: 7
       bit: 0-1
       name: inverter enable on startup
       type: bit
       values:
-        00: disable
-        01: enable
+        0: disable
+        1: enable
     - byte: 7
       bit: 2-3
       name: load sense enable on startup
       type: bit
       values:
-        00: disable
-        01: enable
+        0: disable
+        1: enable
     - byte: 7
       bit: 0-1
       name: pass-through enable on startup
       type: bit
       values:
-        00: disable
-        01: enable
+        0: disable
+        1: enable
 
 1FFD2:
   name: INVERTER_CONFIGURATION_STATUS_1
@@ -2639,15 +2639,15 @@ API_VERSION: 1
       name: line
       type: bit2
       values:
-        00: 1
-        01: 2
+        0: 1
+        1: 2
     - byte: 0
       bit: 6-7
       name: input/output
       type: bit2
       values:
-        00: input
-        01: output
+        0: input
+        1: output
 
 1FFC9:
   name: CHARGER_AC_STATUS_2
@@ -2662,15 +2662,15 @@ API_VERSION: 1
       name: line
       type: bit2
       values:
-        00: 1
-        01: 2
+        0: 1
+        1: 2
     - byte: 0
       bit: 6-7
       name: input/output
       type: bit2
       values:
-        00: input
-        01: output
+        0: input
+        1: output
 
 1FFC8:
   name: CHARGER_AC_STATUS_3
@@ -2685,15 +2685,15 @@ API_VERSION: 1
       name: line
       type: bit2
       values:
-        00: 1
-        01: 2
+        0: 1
+        1: 2
     - byte: 0
       bit: 6-7
       name: input/output
       type: bit2
       values:
-        00: input
-        01: output
+        0: input
+        1: output
 
 1FF8A:
   name: CHARGER_AC_STATUS_4
@@ -2708,15 +2708,15 @@ API_VERSION: 1
       name: line
       type: bit2
       values:
-        00: 1
-        01: 2
+        0: 1
+        1: 2
     - byte: 0
       bit: 6-7
       name: input/output
       type: bit2
       values:
-        00: input
-        01: output
+        0: input
+        1: output
 
 1FF89:
   name: CHARGER_ACFAULT_CONFIGURATION_STATUS_1
@@ -2769,15 +2769,15 @@ API_VERSION: 1
       name: default state on power-up
       type: bit2
       values:
-        00: disabled
-        01: enabled
+        0: disabled
+        1: enabled
     - byte: 7
       bit: 2-3
       name: auto recharge enable
       type: bit2
       values:
-        00: disabled
-        01: enabled
+        0: disabled
+        1: enabled
     - byte: 7
       bit: 4-7
       name: force charge
@@ -3142,21 +3142,21 @@ API_VERSION: 1
       name: operating mode
       type: bit2
       values:
-        00: automatic
-        01: manual
+        0: automatic
+        1: manual
     - byte: 3
       bit: 2-3
       name: variable level capability
       type: bit2
       values:
-        00: not variable
-        01: variable
+        0: not variable
+        1: variable
     - byte: 3
       bit: 4-7
       name: priority
       type: bit4
       values:
-        0000: highest priority
+        0: highest priority
         1101: lowest priority
         1110: error
         1111: no data
@@ -3183,15 +3183,15 @@ API_VERSION: 1
       name: current demand status
       type: uint2
       values:
-        00: not demanding generator now
-        01: currently demanding generator
+        0: not demanding generator now
+        1: currently demanding generator
     - byte: 1
       bit: 2-3
       name: active status
       type: uint2
       values:
-        00: currently inactive
-        01: currently active
+        0: currently inactive
+        1: currently active
 
 1FED2:
   name: AGS_CRITERION_STATUS_2
@@ -3204,29 +3204,29 @@ API_VERSION: 1
       name: high voltage limit status
       type: uint2
       values:
-        00: not reached
-        01: limit reached
+        0: not reached
+        1: limit reached
     - byte: 1
       bit: 2-3
       name: high voltage disconnect status
       type: uint2
       values:
-        00: connected
-        01: charge bus disconnected
+        0: connected
+        1: charge bus disconnected
     - byte: 1
       bit: 4-5
       name: low voltage limit status
       type: uint2
       values:
-        00: not reached
-        01: limit reached
+        0: not reached
+        1: limit reached
     - byte: 1
       bit: 6-7
       name: low voltage disconnect status
       type: uint2
       values:
-        00: connected
-        01: charge bus disconnected
+        0: connected
+        1: charge bus disconnected
 
 1FED5:
   name: AGS_DEMAND_CONFIGURATION_STATUS
@@ -3236,99 +3236,99 @@ API_VERSION: 1
       name: disable on park brake release
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 0
       bit: 2-3
       name: disable on ignition
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 0
       bit: 4-5
       name: disable on drive
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 0
       bit: 6-7
       name: disable on motion
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 1
       bit: 0-1
       name: disable on oem switch
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 1
       bit: 2-3
       name: disable on service brake
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 1
       bit: 4-5
       name: disable on monoxide detect
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 1
       bit: 6-7
       name: disable on opened compartment
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 2
       bit: 0-1
       name: disable on fire alarm
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 2
       bit: 2-3
       name: disable on manual operation
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 2
       bit: 4-5
       name: disable on genset fault
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 2
       bit: 6-7
       name: disable on system fault
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 3
       bit: 0-1
       name: disable on shore power
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 3
       bit: 2-3
       name: disable on 50 amp shore
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 4
       name: disable ags after time span
       type: uint8
@@ -3346,99 +3346,99 @@ API_VERSION: 1
       name: disable on park brake release
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 0
       bit: 2-3
       name: disable on ignition
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 0
       bit: 4-5
       name: disable on drive
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 0
       bit: 6-7
       name: disable on motion
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 1
       bit: 0-1
       name: disable on oem switch
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 1
       bit: 2-3
       name: disable on service brake
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 1
       bit: 4-5
       name: disable on monoxide detect
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 1
       bit: 6-7
       name: disable on opened compartment
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 2
       bit: 0-1
       name: disable on fire alarm
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 2
       bit: 2-3
       name: disable on manual operation
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 2
       bit: 4-5
       name: disable on genset fault
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 2
       bit: 6-7
       name: disable on system fault
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 3
       bit: 0-1
       name: disable on shore power
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        0: active
     - byte: 3
       bit: 2-3
       name: disable on 50 amp shore
       type: bit2
       values:
-        00: inactive
-        01: active
+        0: inactive
+        1: active
     - byte: 4
       name: disable ags after time span
       type: uint8
@@ -3455,33 +3455,33 @@ API_VERSION: 1
       name: lock status
       type: bit2
       values:
-        00: unlocked
-        01: locked
-        11: lock command not supported
+        0: unlocked
+        1: locked
+        2: lock command not supported
     - byte: 1
       bit: 2-3
       name: overcurrent status
       type: bit2
       values:
-        00: not in overcurrent
-        01: in overcurrent
-        11: status not available
+        0: not in overcurrent
+        1: in overcurrent
+        2: status not available
     - byte: 1
       bit: 4-5
       name: override status
       type: bit2
       values:
-        00: override inactive
-        01: override active
-        11: override status unavailable
+        0: override inactive
+        1: override active
+        2: override status unavailable
     - byte: 1
       bit: 6-7
       name: enable status
       type: bit2
       values:
-        00: enabled
-        01: disabled
-        11: enable status unavailable
+        0: enabled
+        1: disabled
+        2: enable status unavailable
     - byte: 2
       name: last command
       type: uint8
@@ -3501,9 +3501,9 @@ API_VERSION: 1
       name: interlock status
       type: bit2
       values:
-        00: interlock not active
-        01: interlock active
-        02: interlock not supported
+        0: interlock not active
+        1: interlock active
+        2: interlock not supported
 
 1FFBE:
   name: AC_LOAD_COMMAND
@@ -3524,22 +3524,22 @@ API_VERSION: 1
       name: desired operating mode
       type: bit2
       values:
-        00: automatic
-        01: manual
+        0: automatic
+        1: manual
     - byte: 3
       bit: 2-3
       name: interlock
       type: bit2
       values:
-        00: no interlock active
-        01: interlock a
-        10: interlock b
+        0: no interlock active
+        1: interlock a
+        2: interlock b
     - byte: 3
       bit: 4-7
       name: priority
       type: bit4
       values:
-        0000: highest priority
+        0: highest priority
         1101: lowest priority
         1110: error
         1111: no data
@@ -3584,33 +3584,33 @@ API_VERSION: 1
       name: lock status
       type: bit2
       values:
-        00: unlocked
-        01: locked
-        11: lock command not supported
+        0: unlocked
+        1: locked
+        2: lock command not supported
     - byte: 1
       bit: 2-3
       name: overcurrent status
       type: bit2
       values:
-        00: not in overcurrent
-        01: in overcurrent
-        11: status not available
+        0: not in overcurrent
+        1: in overcurrent
+        2: status not available
     - byte: 1
       bit: 4-5
       name: override status
       type: bit2
       values:
-        00: override inactive
-        01: override active
-        11: override status unavailable
+        0: override inactive
+        1: override active
+        2: override status unavailable
     - byte: 1
       bit: 6-7
       name: enable status
       type: bit2
       values:
-        00: enabled
-        01: disabled
-        11: enable status unavailable
+        0: enabled
+        1: disabled
+        2: enable status unavailable
     - byte: 2
       name: last command
       type: uint8
@@ -3630,9 +3630,9 @@ API_VERSION: 1
       name: interlock status
       type: bit2
       values:
-        00: interlock not active
-        01: interlock active
-        02: interlock not supported
+        0: interlock not active
+        1: interlock active
+        2: interlock not supported
 
 1FFBC:
   name: DC_LOAD_COMMAND
@@ -4692,9 +4692,9 @@ API_VERSION: 1
       name: compass calibration status
       type: uint2
       values:
-        00: compass is calibrated
-        01: compass in calibration process
-        10: error
+        0: compass is calibrated
+        1: compass in calibration process
+        2: error
 
 1FF9F:
   name: COMPASS_CALIBRATE_COMMAND
@@ -5143,8 +5143,8 @@ Z0003:
       name: fault surge protection
       type: bit2
       values:
-        00: no fault
-        01: surge fault detected
+        0: no fault
+        1: surge fault detected
     - byte: 2
       bit: 2-3
       name: fault high frequency
@@ -5387,22 +5387,22 @@ Z0005:
       name: Alarm for User Notification
       type: uint2
       values:
-        00b: Do not notify user
-        01b: User notification required
+        0: Do not notify user
+        1: User notification required
     - byte: 4
       bit: 2-3
       name: Alarm for Logging
       type: uint2
       values:
-        00b: Do not log alarm now
-        01b: Alarm should be logged
+        0: Do not log alarm now
+        1: Alarm should be logged
     - byte: 4
       bit: 6-7
       name: Full-Time Monitoring Required
       type: uint2
       values:
-        00b: Full-Time monitoring of alarm is not required
-        01b: Full-Time monitoring of alarm is required
+        0: Full-Time monitoring of alarm is not required
+        1: Full-Time monitoring of alarm is required
     - byte: 5
       name: Device Instance
       type: uint8
@@ -5411,29 +5411,29 @@ Z0005:
       name: Automatic Reset Enabled
       type: uint2
       values:
-        00b: Alarm will not automatically return to Ready State
-        01b: Alarm will automatically return to Ready State
+        0: Alarm will not automatically return to Ready State
+        1: Alarm will automatically return to Ready State
     - byte: 6
       bit: 2-3
       name: Alarm Ready
       type: uint2
       values:
-        00b: Alarm condition is not being monitored
-        01b: Alarm condition is being monitored
+        0: Alarm condition is not being monitored
+        1: Alarm condition is being monitored
     - byte: 6
       bit: 4-5
       name: Alarm is Acknowledged
       type: uint2
       values:
-        00b: Alarm has not been acknowledged
-        01b: Alarm has been triggered and acknowledged
+        0: Alarm has not been acknowledged
+        1: Alarm has been triggered and acknowledged
     - byte: 6
       bit: 6-7
       name: Alarm Triggered
       type: uint2
       values:
-        00b: Alarm is not Triggered
-        01b: Alarm is Triggered
+        0: Alarm is not Triggered
+        1: Alarm is Triggered
 
 1FEA6:
   name: ROOF_FAN_COMMAND_1
@@ -5487,12 +5487,12 @@ Z0005:
       name: Dome Position [Deprecated]
       type: uint4
       values:
-        0000: "Close"
-        0001: "¼ Open"
-        0010: "½ Open"
-        0011: "¾ Open"
-        0100: "Open"
-        0101: "Stop"
+        0: "Close"
+        1: "¼ Open"
+        2: "½ Open"
+        3: "¾ Open"
+        4: "Open"
+        5: "Stop"
       comment: "Recommend to use Desired Dome Position under ROOF_FAN_COMMAND_2 for new development."
     - byte: 3
       bit: 6-7
@@ -5614,29 +5614,29 @@ Z0005:
       name: Mechanical Lock status
       type: uint2
       values:
-        00b: "Lift is unlocked"
-        01b: "Lift is locked"
+        0: "Lift is unlocked"
+        1: "Lift is locked"
     - byte: 3
       bit: 2-3
       name: Unlock status
       type: uint2
       values:
-        00b: "Lift is unlocked"
-        01b: "Lift is locked"
+        0: "Lift is unlocked"
+        1: "Lift is locked"
     - byte: 3
       bit: 4-5
       name: User Lock Status
       type: uint2
       values:
-        00b: "User lock is not activated. Lift is OK to move"
-        01b: "User lock is activated. Lift will not move"
+        0: "User lock is not activated. Lift is OK to move"
+        1: "User lock is activated. Lift will not move"
     - byte: 3
       bit: 6-7
       name: Brake status
       type: uint2
       values:
-        00b: "All motor brakes are not locked"
-        01b: "One or more motor brakes are locked"
+        0: "All motor brakes are not locked"
+        1: "One or more motor brakes are locked"
 
 1FEE2:
   name: WINDOW_COMMAND
@@ -5696,9 +5696,9 @@ Z0005:
       name: Fix Type
       type: uint3
       values:
-        000b: No Fix
-        010b: 2D
-        011b: 3D
+        0: No Fix
+        2: 2D
+        3: 3D
 
 1FED0:
   name: DC_DISCONNECT_STATUS
@@ -5711,20 +5711,20 @@ Z0005:
       name: Circuit Status
       type: uint2
       values:
-        00b: Circuit is disconnected
-        01b: Circuit is connected
+        0: Circuit is disconnected
+        1: Circuit is connected
     - byte: 2-3
       name: Last Command
       type: uint2
       values:
-        00b: Disconnect circuit
-        01b: Connect circuit
+        0: Disconnect circuit
+        1: Connect circuit
     - byte: 4-5
       name: Bypass Detect
       type: uint2
       values:
-        00b: Circuit is under system control
-        01b: Circuit has been bypassed
+        0: Circuit is under system control
+        1: Circuit has been bypassed
     - byte: 2-3
       name: DC switched voltage
       type: uint16
@@ -5745,8 +5745,8 @@ Z0005:
       name: command
       type: uint2
       values:
-        00b: Disconnect circuit
-        01b: Connect circuit
+        0: Disconnect circuit
+        1: Connect circuit
 
 1FEFB:
   name: FLOOR_HEAT_COMMAND
@@ -5759,8 +5759,8 @@ Z0005:
       name: Desired operating mode
       type: uint2
       values:
-        00b: Automatic
-        01b: Manual
+        0: Automatic
+        1: Manual
     - byte: 2-3
       name: Set point
       type: uint16
@@ -5845,8 +5845,8 @@ Z0005:
       name: Alarm status
       type: uint2
       values:
-        00b: No alarm
-        01b: Slow leak detected
+        0: No alarm
+        1: Slow leak detected
     - byte: 2-3
       name: Leak rate
       type: uint16
@@ -5898,8 +5898,8 @@ Z0005:
       name: Bypass mode
       type: uint2
       values:
-        00b: Normal Mode
-        01b: Bypass Mode
+        0: Normal Mode
+        1: Bypass Mode
 
 1FEED:
   name: TIRE_PRESSURE_CONFIGURATION_STATUS
@@ -6039,29 +6039,29 @@ Z0005:
       name: lock status
       type: uint2
       values:
-        00: unlocked
-        01: locked
+        0: unlocked
+        1: locked
     - byte: 3
       bit: 2-3
       name: unlock status
       type: uint2
       values:
-        00: unlocked
-        01: locked
+        0: unlocked
+        1: locked
     - byte: 3
       bit: 4-5
       name: user lock status
       type: uint2
       values:
-        00: unlocked
-        01: locked
+        0: unlocked
+        1: locked
     - byte: 3
       bit: 6-7
       name: brake status
       type: uint2
       values:
-        00: all motor brakes not locked
-        01: one or more motor brakes locked
+        0: all motor brakes not locked
+        1: one or more motor brakes locked
 
 1FEF2:
   name: AWNING_COMMAND
@@ -6141,128 +6141,128 @@ Z0005:
       name: Engine Preheat
       type: uint4
       values:
-        0000: Off
-        0001: On
-        0101: Test (Forced On)
+        0: Off
+        1: On
+        5: Test (Forced On)
     - byte: 2
       bit: 4-5
       name: Coolant Level Warning
       type: uint2
       values:
-        00: Coolant level sufficient
-        01: Coolant level low
+        0: Coolant level sufficient
+        1: Coolant level low
     - byte: 2
       bit: 6-7
       name: Hot Water Priority
       type: uint2
       values:
-        00: Domestic water priority
-        01: Heating priority
+        0: Domestic water priority
+        1: Heating priority
     - byte: 3
       bit: 0-1
       name: Output Status:Burner
       type: uint2
       values:
-        00: Off
-        01: On
+        0: Off
+        1: On
     - byte: 3
       bit: 2-3
       name: Output Status:Burner Indicator
       type: uint2
       values:
-        00: Off
-        01: On
+        0: Off
+        1: On
     - byte: 3
       bit: 4-5
       name: Output Status:Electric Low
       type: uint2
       values:
-        00: Off
-        01: On
+        0: Off
+        1: On
     - byte: 3
       bit: 6-7
       name: Output Status:Electric High
       type: uint2
       values:
-        00: Off
-        01: On
+        0: Off
+        1: On
     - byte: 4
       bit: 0-1
       name: Burner Overcurrent Status
       type: uint2
       values:
-        00: No overcurrent detected
-        01: Overcurrent detected
+        0: No overcurrent detected
+        1: Overcurrent detected
     - byte: 4
       bit: 2-3
       name: Burner Undercurrent Status
       type: uint2
       values:
-        00: No undercurrent detected
-        01: Undercurrent detected
+        0: No undercurrent detected
+        1: Undercurrent detected
     - byte: 4
       bit: 4-5
       name: Burner Temperature Status
       type: uint2
       values:
-        00: Temperature normal
-        01: Temperature warning
+        0: Temperature normal
+        1: Temperature warning
     - byte: 4
       bit: 6-7
       name: Burner Input Status
       type: uint2
       values:
-        00: Off (Inactive)
-        01: On (Active)
+        0: Off (Inactive)
+        1: On (Active)
     - byte: 5
       bit: 0-1
       name: Burner Indicator Overcurrent Status
       type: uint2
       values:
-        00: No overcurrent detected
-        01: Overcurrent detected
+        0: No overcurrent detected
+        1: Overcurrent detected
     - byte: 5
       bit: 2-3
       name: Burner Indicator Undercurrent Status
       type: uint2
       values:
-        00: No undercurrent detected
-        01: Undercurrent detected
+        0: No undercurrent detected
+        1: Undercurrent detected
     - byte: 5
       bit: 4-5
       name: Burner Indicator Temperature Status
       type: uint2
       values:
-        00: Temperature normal
-        01: Temperature warning
+        0: Temperature normal
+        1: Temperature warning
     - byte: 6
       bit: 0-1
       name: Electric Low Element Overcurrent Status
       type: uint2
       values:
-        00: No overcurrent detected
-        01: Overcurrent detected
+        0: No overcurrent detected
+        1: Overcurrent detected
     - byte: 6
       bit: 2-3
       name: Electric Low Element Undercurrent Status
       type: uint2
       values:
-        00: No undercurrent detected
-        01: Undercurrent detected
+        0: No undercurrent detected
+        1: Undercurrent detected
     - byte: 6
       bit: 4-5
       name: Electric Low Element Temperature Status
       type: uint2
       values:
-        00: Temperature normal
-        01: Temperature warning
+        0: Temperature normal
+        1: Temperature warning
     - byte: 6
       bit: 6-7
       name: Electric Low Element Input Status
       type: uint2
       values:
-        00: Off (Inactive)
-        01: On (Active)
+        0: Off (Inactive)
+        1: On (Active)
 
 1FE97:
   name: CIRCULATION_PUMP_STATUS
@@ -6278,30 +6278,30 @@ Z0005:
       name: Output Status
       type: uint4
       values:
-        0000: Off
-        0001: On
-        0101: Test (Forced On)
+        0: Off
+        1: On
+        5: Test (Forced On)
     - byte: 2
       bit: 0-1
       name: Pump Overcurrent Status
       type: uint2
       values:
-        00: No overcurrent detected
-        01: Overcurrent detected
+        0: No overcurrent detected
+        1: Overcurrent detected
     - byte: 2
       bit: 2-3
       name: Pump Undercurrent Status
       type: uint2
       values:
-        00: No undercurrent detected
-        01: Undercurrent detected
+        0: No undercurrent detected
+        1: Undercurrent detected
     - byte: 2
       bit: 4-5
       name: Pump Temperature Status
       type: uint2
       values:
-        00: Temperature normal
-        01: Temperature warning
+        0: Temperature normal
+        1: Temperature warning
 
 1FE96:
   name: CIRCULATION_PUMP_COMMAND
@@ -6317,5 +6317,5 @@ Z0005:
       name: Output Mode
       type: uint4
       values:
-        0000: Off (End of Test)
-        0101: Test (Forced On)
+        0: Off (End of Test)
+        5: Test (Forced On)
