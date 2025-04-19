@@ -3431,7 +3431,7 @@ API_VERSION: 1
       type: bit2
       values:
         0: inactive
-        0: active
+        1: active
     - byte: 3
       bit: 2-3
       name: disable on 50 amp shore
@@ -4010,14 +4010,14 @@ API_VERSION: 1
       values:
         0: unlocked
         1: locked
-        11: lock command not supported
+        3: lock command not supported
     - byte: 3
       bit: 2-3
       name: motor status
       type: bit2
       values:
         0: inactive
-        0: active
+        1: active
     - byte: 3
       bit: 4-5
       name: forward status
@@ -4056,7 +4056,7 @@ API_VERSION: 1
       values:
         0: not in overcurrent
         1: in overcurrent
-        11: overcurrent status unavailable
+        3: overcurrent status unavailable
     - byte: 6
       bit: 2-3
       name: override status
@@ -4064,7 +4064,7 @@ API_VERSION: 1
       values:
         0: override inactive
         1: override active
-        11: override status unavailable
+        3: override status unavailable
     - byte: 6
       bit: 4-5
       name: disable1 status
@@ -4072,7 +4072,7 @@ API_VERSION: 1
       values:
         0: inactive
         1: active
-        11: not supported
+        3: not supported
     - byte: 6
       bit: 6-7
       name: disable2 status
@@ -4080,7 +4080,7 @@ API_VERSION: 1
       values:
         0: inactive
         1: active
-        11: not supported
+        3: not supported
 
 1FEE1:
   name: DC_MOTOR_CONTROL_COMMAND
@@ -5576,21 +5576,6 @@ Z0005:
         63: "One step"
       comment: "This would typically be used on fans that support a broad range of possible speeds. When adjusting fixed speed fans this value would typically be set to 63 (111111b)"
 
-1FDB1:
-  name: BROKER_CONNECTION_COMMAND
-  parameters:
-    - byte: 0
-      name: Broker instance
-      type: uint8
-      comment: "1-250"
-    - byte: 1
-      name: Connection Instance
-      type: uint8
-      comment: "1-250"
-    - byte: 2
-      name: Connection Text Identifier Length
-      type: uint8
-
 1FEE3:
   name: WINDOW_STATUS
   parameters:
@@ -6670,20 +6655,6 @@ EF00:
     - byte: 0
       name: request_level
       type: uint8
-
-1FDAF:
-  name: BROKER_CONNECTION_TEXT_COMMAND
-  # section 6.44.8
-  parameters:
-    - byte: 0
-      name: broker_instance
-      type: uint8
-    - byte: 1
-      name: connection_instance
-      type: uint8
-    - byte: 2-7
-      name: text
-      type: ascii
 
 # Air-conditioner component
 1FDAD:
