@@ -1324,6 +1324,12 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
+      values:
+        1: Room 1
+        2: Room 2
+        3: Room 3
+        4: Room 4
+        5: Generator
     - byte: 1
       name: motion
       type: uint8
@@ -1340,29 +1346,64 @@ API_VERSION: 1
       name: lock status
       type: uint2
       values:
-        0: unlocked
-        1: locked
+        0: secured
+        1: not secured
     - byte: 3
       bit: 2-3
       name: unlock status
       type: uint2
       values:
-        0: unlocked
-        1: locked
+        0: unlocked & ready
+        1: not unlocked
     - byte: 3
       bit: 4-5
       name: user lock status
       type: uint2
       values:
-        0: unlocked
-        1: locked
+        0: user lock off
+        1: user lock on
     - byte: 3
       bit: 6-7
       name: brake status
       type: uint2
       values:
-        0: all motor brakes not locked
-        1: one or more motor brakes locked
+        0: no motor brakes locked
+        1: one or more brakes locked
+    - byte: 4
+      bit: 0-1
+      name: park brake
+      type: uint2
+      values:
+        0: slide may move
+        1: slide blocked by park brake
+    - byte: 4
+      bit: 2-3
+      name: leveling jacks
+      type: uint2
+      values:
+        0: slide may move
+        1: slide blocked by levelers
+    - byte: 4
+      bit: 4-5
+      name: ignition key
+      type: uint2
+      values:
+        0: slide may move
+        1: slide blocked by ignition
+    - byte: 4
+      bit: 6-7
+      name: air seal
+      type: uint2
+      values:
+        0: slide may move
+        1: slide blocked by air seal
+    - byte: 5
+      bit: 0-1
+      name: low voltage
+      type: uint2
+      values:
+        0: slide may move
+        1: slide blocked by low voltage
 
 1FFE7:
   name: SLIDE_COMMAND
@@ -1370,18 +1411,50 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
+      values:
+        1: Room 1
+        2: Room 2
+        3: Room 3
+        4: Room 4
+        5: Generator
+        6: Step (deprecated)
+        7: Step cover
     - byte: 1
       bit: 0-1
-      name: direction of movement
-      type: bit2
+      name: user lock
+      type: uint2
       values:
-        00: stop
-        01: extend
-        10: retract
-    - byte: 3
-      name: move to position
+        0: release user lock
+        1: set user lock
+    - byte: 1
+      bit: 2-3
+      name: air seal deflate
+      type: uint2
+      values:
+        0: off
+        1: begin deflation
+    - byte: 1
+      bit: 4-5
+      name: air seal vacuum
+      type: uint2
+      values:
+        0: off
+        1: begin evacuation
+    - byte: 1
+      bit: 6-7
+      name: mechanical lock
+      type: uint2
+      values:
+        0: disengage lock
+        1: engage lock
+    - byte: 2
+      name: direction of movement
       type: uint8
-      unit: Pct
+      values:
+        0: stop
+        1: extend
+        2: retract
+        255: do not change
 
 1FFE6:
   name: SLIDE_SENSOR_STATUS
@@ -1389,55 +1462,147 @@ API_VERSION: 1
     - byte: 0
       name: instance
       type: uint8
-    - byte: 1
-      name: voltage fault
-      type: uint8
       values:
-        0: voltage ok
-        1: extremely low voltage
-        2: low voltage
-        3: high voltage
-        4: extremely high voltage
-        5: open line 1 detected
-        6: open line 2 detected
+        1: Room 1
+        2: Room 2
+        3: Room 3
+        4: Room 4
+        5: Generator
+        6: Step (deprecated)
+        7: Step cover
+    - byte: 1
+      bit: 0-1
+      name: slide lock limit (upper front)
+      type: uint2
+      values:
+        0: not locked
+        1: locked
+    - byte: 1
+      bit: 2-3
+      name: slide lock limit (upper rear)
+      type: uint2
+      values:
+        0: not locked
+        1: locked
+    - byte: 1
+      bit: 4-5
+      name: slide lock limit (lower front)
+      type: uint2
+      values:
+        0: not locked
+        1: locked
+    - byte: 1
+      bit: 6-7
+      name: slide lock limit (lower rear)
+      type: uint2
+      values:
+        0: not locked
+        1: locked
     - byte: 2
       bit: 0-1
-      name: fault surge protection
-      type: bit2
+      name: slide unlock limit (upper front)
+      type: uint2
       values:
-        00: no fault
-        01: surge fault detected
+        0: not unlocked
+        1: unlocked
     - byte: 2
       bit: 2-3
-      name: fault high frequency
-      type: bit2
+      name: slide unlock limit (upper rear)
+      type: uint2
       values:
-        00: no fault
-        01: frequency over high limit
+        0: not unlocked
+        1: unlocked
     - byte: 2
       bit: 4-5
-      name: fault low frequency
-      type: bit2
+      name: slide unlock limit (lower front)
+      type: uint2
       values:
-        00: no fault
-        01: frequency below low limit
+        0: not unlocked
+        1: unlocked
     - byte: 2
       bit: 6-7
-      name: bypass mode active
-      type: bit2
+      name: slide unlock limit (lower rear)
+      type: uint2
       values:
-        00: normal mode
-        01: bypass mode
+        0: not unlocked
+        1: unlocked
     - byte: 3
-      bit: 0-3
-      name: qualification Status
-      type: uint4
+      bit: 0-1
+      name: slide retraction limit (upper front)
+      type: uint2
       values:
-        0: unqualified (no ac present)
-        1: unqualified (bad ac)
-        2: waiting to qualify
-        3: qualifying
-        4: qualified (good ac)
+        0: not retracted
+        1: retracted
+    - byte: 3
+      bit: 2-3
+      name: slide retraction limit (upper rear)
+      type: uint2
+      values:
+        0: not retracted
+        1: retracted
+    - byte: 3
+      bit: 4-5
+      name: slide retraction limit (lower front)
+      type: uint2
+      values:
+        0: not retracted
+        1: retracted
+    - byte: 3
+      bit: 6-7
+      name: slide retraction limit (lower rear)
+      type: uint2
+      values:
+        0: not retracted
+        1: retracted
+    - byte: 4
+      bit: 0-1
+      name: slide extension limit (upper front)
+      type: uint2
+      values:
+        0: not extended
+        1: extended
+    - byte: 4
+      bit: 2-3
+      name: slide extension limit (upper rear)
+      type: uint2
+      values:
+        0: not extended
+        1: extended
+    - byte: 4
+      bit: 4-5
+      name: slide extension limit (lower front)
+      type: uint2
+      values:
+        0: not extended
+        1: extended
+    - byte: 4
+      bit: 6-7
+      name: slide extension limit (lower rear)
+      type: uint2
+      values:
+        0: not extended
+        1: extended
+    - byte: 5
+      bit: 0-1
+      name: retractable floor limit (up)
+      type: uint2
+      values:
+        0: not up
+        1: up
+    - byte: 5
+      bit: 2-3
+      name: retractable floor limit (down)
+      type: uint2
+      values:
+        0: not down
+        1: down
+    - byte: 6
+      bit: 0-1
+      name: air seal vacuum switch
+      type: uint2
+      values:
+        0: not evacuated
+        1: evacuated
 
 1FFE5:
   name: SLIDE_MOTOR_STATUS
@@ -1446,55 +1611,48 @@ API_VERSION: 1
       name: instance
       type: uint8
     - byte: 1
-      bit: 0-1
-      name: voltage fault
+      name: motion
       type: uint8
-      values:
-        0: voltage ok
-        1: extremely low voltage
-        2: low voltage
-        3: high voltage
-        4: extremely high voltage
-        5: open line 1 detected
-        6: open line 2 detected
     - byte: 2
-      bit: 0-1
-      name: current fault
+      name: position
       type: uint8
-      values:
-        0: current ok
-        1: extremely low current
-        2: low current
-        3: high current
-        4: extremely high current
-        5: open line 1 detected
-        6: open line 2 detected
-    - byte: 2
+    - byte: 3
+      bit: 0-1
+      name: lock status
+      type: uint2
+    - byte: 3
       bit: 2-3
-      name: temperature fault
-      type: uint8
-      values:
-        0: temperature ok
-        1: too cold
-        2: cold
-        3: hot
-        4: extremely hot
-        5: open line 1 detected
-        6: open line 2 detected
-    - byte: 2
+      name: unlock status
+      type: uint2
+    - byte: 3
       bit: 4-5
-      name: polarity fault
-      type: bit2
-      values:
-        00: polarity ok
-        01: reverse polarity detected
-    - byte: 2
+      name: brake status
+      type: uint2
+    - byte: 3
       bit: 6-7
-      name: ground fault
-      type: bit2
-      values:
-        00: no fault
-        01: ground fault detected
+      name: air seal status
+      type: uint2
+    - byte: 4
+      bit: 0-3
+      name: slide lock limit switches
+      type: uint4
+      comment: bits 0–3 map to “Upper Front”, “Upper Rear”, “Lower Front”, “Lower Rear” V-C Specification Full Layer 12-20-24 Final-3.pdf](file-service://file-1LZVkWbLLoomsprD6jMTmF)
+    - byte: 5
+      bit: 0-3
+      name: slide unlock limit switches
+      type: uint4
+      comment: likewise, 4 switches V-C Specification Full Layer 12-20-24 Final-3.pdf](file-service://file-1LZVkWbLLoomsprD6jMTmF)
+    - byte: 6
+      bit: 0-3
+      name: slide retraction limit switches
+      type: uint4
+      comment: likewise V-C Specification Full Layer 12-20-24 Final-3.pdf](file-service://file-1LZVkWbLLoomsprD6jMTmF)
+    - byte: 7
+      bit: 0-3
+      name: slide extension limit switches
+      type: uint4
+      comment: likewise V-C Specification Full Layer 12-20-24 Final-3.pdf](file-service://file-1LZVkWbLLoomsprD6jMTmF)
+    # and so on for current, motor-brake-control, etc., as enumerated in Table 6.14.4b V-C Specification Full Layer 12-20-24 Final-3.pdf](file-service://file-1LZVkWbLLoomsprD6jMTmF)
 
 1FFE4:
   name: FURNACE_STATUS
@@ -4936,30 +5094,521 @@ API_VERSION: 1
         1: Open/Extend Door
         2: Close/Retract Door
         3: Stop
-
+# 6.45.2
 1FEB3:
   name: SOLAR_CONTROLLER_STATUS
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1-2
+      name: charge voltage
+      type: uint16
+      unit: Vdc
+    - byte: 3-4
+      name: charge current
+      type: uint16
+      unit: Adc
+    - byte: 5
+      name: charge current percent of maximum
+      type: uint8
+      unit: '%'
+    - byte: 6
+      name: operating state
+      type: uint8
+    - byte: 7
+      bit: 0-1
+      name: power‑up state
+      type: uint2
+    - byte: 7
+      bit: 2-3
+      name: clear history
+      type: uint2
+    - byte: 7
+      bit: 4-7
+      name: force charge
+      type: uint4
 
+# 6.45.3
+1FE85:
+  name: SOLAR_CONTROLLER_STATUS_2
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1-2
+      name: rated battery voltage
+      type: uint16
+      unit: Vdc
+    - byte: 3-4
+      name: rated charging current
+      type: uint16
+      unit: Adc
+    - byte: 5
+      name: supported battery types
+      type: bitmap
+    - byte: 6
+      name: supported battery types (continued)
+      type: bitmap
+    - byte: 7
+      bit: 0-1
+      name: Vendor‑Defined Proprietary Type 1 support
+      type: uint2
+    - byte: 7
+      bit: 2-3
+      name: Vendor‑Defined Proprietary Type 2 support
+      type: uint2
+
+# 6.45.4
+1FE84:
+  name: SOLAR_CONTROLLER_STATUS_3
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1-2
+      name: rated solar input voltage
+      type: uint16
+      unit: Vdc
+    - byte: 3-4
+      name: rated solar input current
+      type: uint16
+      unit: Adc
+    - byte: 5-6
+      name: rated solar over‑power
+      type: uint16
+      unit: W
+
+# 6.45.5
+1FE83:
+  name: SOLAR_CONTROLLER_STATUS_4
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1-2
+      name: today’s amp‑hours to battery
+      type: uint16
+      unit: Ah
+    - byte: 3-4
+      name: yesterday’s amp‑hours to battery
+      type: uint16
+      unit: Ah
+    - byte: 5-6
+      name: day‑before‑yesterday’s amp‑hours to battery
+      type: uint16
+      unit: Ah
+
+# 6.45.6
+1FE82:
+  name: SOLAR_CONTROLLER_STATUS_5
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1-2
+      name: last 7 days amp‑hours to battery
+      type: uint16
+      unit: Ah
+    - byte: 3-6
+      name: cumulative power generation
+      type: uint32
+      unit: kWh
+
+# 6.45.7
+1FE81:
+  name: SOLAR_CONTROLLER_STATUS_6
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1-2
+      name: total number of operating days
+      type: uint16
+      unit: days
+    - byte: 3-4
+      name: controller measured temperature
+      type: uint16
+      unit: °C
+
+# 6.45.8
+1FE80:
+  name: SOLAR_CONTROLLER_BATTERY_STATUS
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      name: DC Source instance (DEPRECATED)
+      type: uint8
+    - byte: 2
+      name: charger priority (DEPRECATED)
+      type: uint8
+    - byte: 3-4
+      name: measured voltage
+      type: uint16
+      unit: Vdc
+    - byte: 5-6
+      name: measured current
+      type: uint16
+      unit: Adc
+    - byte: 7
+      name: measured temperature
+      type: uint8
+      unit: °C
+
+# 6.45.9
+1FDFF:
+  name: SOLAR_CONTROLLER_SOLAR_ARRAY_STATUS
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1-2
+      name: solar array measured voltage
+      type: uint16
+      unit: Vdc
+    - byte: 3-4
+      name: solar array measured input current
+      type: uint16
+      unit: Adc
+
+# 6.45.10
 1FEB2:
   name: SOLAR_CONTROLLER_CONFIGURATION_STATUS
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      name: charging algorithm
+      type: uint8
+    - byte: 2
+      name: controller mode
+      type: uint8
+    - byte: 3
+      bit: 0-1
+      name: battery sensor present
+      type: uint2
+    - byte: 3
+      bit: 2-3
+      name: linkage mode
+      type: uint2
+    - byte: 3
+      bit: 4-7
+      name: battery type
+      type: uint4
+    - byte: 4-5
+      name: battery bank size
+      type: uint16
+      unit: A•h
+    - byte: 7
+      name: maximum charging current
+      type: uint8
+      unit: A
 
+# 6.45.11
 1FEB1:
   name: SOLAR_CONTROLLER_COMMAND
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      name: solar charge controller status
+      type: uint8
+    - byte: 2
+      bit: 0-1
+      name: default state on power‑up
+      type: uint2
+    - byte: 2
+      bit: 2-3
+      name: clear history
+      type: uint2
+    - byte: 2
+      bit: 4-7
+      name: force charge
+      type: uint4
 
+# 6.45.12
 1FEB0:
   name: SOLAR_CONTROLLER_CONFIGURATION_COMMAND
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      name: charging algorithm
+      type: uint8
+    - byte: 2
+      name: charger mode
+      type: uint8
+    - byte: 3
+      bit: 0-1
+      name: battery sensor present
+      type: uint2
+    - byte: 3
+      bit: 2-3
+      name: linkage mode
+      type: uint2
+    - byte: 3
+      bit: 4-7
+      name: battery type
+      type: uint4
+    - byte: 4-5
+      name: battery bank size
+      type: uint16
+      unit: A•h
+    - byte: 7
+      name: maximum charging current
+      type: uint8
+      unit: A
 
+# 6.45.13
+1FDFE:
+  name: SOLAR_CONTROLLER_CONFIGURATION_STATUS_2
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1-2
+      name: bulk‑absorption voltage
+      type: uint16
+      unit: Vdc
+    - byte: 3-4
+      name: float voltage
+      type: uint16
+      unit: Vdc
+    - byte: 5-6
+      name: charge return voltage
+      type: uint16
+      unit: Vdc
+
+# 6.45.14
+1FDFD:
+  name: SOLAR_CONTROLLER_CONFIGURATION_COMMAND_2
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1-2
+      name: bulk‑absorption voltage
+      type: uint16
+      unit: Vdc
+    - byte: 3-4
+      name: float voltage
+      type: uint16
+      unit: Vdc
+    - byte: 5-6
+      name: charge return voltage
+      type: uint16
+      unit: Vdc
+
+# 6.45.15
+1FDFC:
+  name: SOLAR_CONTROLLER_CONFIGURATION_STATUS_3
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1-2
+      name: under‑voltage warning voltage
+      type: uint16
+      unit: Vdc
+    - byte: 3-4
+      name: battery high voltage limit voltage
+      type: uint16
+      unit: Vdc
+    - byte: 5-6
+      name: battery low voltage limit voltage
+      type: uint16
+      unit: Vdc
+
+# 6.45.16
+1FDFB:
+  name: SOLAR_CONTROLLER_CONFIGURATION_COMMAND_3
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1-2
+      name: under‑voltage warning voltage
+      type: uint16
+      unit: Vdc
+    - byte: 3-4
+      name: battery high voltage limit voltage
+      type: uint16
+      unit: Vdc
+    - byte: 5-6
+      name: battery low voltage limit voltage
+      type: uint16
+      unit: Vdc
+
+# 6.45.17
+1FDFA:
+  name: SOLAR_CONTROLLER_CONFIGURATION_STATUS_4
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1-2
+      name: battery high voltage limit return voltage
+      type: uint16
+      unit: Vdc
+    - byte: 3-4
+      name: battery low voltage limit return voltage
+      type: uint16
+      unit: Vdc
+    - byte: 5
+      name: battery low voltage limit time delay
+      type: uint8
+      unit: sec
+    - byte: 6
+      name: absorption duration
+      type: uint8
+      unit: min
+    - byte: 7
+      name: temperature compensation factor
+      type: uint8
+      unit: mV/°C
+
+# 6.45.18
+1FDF9:
+  name: SOLAR_CONTROLLER_CONFIGURATION_COMMAND_4
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1-2
+      name: battery high voltage limit return voltage
+      type: uint16
+      unit: Vdc
+    - byte: 3-4
+      name: battery low voltage limit return voltage
+      type: uint16
+      unit: Vdc
+    - byte: 5
+      name: battery low voltage limit time delay
+      type: uint8
+      unit: sec
+    - byte: 6
+      name: absorption duration
+      type: uint8
+      unit: min
+    - byte: 7
+      name: temperature compensation factor
+      type: uint8
+      unit: mV/°C
+
+# 6.45.19
+1FDCF:
+  name: SOLAR_CONTROLLER_CONFIGURATION_STATUS_5
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      name: charger priority
+      type: uint8
+    - byte: 2
+      name: external temperature sensor high limit
+      type: uint8
+      unit: °C
+    - byte: 3
+      name: external temperature sensor low limit
+      type: uint8
+      unit: °C
+
+1FDCE:
+  name: SOLAR_CONTROLLER_CONFIGURATION_COMMAND_5
+  # Section 6.45.20
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      name: charger priority
+      type: uint8
+    - byte: 2
+      name: external temperature sensor high temperature limit
+      type: uint8
+      unit: °C
+    - byte: 3
+      name: external temperature sensor low temperature limit
+      type: uint8
+      unit: °C
+
+# 6.45.21
 1FEAF:
   name: SOLAR_EQUALIZATION_STATUS
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1-2
+      name: time remaining
+      type: uint16
+      unit: min
+    - byte: 3
+      bit: 0-1
+      name: pre‑charging status
+      type: uint2
+    - byte: 4
+      name: time since last equalization
+      type: uint8
+      unit: days
 
+# 6.45.22
 1FEAE:
   name: SOLAR_EQUALIZATION_CONFIGURATION_STATUS
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1-2
+      name: equalization voltage
+      type: uint16
+      unit: Vdc
+    - byte: 3-4
+      name: equalization time
+      type: uint16
+      unit: min
+    - byte: 5
+      name: equalization interval
+      type: uint8
+      unit: days
 
+# 6.45.23
 1FEAD:
   name: SOLAR_EQUALIZATION_CONFIGURATION_COMMAND
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1-2
+      name: equalization voltage
+      type: uint16
+      unit: Vdc
+    - byte: 3-4
+      name: equalization time
+      type: uint16
+      unit: min
+    - byte: 5
+      name: equalization interval
+      type: uint8
+      unit: days
 
 1FED6:
   name: MFG_SPECIFIC_CLAIM_REQUEST
+  # Section 3.3.4
+  parameters:
+    - byte: 0
+      bit: 0-2
+      name: manufacturer code LSB
+      type: uint3
+    - byte: 1
+      name: manufacturer code MSB
+      type: uint8
 
 1FECA:
   name: DM_RV
