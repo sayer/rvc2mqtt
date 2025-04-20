@@ -789,8 +789,8 @@ API_VERSION: 1
       name: tag axle position
       type: bit2
       values:
-        01: down
-        01: up
+        0: down
+        1: up
 
 1FFEF:
   name: AAS_SENSOR_STATUS
@@ -4898,7 +4898,7 @@ API_VERSION: 1
       unit: bitmap
 
 1FEE5:
-  name: LOCK_STATUS
+  name: DOOR_STATUS
   parameters:
     - byte: 0
       name: instance
@@ -4906,14 +4906,35 @@ API_VERSION: 1
     - byte: 1
       bit: 0-1
       name: lock status
-      type: uint8
+      type: uint2
       values:
         0: unlocked
         1: locked
 
 1FEE4:
-  name: LOCK_COMMAND
-  alias: 1FEE5
+  name: DOOR_COMMAND
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+      values:
+        0: All Locks
+        1-250: Individual lock instance
+    - byte: 1
+      bit: 0-1
+      name: Lock Command
+      type: uint2
+      values:
+        0: Unlocked
+        1: Locked
+    - byte: 2
+      name: Command
+      type: uint8
+      values:
+        0: No Additional Action
+        1: Open/Extend Door
+        2: Close/Retract Door
+        3: Stop
 
 1FEB3:
   name: SOLAR_CONTROLLER_STATUS
