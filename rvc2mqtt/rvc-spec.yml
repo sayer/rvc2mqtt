@@ -4921,12 +4921,13 @@ API_VERSION: 1
         0: All Locks
         1-250: Individual lock instance
     - byte: 1
-      bit: 0-1
       name: Lock Command
-      type: uint2
+      type: uint8
       values:
         0: Unlocked
         1: Locked
+        254: Unlocked (legacy format)
+        255: Locked (legacy format)
     - byte: 2
       name: Command
       type: uint8
