@@ -7483,10 +7483,11 @@ EF00:
       name: reserved
       type: uint8
 
-# DC Component Driver Status 1 (DGN 16F00h – 16FFFh)  
+# DC Component Driver Status 1 (DGN 16F00h – 16FFFh, range: 16F00-16FFF)
 # section 6.50.1 V-C Specification Full Layer 12-20-24 Final-3.pdf](file-service://file-1LZVkWbLLoomsprD6jMTmF)
 16F00:
   name: DC_COMPONENT_DRIVER_STATUS_1
+  range: 16F00-16FFF
   parameters:
     - byte: 0
       name: device_instance
@@ -7545,12 +7546,179 @@ EF00:
         8: driver_fault
         9: max_on_time_exceeded
         10: fault_recovery_period_active
-        11: driver_supply_loss
+# DC Component Driver Status 3 (DGN 16D00h – 16DFFh, range: 16D00-16DFF)
+16D00:
+  name: DC_COMPONENT_DRIVER_STATUS_3
+  range: 16D00-16DFF
+  parameters:
+    - byte: 0
+      name: device_instance
+      type: uint8
+    - byte: 1
+      name: driver_index
+      type: uint8
+    - byte: 2-3
+      name: shutdown_count
+      type: uint16
+    - byte: 4-5
+      name: peak_current_last_shutdown
+      type: uint16
+    - byte: 6-7
+      name: voltage_last_shutdown
+      type: uint16
 
-# DC Component Driver Status 2 (DGN 16E00h – 16EFFh)  
+# DC Component Driver Status 4 (DGN 16C00h – 16CFFh, range: 16C00-16CFF)
+16C00:
+  name: DC_COMPONENT_DRIVER_STATUS_4
+  range: 16C00-16CFF
+  parameters:
+    - byte: 0
+      name: device_instance
+      type: uint8
+    - byte: 1
+      name: driver_index
+      type: uint8
+    - byte: 2-3
+      name: on_cycle_count
+      type: uint16
+    - byte: 4-7
+      name: channel_on_time
+      type: uint32
+
+# DC Component Driver Status 5 (DGN 16B00h – 16BFFh, range: 16B00-16BFF)
+16B00:
+  name: DC_COMPONENT_DRIVER_STATUS_5
+  range: 16B00-16BFF
+  parameters:
+    - byte: 0
+      name: device_instance
+      type: uint8
+    - byte: 1
+      name: driver_index
+      type: uint8
+    - byte: 2
+      name: last_shutdown_year
+      type: uint8
+    - byte: 3
+      name: last_shutdown_month
+      type: uint8
+    - byte: 4
+      name: last_shutdown_day
+      type: uint8
+    - byte: 5
+      name: last_shutdown_hour
+      type: uint8
+    - byte: 6
+      name: last_shutdown_minute
+      type: uint8
+    - byte: 7
+      name: last_shutdown_second
+      type: uint8
+
+# DC Component Driver Settings 1 (DGN 16A00h – 16AFFh, range: 16A00-16AFF)
+16A00:
+  name: DC_COMPONENT_DRIVER_SETTINGS_1
+  range: 16A00-16AFF
+  parameters:
+    - byte: 0
+      name: device_instance
+      type: uint8
+    - byte: 1
+      name: driver_index
+      type: uint8
+    - byte: 2-3
+      name: overcurrent_shutdown_threshold
+      type: uint16
+    - byte: 4-5
+      name: overcurrent_time_threshold_instantaneous
+      type: uint16
+    - byte: 6-7
+      name: overcurrent_time_threshold_filtered
+      type: uint16
+
+# DC Component Driver Settings 2 (DGN 16900h – 169FFh, range: 16900-169FF)
+16900:
+  name: DC_COMPONENT_DRIVER_SETTINGS_2
+  range: 16900-169FF
+  parameters:
+    - byte: 0
+      name: device_instance
+      type: uint8
+    - byte: 1
+      name: driver_index
+      type: uint8
+    - byte: 2-3
+      name: temperature_shutdown_threshold
+      type: uint16
+    - byte: 4-5
+      name: over_voltage_shutdown_threshold
+      type: uint16
+    - byte: 6-7
+      name: low_voltage_shutdown_threshold
+      type: uint16
+
+# DC Component Driver Settings Command 1 (DGN 16100h – 161FFh, range: 16100-161FF)
+16100:
+  name: DC_COMPONENT_DRIVER_SETTINGS_COMMAND_1
+  range: 16100-161FF
+  parameters:
+    - byte: 0
+      name: device_instance
+      type: uint8
+    - byte: 1
+      name: driver_index
+      type: uint8
+    - byte: 2-3
+      name: overcurrent_shutdown_threshold
+      type: uint16
+    - byte: 4-5
+      name: overcurrent_time_threshold_instantaneous
+      type: uint16
+    - byte: 6-7
+      name: overcurrent_time_threshold_filtered
+      type: uint16
+
+# DC Component Driver Settings Command 2 (DGN 16200h – 162FFh, range: 16200-162FF)
+16200:
+  name: DC_COMPONENT_DRIVER_SETTINGS_COMMAND_2
+  range: 16200-162FF
+  parameters:
+    - byte: 0
+      name: device_instance
+      type: uint8
+    - byte: 1
+      name: driver_index
+      type: uint8
+    - byte: 2-3
+      name: temperature_shutdown_threshold
+      type: uint16
+    - byte: 4-5
+      name: over_voltage_shutdown_threshold
+      type: uint16
+    - byte: 6-7
+      name: low_voltage_shutdown_threshold
+      type: uint16
+
+# DC Component Driver Command (DGN 16000h – 160FFh, range: 16000-160FF)
+16000:
+  name: DC_COMPONENT_DRIVER_COMMAND
+  range: 16000-160FF
+  parameters:
+    - byte: 0
+      name: device_instance
+      type: uint8
+    - byte: 1
+      name: driver_index
+      type: uint8
+    - byte: 2
+      name: command
+      type: uint8
+
+# DC Component Driver Status 2 (DGN 16E00h – 16EFFh, range: 16E00-16EFF)
 # section 6.50.2 V-C Specification Full Layer 12-20-24 Final-3.pdf](file-service://file-1LZVkWbLLoomsprD6jMTmF)
 16E00:
   name: DC_COMPONENT_DRIVER_STATUS_2
+  range: 16E00-16EFF
   parameters:
     - byte: 0
       name: device_instance
@@ -7592,10 +7760,11 @@ EF00:
       type: uint16
       unit: Deg C
 
-# DC Component Driver Status 6 (DGN 16300h – 163FFh)  
+# DC Component Driver Status 6 (DGN 16300h – 163FFh, range: 16300-163FF)
 # section 6.50.11 V-C Specification Full Layer 12-20-24 Final-3.pdf](file-service://file-1LZVkWbLLoomsprD6jMTmF)
 16300:
   name: DC_COMPONENT_DRIVER_STATUS_6
+  range: 16300-163FF
   parameters:
     - byte: 0
       name: device_instance
@@ -7654,3 +7823,4 @@ EF00:
       values:
         0: inactive
         1: active
+# (Removed duplicate 16F00 entry inserted above. The original 16F00 entry at line 7488 remains as the canonical definition.)

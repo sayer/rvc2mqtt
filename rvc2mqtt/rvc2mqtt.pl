@@ -100,8 +100,26 @@ sub decode() {
   my %result;
   our $decoders;
 
-  # Locate the decoder for this DGN
+  # Locate the decoder for this DGN, supporting DGN ranges
   my $decoder = $decoders->{$dgn};
+
+  # If not found, try to match by DGN range
+  if (!defined $decoder) {
+    foreach my $key (keys %$decoders) {
+      next unless $key =~ /^[0-9A-Fa-f]{5}$/;
+      my $entry = $decoders->{$key};
+      if (exists $entry->{range}) {
+        my ($start, $end) = $entry->{range} =~ /^([0-9A-Fa-f]+)-([0-9A-Fa-f]+)$/;
+        if (defined $start && defined $end) {
+          my $dgn_num = hex($dgn);
+          if ($dgn_num >= hex($start) && $dgn_num <= hex($end)) {
+            $decoder = $entry;
+            last;
+          }
+        }
+      }
+    }
+  }
 
   $result{dgn} = $dgn;
   $result{data} = $data;
