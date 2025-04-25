@@ -114,24 +114,22 @@ sub handle_message {
     if ($debug) {
         my ($sec, $usec) = gettimeofday();
         my $timestamp = scalar(localtime($sec));
-       # print "\n${color_yellow}[$timestamp]${color_reset} ";
-       # print "${color_green}RECEIVED${color_reset} ${color_blue}$topic${color_reset}";
-       # print " ${color_magenta}[DGN: $dgn_name]${color_reset} ${color_cyan}[Index: $driver_index]${color_reset}\n";
+       print "\n${color_yellow}[$timestamp]${color_reset} ";
+       print "${color_green}RECEIVED${color_reset} ${color_blue}$topic${color_reset}";
+       print " ${color_magenta}[DGN: $dgn_name]${color_reset} ${color_cyan}[Index: $driver_index]${color_reset}\n";
     }
     
     # Store the latest data for this shade and DGN
     # Use dclone to make a deep copy of the payload data
     $shade_state{$driver_index}{$dgn_name} = dclone($data);
     
-    # Trigger processing only when a STATUS_6 message is received for a shade
-    # This ensures we process with potentially updated direction/duration
-    if ($dgn_name eq 'DC_COMPONENT_DRIVER_STATUS_6') {
-        process_shade_status($driver_index);
-    } else {
-        # For other DGNs, we just update the state and wait for a STATUS_6 trigger.
-        # If you need real-time updates on other changes (like temperature),
-        # you would call process_shade_status here too, but the user requested
-        # specifically to trigger on STATUS_6.
+    # Process shade status whenever we receive any relevant DGN
+    # This ensures more responsive updates when any component changes
+    process_shade_status($driver_index);
+    
+    # Log what triggered the status update
+    if ($debug) {
+        print "${color_green}Processing shade status for driver $driver_index due to $dgn_name update${color_reset}\n";
     }
 }
 
@@ -142,6 +140,7 @@ sub process_shade_status {
     my $shade_data = $shade_state{$driver_index};
     unless ($shade_data) {
         # Should not happen if called from handle_message, but safety check
+        warn "No shade data found for driver index $driver_index\n";
         return;
     }
     
@@ -330,7 +329,7 @@ sub process_shade_status {
     
     # Skip shades with instance 255 (reserved value for "not applicable" in RVC protocol)
     if ($output_1fede_payload{'instance'} == 255) {
-        #print "${color_yellow}Skipping shade with instance 255 (driver_index: $driver_index)${color_reset}\n" if $debug;
+        print "${color_yellow}Skipping shade with instance 255 (driver_index: $driver_index)${color_reset}\n" if $debug;
         return;
     }
     
