@@ -30,7 +30,7 @@ my $color_magenta = "\033[35m";
 # Configuration with defaults
 my $mqtt_host = "localhost";
 my $mqtt_port = 1883; # Default MQTT port
-my $output_topic_base = "rvc/output/1FEDE"; # Base topic for publishing 1FEDE JSON
+my $output_topic_base = "RVC/WINDOW_SHADE_CONTROL_STATUS"; # Base topic for publishing window shade status
 my $debug = 0;
 my $help = 0;
 
@@ -149,18 +149,32 @@ sub process_shade_status {
     # Initialize with defaults or unknown states
     my %output_1fede_payload = (
         instance => 255, # Default instance based on logs
-        group => 0,       # Default, not in input
-        'motor duty' => 255, # 255 typically means "N/A" or unknown for uint8, or map from 6.pwm_duty
-        'lock status' => 3, # 3 (11) for unavailable
-        'motor status' => 0, # 00 for inactive
-        'forward status' => 0, # 00 for inactive
-        'reverse status' => 0, # 00 for inactive
+        group => "01111101",  # Default group from example logs
+        'motor duty' => 0, # Default 0 for inactive
+        'lock status' => "00", # "00" for unlocked (default)
+        'lock status definition' => "unlocked",
+        'motor status' => "00", # "00" for inactive
+        'motor status definition' => "inactive",
+        'forward status' => "00", # "00" for inactive
+        'forward status definition' => "inactive",
+        'reverse status' => "00", # "00" for inactive
+        'reverse status definition' => "inactive",
         duration => 255, # 255 for N/A or unknown
-        'last command' => 4, # 4 (stop) as a default inference
-        'overcurrent status' => 3, # 3 (11) for unavailable (using DGN name, mapping from undercurrent)
-        'override status' => 3, # 3 (11) for unavailable
-        'disable1 status' => 3, # 3 (11) for not supported/unavailable
-        'disable2 status' => 3, # 3 (11) for not supported/unavailable
+        'last command' => 4, # 4 (stop) as a default inference (numeric for mqtt2rvc)
+        'last command definition' => "stop",
+        'overcurrent status' => "11", # "11" for unavailable
+        'overcurrent status definition' => "overcurrent status unavailable",
+        'override status' => "11", # "11" for unavailable
+        'override status definition' => "override status unavailable",
+        'disable1 status' => "00", # "00" for inactive
+        'disable1 status definition' => "inactive",
+        'disable2 status' => "00", # "00" for inactive
+        'disable2 status definition' => "inactive",
+        'name' => "WINDOW_SHADE_CONTROL_STATUS",
+        'dgn' => "1FEDE",
+        'data' => "",  # Will be populated later if available
+        'timestamp' => sprintf("%.6f", Time::HiRes::time()),
+        'command' => 4, # Numeric for mqtt2rvc.pl compatibility
     );
     
     # Map data from received DGNs
@@ -172,9 +186,11 @@ sub process_shade_status {
         # Map motor status from output_status
         if (defined $status1->{'output_status definition'}) {
             if ($status1->{'output_status definition'} eq 'on') {
-                $output_1fede_payload{'motor status'} = 1; # 01 for active
+                $output_1fede_payload{'motor status'} = "01"; # "01" for active
+                $output_1fede_payload{'motor status definition'} = "active";
             } elsif ($status1->{'output_status definition'} eq 'off') {
-                $output_1fede_payload{'motor status'} = 0; # 00 for inactive
+                $output_1fede_payload{'motor status'} = "00"; # "00" for inactive
+                $output_1fede_payload{'motor status definition'} = "inactive";
             }
             # Handle other states if necessary
         }
@@ -186,11 +202,14 @@ sub process_shade_status {
         # Map overcurrent status from undercurrent status (using the DGN's name for the parameter)
         if (defined $status2->{'undercurrent definition'}) {
             if ($status2->{'undercurrent definition'} eq 'normal') {
-                $output_1fede_payload{'overcurrent status'} = 0; # 00 for not in overcurrent
+                $output_1fede_payload{'overcurrent status'} = "00"; # "00" for not in overcurrent
+                $output_1fede_payload{'overcurrent status definition'} = "not in overcurrent";
             } elsif ($status2->{'undercurrent definition'} eq 'undercurrent_condition') {
-                $output_1fede_payload{'overcurrent status'} = 1; # 01 for has drawn overcurrent (re-purposing as "not normal")
+                $output_1fede_payload{'overcurrent status'} = "01"; # "01" for has drawn overcurrent
+                $output_1fede_payload{'overcurrent status definition'} = "has drawn overcurrent";
             } else {
-                $output_1fede_payload{'overcurrent status'} = 3; # 11 for unavailable
+                $output_1fede_payload{'overcurrent status'} = "11"; # "11" for unavailable
+                $output_1fede_payload{'overcurrent status definition'} = "overcurrent status unavailable";
             }
         }
         # Note: Temperature is not directly in 1FEDE
@@ -212,33 +231,56 @@ sub process_shade_status {
         # Map lock status
         if (defined $status6->{'lock_status definition'}) {
             if ($status6->{'lock_status definition'} eq 'unlocked' || $status6->{'lock_status definition'} eq 'not_locked') {
-                $output_1fede_payload{'lock status'} = 0; # 00 for unlocked
+                $output_1fede_payload{'lock status'} = "00"; # "00" for unlocked
+                $output_1fede_payload{'lock status definition'} = "unlocked";
             } elsif ($status6->{'lock_status definition'} eq 'locked') {
-                $output_1fede_payload{'lock status'} = 1; # 01 for locked
+                $output_1fede_payload{'lock status'} = "01"; # "01" for locked
+                $output_1fede_payload{'lock status definition'} = "locked";
             } else {
-                $output_1fede_payload{'lock status'} = 3; # 11 for not supported/unavailable
+                $output_1fede_payload{'lock status'} = "11"; # "11" for not supported
+                $output_1fede_payload{'lock status definition'} = "lock command not supported";
             }
         }
         
         # Map forward and reverse status from driver_direction
         if (defined $status6->{'driver_direction definition'}) {
             if ($status6->{'driver_direction definition'} eq 'forward') {
-                $output_1fede_payload{'forward status'} = 1; # 01 for active
-                $output_1fede_payload{'reverse status'} = 0; # 00 for inactive
+                $output_1fede_payload{'forward status'} = "01"; # "01" for active
+                $output_1fede_payload{'forward status definition'} = "active";
+                $output_1fede_payload{'reverse status'} = "00"; # "00" for inactive
+                $output_1fede_payload{'reverse status definition'} = "inactive";
                 # Infer last command (forward movement implies this was the command)
                 $output_1fede_payload{'last command'} = 129; # 129 for forward
+                $output_1fede_payload{'last command definition'} = "forward";
+                $output_1fede_payload{'command'} = 129; # Duplicate for mqtt2rvc compatibility
             } elsif ($status6->{'driver_direction definition'} eq 'reverse') {
-                $output_1fede_payload{'forward status'} = 0; # 00 for inactive
-                $output_1fede_payload{'reverse status'} = 1; # 01 for active
+                $output_1fede_payload{'forward status'} = "00"; # "00" for inactive
+                $output_1fede_payload{'forward status definition'} = "inactive";
+                $output_1fede_payload{'reverse status'} = "01"; # "01" for active
+                $output_1fede_payload{'reverse status definition'} = "active";
                 # Infer last command (reverse movement implies this was the command)
                 $output_1fede_payload{'last command'} = 65; # 65 for reverse
+                $output_1fede_payload{'last command definition'} = "reverse";
+                $output_1fede_payload{'command'} = 65; # Duplicate for mqtt2rvc compatibility
+            } elsif ($status6->{'driver_direction definition'} eq 'toggle_forward') {
+                $output_1fede_payload{'forward status'} = "01"; # "01" for active
+                $output_1fede_payload{'forward status definition'} = "active";
+                $output_1fede_payload{'reverse status'} = "00"; # "00" for inactive
+                $output_1fede_payload{'reverse status definition'} = "inactive";
+                $output_1fede_payload{'last command'} = 133; # 133 for toggle forward
+                $output_1fede_payload{'last command definition'} = "toggle forward";
+                $output_1fede_payload{'command'} = 133; # Duplicate for mqtt2rvc compatibility
             } else { # 'not_active' (3) or other states
-                $output_1fede_payload{'forward status'} = 0; # 00 for inactive
-                $output_1fede_payload{'reverse status'} = 0; # 00 for inactive
+                $output_1fede_payload{'forward status'} = "00"; # "00" for inactive
+                $output_1fede_payload{'forward status definition'} = "inactive";
+                $output_1fede_payload{'reverse status'} = "00"; # "00" for inactive
+                $output_1fede_payload{'reverse status definition'} = "inactive";
                 # If motor is inactive and it was previously moving, infer stop
                 # This is an oversimplification. True "last command" needs command PGNs.
                 # Sticking to simple inference from current state: if not moving, assume stop command was last.
                 $output_1fede_payload{'last command'} = 4; # 4 for stop
+                $output_1fede_payload{'last command definition'} = "stop";
+                $output_1fede_payload{'command'} = 4; # Duplicate for mqtt2rvc compatibility
             }
         }
         
@@ -251,17 +293,28 @@ sub process_shade_status {
         # Map override status
         if (defined $status6->{'override_input definition'}) {
             if ($status6->{'override_input definition'} eq 'inactive') {
-                $output_1fede_payload{'override status'} = 0; # 00 for inactive
+                $output_1fede_payload{'override status'} = "00"; # "00" for inactive
+                $output_1fede_payload{'override status definition'} = "external override inactive";
             } elsif ($status6->{'override_input definition'} eq 'active') {
-                $output_1fede_payload{'override status'} = 1; # 01 for active
+                $output_1fede_payload{'override status'} = "01"; # "01" for active
+                $output_1fede_payload{'override status definition'} = "external override active";
             } else {
-                $output_1fede_payload{'override status'} = 3; # 11 for unavailable
+                $output_1fede_payload{'override status'} = "11"; # "11" for unavailable
+                $output_1fede_payload{'override status definition'} = "override status unavailable";
             }
         }
         
-        # disable1/disable2 status are not directly available in these DGNs
-        # They are part of 1FEDE but not directly reported by 1/2/4/6.
-        # Keeping them as 3 (unavailable) as per initialization.
+        # Map disable1/disable2 status - using default values from examples
+        # These values are consistent across all example messages
+        $output_1fede_payload{'disable1 status'} = "00"; # "00" for inactive
+        $output_1fede_payload{'disable1 status definition'} = "inactive";
+        $output_1fede_payload{'disable2 status'} = "00"; # "00" for inactive
+        $output_1fede_payload{'disable2 status definition'} = "inactive";
+        
+        # Extract data field if available
+        if (defined $status6->{'data'}) {
+            $output_1fede_payload{'data'} = $status6->{'data'};
+        }
         
     } # End of STATUS_6 mapping
     
@@ -274,6 +327,20 @@ sub process_shade_status {
     }
     
     # --- Prepare and Publish JSON if Different ---
+    
+    # Skip shades with instance 255 (reserved value for "not applicable" in RVC protocol)
+    if ($output_1fede_payload{'instance'} == 255) {
+        #print "${color_yellow}Skipping shade with instance 255 (driver_index: $driver_index)${color_reset}\n" if $debug;
+        return;
+    }
+    
+    # Update timestamp before publishing
+    $output_1fede_payload{'timestamp'} = sprintf("%.6f", Time::HiRes::time());
+    
+    # Ensure command value is synchronized with last_command for mqtt2rvc.pl compatibility
+    if (defined $output_1fede_payload{'last command'}) {
+        $output_1fede_payload{'command'} = $output_1fede_payload{'last command'};
+    }
     
     # Convert the new correlated data to a JSON string
     # Need to sort keys to ensure consistent JSON string for comparison
@@ -288,7 +355,8 @@ sub process_shade_status {
     if (!defined $last_json_string || $new_json_string ne $last_json_string) {
         # JSON has changed, publish it
         
-        my $output_topic = "$output_topic_base/$driver_index";
+        # Use instance from the payload, not driver_index
+        my $output_topic = "$output_topic_base/" . $output_1fede_payload{'instance'};
         if ($debug) {
             print "${color_green}Publishing 1FEDE status for driver $driver_index to $output_topic:${color_reset}\n";
             print "${color_cyan}$new_json_string${color_reset}\n";
