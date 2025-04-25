@@ -80,18 +80,21 @@ sub handle_message {
     
     # Extract DGN name from topic (assuming format RVC/DGN_NAME/...)
     my @parts = split('/', $topic);
-    unless ($#parts >= 1 && $parts[0] eq 'RVC') {
+    unless ($#parts >= 1 && $parts[0] =~ /^RVC$/i) {
         # Not an RVC topic, ignore
         print "${color_yellow}Ignoring message on non-RVC topic: $topic${color_reset}\n" if $debug;
         return;
     }
+    print "${color_cyan}Processing message on topic: $topic${color_reset}\n" if $debug;
     my $dgn_name = $parts[1]; # e.g., DC_COMPONENT_DRIVER_STATUS_1
     
     # Filter for the DGNs we care about
-    unless ($dgn_name =~ /^DC_COMPONENT_DRIVER_STATUS_[1246]$/) {
+    unless ($dgn_name =~ /^DC_COMPONENT_DRIVER_STATUS_[1246]$/i) {
         # Not one of the DGNs we care about, ignore
+        print "${color_yellow}Ignoring message with unsupported DGN: $dgn_name${color_reset}\n" if $debug;
         return;
     }
+    print "${color_green}Found supported DGN: $dgn_name${color_reset}\n" if $debug;
     
     # Parse JSON payload
     my $data;
@@ -110,14 +113,13 @@ sub handle_message {
         return;
     }
     
-    # Log received message if debug enabled
-    if ($debug) {
-        my ($sec, $usec) = gettimeofday();
-        my $timestamp = scalar(localtime($sec));
-       print "\n${color_yellow}[$timestamp]${color_reset} ";
-       print "${color_green}RECEIVED${color_reset} ${color_blue}$topic${color_reset}";
-       print " ${color_magenta}[DGN: $dgn_name]${color_reset} ${color_cyan}[Index: $driver_index]${color_reset}\n";
-    }
+    # Always log received message for troubleshooting
+    my ($sec, $usec) = gettimeofday();
+    my $timestamp = scalar(localtime($sec));
+    print "\n${color_yellow}[$timestamp]${color_reset} ";
+    print "${color_green}RECEIVED${color_reset} ${color_blue}$topic${color_reset}";
+    print " ${color_magenta}[DGN: $dgn_name]${color_reset} ${color_cyan}[Index: $driver_index]${color_reset}\n";
+    print "${color_cyan}Payload: $payload${color_reset}\n";
     
     # Store the latest data for this shade and DGN
     # Use dclone to make a deep copy of the payload data
@@ -361,12 +363,17 @@ sub process_shade_status {
             print "${color_cyan}$new_json_string${color_reset}\n";
         }
         
+        print "${color_green}======= PUBLISHING WINDOW_SHADE_CONTROL_STATUS ========${color_reset}\n";
+        print "${color_blue}Topic: $output_topic${color_reset}\n";
+        print "${color_cyan}Payload: $new_json_string${color_reset}\n";
+        
         eval {
             # Use retain => 1 so the last state is available on broker/client restarts
             $mqtt->retain($output_topic => $new_json_string);
+            print "${color_green}Successfully published to $output_topic${color_reset}\n";
         };
         if ($@) {
-            warn "Failed to publish 1FEDE status to $output_topic: $@\n";
+            warn "Failed to publish WINDOW_SHADE_CONTROL_STATUS to $output_topic: $@\n";
         }
         
         # Update the last published JSON for this driver_index
