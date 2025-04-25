@@ -221,15 +221,14 @@ sub process_shade_status {
     if (exists $shade_data->{'DC_COMPONENT_DRIVER_STATUS_2'}) {
         my $status2 = $shade_data->{'DC_COMPONENT_DRIVER_STATUS_2'};
         # Map overcurrent status from undercurrent status (using the DGN's name for the parameter)
-        if (defined $status2->{'undercurrent definition'}) {
-            # Map undercurrent to overcurrent status correctly
-            # In RVC, undercurrent_condition doesn't mean there's overcurrent
-            # Always report overcurrent status as 00 unless exact conditions for overcurrent are met
+        # By default, set overcurrent status to unavailable unless we know otherwise
+        $output_1fede_payload{'overcurrent status'} = "11"; # "11" for unavailable
+        $output_1fede_payload{'overcurrent status definition'} = "overcurrent status unavailable";
+        
+        # Only set to "not in overcurrent" if we have specific undercurrent information
+        if (defined $status2->{'undercurrent definition'} && $status2->{'undercurrent definition'} eq 'normal') {
             $output_1fede_payload{'overcurrent status'} = "00"; # "00" for not in overcurrent
             $output_1fede_payload{'overcurrent status definition'} = "not in overcurrent";
-        } else {
-            $output_1fede_payload{'overcurrent status'} = "11"; # "11" for unavailable
-            $output_1fede_payload{'overcurrent status definition'} = "overcurrent status unavailable";
         }
         # Note: Temperature is not directly in 1FEDE
     }
@@ -311,6 +310,23 @@ sub process_shade_status {
                 $last_movement_commands{$driver_index} = {
                     cmd => 133,
                     def => "toggle forward"
+                };
+                
+            } elsif ($status6->{'driver_direction definition'} eq 'toggle_reverse') {
+                $output_1fede_payload{'forward status'} = "00"; # "00" for inactive
+                $output_1fede_payload{'forward status definition'} = "inactive";
+                $output_1fede_payload{'reverse status'} = "01"; # "01" for active
+                $output_1fede_payload{'reverse status definition'} = "active";
+                
+                # Set command for toggle reverse case
+                $output_1fede_payload{'last command'} = 69; # 69 for toggle reverse
+                $output_1fede_payload{'last command definition'} = "toggle reverse";
+                $output_1fede_payload{'command'} = 69; # Duplicate for mqtt2rvc compatibility
+                
+                # Store this movement direction for future use
+                $last_movement_commands{$driver_index} = {
+                    cmd => 69,
+                    def => "toggle reverse"
                 };
                 
             } else { # 'not_active' (3) or other states
