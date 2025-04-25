@@ -88,7 +88,7 @@ sub handle_message {
         print "${color_yellow}Ignoring message on non-RVC topic: $topic${color_reset}\n" if $debug;
         return;
     }
-    print "${color_cyan}Processing message on topic: $topic${color_reset}\n" if $debug;
+    # print "${color_cyan}Processing message on topic: $topic${color_reset}\n" if $debug;
     my $dgn_name = $parts[1]; # e.g., DC_COMPONENT_DRIVER_STATUS_1
     
     # Filter for the DGNs we care about
@@ -97,7 +97,7 @@ sub handle_message {
         print "${color_yellow}Ignoring message with unsupported DGN: $dgn_name${color_reset}\n" if $debug;
         return;
     }
-    print "${color_green}Found supported DGN: $dgn_name${color_reset}\n" if $debug;
+   # print "${color_green}Found supported DGN: $dgn_name${color_reset}\n" if $debug;
     
     # Parse JSON payload
     my $data;
@@ -119,10 +119,10 @@ sub handle_message {
     # Always log received message for troubleshooting
     my ($sec, $usec) = gettimeofday();
     my $timestamp = scalar(localtime($sec));
-    print "\n${color_yellow}[$timestamp]${color_reset} ";
-    print "${color_green}RECEIVED${color_reset} ${color_blue}$topic${color_reset}";
-    print " ${color_magenta}[DGN: $dgn_name]${color_reset} ${color_cyan}[Index: $driver_index]${color_reset}\n";
-    print "${color_cyan}Payload: $payload${color_reset}\n";
+    #print "\n${color_yellow}[$timestamp]${color_reset} ";
+    #print "${color_green}RECEIVED${color_reset} ${color_blue}$topic${color_reset}";
+    #print " ${color_magenta}[DGN: $dgn_name]${color_reset} ${color_cyan}[Index: $driver_index]${color_reset}\n";
+    #print "${color_cyan}Payload: $payload${color_reset}\n";
     
     # Store the latest data for this shade and DGN
     # Use dclone to make a deep copy of the payload data
@@ -130,20 +130,21 @@ sub handle_message {
     
     # Process shade status whenever we receive any relevant DGN
     # This ensures more responsive updates when any component changes
-    print "${color_green}Processing shade status for driver $driver_index due to $dgn_name update${color_reset}\n";
+    #print "${color_green}Processing shade status for driver $driver_index due to $dgn_name update${color_reset}\n";
     
     # Check if we have received all needed status messages for this component
     my @required_dgns = qw(DC_COMPONENT_DRIVER_STATUS_1 DC_COMPONENT_DRIVER_STATUS_6);
     my $missing_dgns = 0;
     foreach my $required_dgn (@required_dgns) {
         unless (exists $shade_state{$driver_index}{$required_dgn}) {
-            print "${color_yellow}Missing required DGN $required_dgn for driver $driver_index${color_reset}\n";
+            #print "${color_yellow}Missing required DGN $required_dgn for driver $driver_index${color_reset}\n";
             $missing_dgns++;
         }
     }
     
     if ($missing_dgns) {
-        print "${color_yellow}Will process $driver_index but some required DGNs are missing${color_reset}\n";
+        print "${color_yellow}skipping process $driver_index  some required DGNs are missing${color_reset}\n";
+        return
     }
     
     # Process the shade status
@@ -159,12 +160,6 @@ sub process_shade_status {
         # Should not happen if called from handle_message, but safety check
         warn "No shade data found for driver index $driver_index\n";
         return;
-    }
-    
-    # Debug: Print what data we have for this driver
-    print "${color_green}Processing shade for driver_index $driver_index${color_reset}\n";
-    foreach my $dgn (sort keys %$shade_data) {
-        print "${color_cyan}  Found DGN: $dgn${color_reset}\n";
     }
     
     # --- Correlate Data and Construct 1FEDE JSON ---
@@ -351,11 +346,10 @@ sub process_shade_status {
     # --- Prepare and Publish JSON if Different ---
     
     # Use the actual driver_index as instance
-    if ($output_1fede_payload{'instance'} == 255) {
         # Use driver_index as instance
-        print "${color_yellow}Using driver_index $driver_index as instance for shade${color_reset}\n" if $debug;
+       # print "${color_yellow}Using driver_index $driver_index as instance for shade${color_reset}\n" if $debug;
         $output_1fede_payload{'instance'} = $driver_index;
-    }
+    
     
     # Don't update timestamp until right before publishing - it's done later
     
@@ -379,7 +373,7 @@ sub process_shade_status {
     
     # Skip publishing if driver_index is 255 (reserved value)
     if ($driver_index == 255) {
-        print "${color_yellow}Skipping publish for driver_index 255 (reserved value)${color_reset}\n" if $debug;
+        # print "${color_yellow}Skipping publish for driver_index 255 (reserved value)${color_reset}\n" if $debug;
         return;
     }
     
