@@ -354,8 +354,7 @@ sub process_shade_status {
         $output_1fede_payload{'instance'} = $driver_index;
     }
     
-    # Update timestamp before publishing
-    $output_1fede_payload{'timestamp'} = sprintf("%.6f", Time::HiRes::time());
+    # Don't update timestamp until right before publishing - it's done later
     
     # Ensure command value is synchronized with last_command for mqtt2rvc.pl compatibility
     if (defined $output_1fede_payload{'last command'}) {
