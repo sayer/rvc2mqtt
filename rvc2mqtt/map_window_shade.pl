@@ -129,7 +129,7 @@ sub handle_message {
     
     # Log what triggered the status update
     if ($debug) {
-        print "${color_green}Processing shade status for driver $driver_index due to $dgn_name update${color_reset}\n";
+        # print "${color_green}Processing shade status for driver $driver_index due to $dgn_name update${color_reset}\n";
     }
 }
 
@@ -329,7 +329,7 @@ sub process_shade_status {
     
     # Skip shades with instance 255 (reserved value for "not applicable" in RVC protocol)
     if ($output_1fede_payload{'instance'} == 255) {
-        print "${color_yellow}Skipping shade with instance 255 (driver_index: $driver_index)${color_reset}\n" if $debug;
+       # print "${color_yellow}Skipping shade with instance 255 (driver_index: $driver_index)${color_reset}\n" if $debug;
         return;
     }
     
