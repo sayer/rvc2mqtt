@@ -347,11 +347,11 @@ sub process_shade_status {
     
     # --- Prepare and Publish JSON if Different ---
     
-    # Don't skip shades with instance 255; use driver_index as instance for testing
+    # Use the actual driver_index as instance
     if ($output_1fede_payload{'instance'} == 255) {
-        # Use driver_index as instance for testing purposes
+        # Use driver_index as instance
         print "${color_yellow}Using driver_index $driver_index as instance for shade${color_reset}\n" if $debug;
-        $output_1fede_payload{'instance'} = 31; # Use instance 31 for testing matches (from examples)
+        $output_1fede_payload{'instance'} = $driver_index;
     }
     
     # Update timestamp before publishing
@@ -372,6 +372,12 @@ sub process_shade_status {
     my $last_json_string = $last_published_json{$driver_index}; # Will be undef if not set
     
     # Compare new JSON with the last published JSON
+    # Skip publishing if driver_index is 255 (reserved value)
+    if ($driver_index == 255) {
+        print "${color_yellow}Skipping publish for driver_index 255 (reserved value)${color_reset}\n" if $debug;
+        return;
+    }
+
     if (!defined $last_json_string || $new_json_string ne $last_json_string) {
         # JSON has changed, publish it
         
