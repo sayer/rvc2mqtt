@@ -271,13 +271,13 @@ sub process_shade_status {
                 
                 # Infer last command (forward movement implies this was the command)
                 $output_1fede_payload{'last command'} = 129; # 129 for forward
-                $output_1fede_payload{'last command definition'} = "forward";
+                $output_1fede_payload{'last command definition'} = "toggle forward";
                 $output_1fede_payload{'command'} = 129; # Duplicate for mqtt2rvc compatibility
                 
                 # Store this movement direction for future use
                 $last_movement_commands{$driver_index} = {
                     cmd => 129,
-                    def => "forward"
+                    def => "toggle forward"
                 };
                 
             } elsif ($status6->{'driver_direction definition'} eq 'reverse') {
@@ -288,13 +288,13 @@ sub process_shade_status {
                 
                 # Infer last command (reverse movement implies this was the command)
                 $output_1fede_payload{'last command'} = 65; # 65 for reverse
-                $output_1fede_payload{'last command definition'} = "reverse";
+                $output_1fede_payload{'last command definition'} = "toggle reverse";
                 $output_1fede_payload{'command'} = 65; # Duplicate for mqtt2rvc compatibility
                 
                 # Store this movement direction for future use
                 $last_movement_commands{$driver_index} = {
                     cmd => 65,
-                    def => "reverse"
+                    def => "toggle reverse"
                 };
                 
             } elsif ($status6->{'driver_direction definition'} eq 'toggle_forward') {
@@ -327,7 +327,7 @@ sub process_shade_status {
                 } else {
                     # If we've never seen this shade move, default to forward as the last command
                     $output_1fede_payload{'last command'} = 129; # Default to forward
-                    $output_1fede_payload{'last command definition'} = "forward";
+                    $output_1fede_payload{'last command definition'} = "toggle forward";
                     $output_1fede_payload{'command'} = 129; # Duplicate for mqtt2rvc compatibility
                 }
             }
