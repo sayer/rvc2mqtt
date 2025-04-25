@@ -114,9 +114,9 @@ sub handle_message {
     if ($debug) {
         my ($sec, $usec) = gettimeofday();
         my $timestamp = scalar(localtime($sec));
-        print "\n${color_yellow}[$timestamp]${color_reset} ";
-        print "${color_green}RECEIVED${color_reset} ${color_blue}$topic${color_reset}";
-        print " ${color_magenta}[DGN: $dgn_name]${color_reset} ${color_cyan}[Index: $driver_index]${color_reset}\n";
+       # print "\n${color_yellow}[$timestamp]${color_reset} ";
+       # print "${color_green}RECEIVED${color_reset} ${color_blue}$topic${color_reset}";
+       # print " ${color_magenta}[DGN: $dgn_name]${color_reset} ${color_cyan}[Index: $driver_index]${color_reset}\n";
     }
     
     # Store the latest data for this shade and DGN
@@ -306,7 +306,7 @@ sub process_shade_status {
         $last_published_json{$driver_index} = $new_json_string;
     } else {
         # JSON has not changed, do not publish
-        print "${color_yellow}Status for driver $driver_index is unchanged, skipping publish.${color_reset}\n" if $debug;
+        # print "${color_yellow}Status for driver $driver_index is unchanged, skipping publish.${color_reset}\n" if $debug;
     }
 }
 
