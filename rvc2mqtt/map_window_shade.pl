@@ -54,6 +54,10 @@ my %shade_state;
 # Used for change detection
 my %last_comparison_jsons;
 
+# Hash to store the last movement direction command for each shade index
+# This persists across message processing to maintain correct last_command values
+my %last_movement_commands;
+
 # For backwards compatibility (not used in new code)
 my %last_published_json;
 
@@ -218,16 +222,14 @@ sub process_shade_status {
         my $status2 = $shade_data->{'DC_COMPONENT_DRIVER_STATUS_2'};
         # Map overcurrent status from undercurrent status (using the DGN's name for the parameter)
         if (defined $status2->{'undercurrent definition'}) {
-            if ($status2->{'undercurrent definition'} eq 'normal') {
-                $output_1fede_payload{'overcurrent status'} = "00"; # "00" for not in overcurrent
-                $output_1fede_payload{'overcurrent status definition'} = "not in overcurrent";
-            } elsif ($status2->{'undercurrent definition'} eq 'undercurrent_condition') {
-                $output_1fede_payload{'overcurrent status'} = "01"; # "01" for has drawn overcurrent
-                $output_1fede_payload{'overcurrent status definition'} = "has drawn overcurrent";
-            } else {
-                $output_1fede_payload{'overcurrent status'} = "11"; # "11" for unavailable
-                $output_1fede_payload{'overcurrent status definition'} = "overcurrent status unavailable";
-            }
+            # Map undercurrent to overcurrent status correctly
+            # In RVC, undercurrent_condition doesn't mean there's overcurrent
+            # Always report overcurrent status as 00 unless exact conditions for overcurrent are met
+            $output_1fede_payload{'overcurrent status'} = "00"; # "00" for not in overcurrent
+            $output_1fede_payload{'overcurrent status definition'} = "not in overcurrent";
+        } else {
+            $output_1fede_payload{'overcurrent status'} = "11"; # "11" for unavailable
+            $output_1fede_payload{'overcurrent status definition'} = "overcurrent status unavailable";
         }
         # Note: Temperature is not directly in 1FEDE
     }
@@ -266,38 +268,68 @@ sub process_shade_status {
                 $output_1fede_payload{'forward status definition'} = "active";
                 $output_1fede_payload{'reverse status'} = "00"; # "00" for inactive
                 $output_1fede_payload{'reverse status definition'} = "inactive";
+                
                 # Infer last command (forward movement implies this was the command)
                 $output_1fede_payload{'last command'} = 129; # 129 for forward
                 $output_1fede_payload{'last command definition'} = "forward";
                 $output_1fede_payload{'command'} = 129; # Duplicate for mqtt2rvc compatibility
+                
+                # Store this movement direction for future use
+                $last_movement_commands{$driver_index} = {
+                    cmd => 129,
+                    def => "forward"
+                };
+                
             } elsif ($status6->{'driver_direction definition'} eq 'reverse') {
                 $output_1fede_payload{'forward status'} = "00"; # "00" for inactive
                 $output_1fede_payload{'forward status definition'} = "inactive";
                 $output_1fede_payload{'reverse status'} = "01"; # "01" for active
                 $output_1fede_payload{'reverse status definition'} = "active";
+                
                 # Infer last command (reverse movement implies this was the command)
                 $output_1fede_payload{'last command'} = 65; # 65 for reverse
                 $output_1fede_payload{'last command definition'} = "reverse";
                 $output_1fede_payload{'command'} = 65; # Duplicate for mqtt2rvc compatibility
+                
+                # Store this movement direction for future use
+                $last_movement_commands{$driver_index} = {
+                    cmd => 65,
+                    def => "reverse"
+                };
+                
             } elsif ($status6->{'driver_direction definition'} eq 'toggle_forward') {
                 $output_1fede_payload{'forward status'} = "01"; # "01" for active
                 $output_1fede_payload{'forward status definition'} = "active";
                 $output_1fede_payload{'reverse status'} = "00"; # "00" for inactive
                 $output_1fede_payload{'reverse status definition'} = "inactive";
+                
                 $output_1fede_payload{'last command'} = 133; # 133 for toggle forward
                 $output_1fede_payload{'last command definition'} = "toggle forward";
                 $output_1fede_payload{'command'} = 133; # Duplicate for mqtt2rvc compatibility
+                
+                # Store this movement direction for future use
+                $last_movement_commands{$driver_index} = {
+                    cmd => 133,
+                    def => "toggle forward"
+                };
+                
             } else { # 'not_active' (3) or other states
                 $output_1fede_payload{'forward status'} = "00"; # "00" for inactive
                 $output_1fede_payload{'forward status definition'} = "inactive";
                 $output_1fede_payload{'reverse status'} = "00"; # "00" for inactive
                 $output_1fede_payload{'reverse status definition'} = "inactive";
-                # If motor is inactive and it was previously moving, infer stop
-                # This is an oversimplification. True "last command" needs command PGNs.
-                # Sticking to simple inference from current state: if not moving, assume stop command was last.
-                $output_1fede_payload{'last command'} = 4; # 4 for stop
-                $output_1fede_payload{'last command definition'} = "stop";
-                $output_1fede_payload{'command'} = 4; # Duplicate for mqtt2rvc compatibility
+                
+                # When inactive, use the last movement direction from our stored data
+                if (exists $last_movement_commands{$driver_index}) {
+                    $output_1fede_payload{'last command'} = $last_movement_commands{$driver_index}->{cmd};
+                    $output_1fede_payload{'last command definition'} = $last_movement_commands{$driver_index}->{def};
+                    $output_1fede_payload{'command'} = $last_movement_commands{$driver_index}->{cmd}; # Duplicate for mqtt2rvc compatibility
+                } else {
+                    # If we've never seen this shade move, default to forward as the last command
+                    $output_1fede_payload{'last command'} = 129; # Default to forward
+                    $output_1fede_payload{'last command definition'} = "forward";
+                    $output_1fede_payload{'command'} = 129; # Duplicate for mqtt2rvc compatibility
+                }
             }
         }
         
