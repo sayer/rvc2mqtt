@@ -50,8 +50,11 @@ usage() if $help;
 # Structure: %shade_state = { driver_index => { dgn_name => { parsed_payload }, ... }, ... }
 my %shade_state;
 
-# Hash to store the last JSON output published for each shade index
+# Hash to store the last comparison JSON (without timestamp) for each shade index
 # Used for change detection
+my %last_comparison_jsons;
+
+# For backwards compatibility (not used in new code)
 my %last_published_json;
 
 # Create JSON handler
@@ -361,47 +364,59 @@ sub process_shade_status {
         $output_1fede_payload{'command'} = $output_1fede_payload{'last command'};
     }
     
-    # Convert the new correlated data to a JSON string
+    # Create a deep copy of the payload without timestamp for comparison
+    my %comparison_payload = %output_1fede_payload;
+    delete $comparison_payload{'timestamp'};
+    
+    # Convert the payload (excluding timestamp) to JSON for comparison
     # Need to sort keys to ensure consistent JSON string for comparison
-    my $new_json_string = $json->encode({ # Encode the hash reference
-        map { $_ => $output_1fede_payload{$_} } sort keys %output_1fede_payload # Sort keys
+    my $comparison_json_string = $json->encode({ # Encode the hash reference
+        map { $_ => $comparison_payload{$_} } sort keys %comparison_payload # Sort keys
     });
     
-    # Get the last published JSON string for this driver_index
-    my $last_json_string = $last_published_json{$driver_index}; # Will be undef if not set
+    # Get the last published comparison JSON string for this driver_index
+    my $last_comparison_json = $last_comparison_jsons{$driver_index}; # Will be undef if not set
     
-    # Compare new JSON with the last published JSON
     # Skip publishing if driver_index is 255 (reserved value)
     if ($driver_index == 255) {
         print "${color_yellow}Skipping publish for driver_index 255 (reserved value)${color_reset}\n" if $debug;
         return;
     }
-
-    if (!defined $last_json_string || $new_json_string ne $last_json_string) {
+    
+    # Compare new JSON (without timestamp) with the last published comparison JSON
+    if (!defined $last_comparison_json || $comparison_json_string ne $last_comparison_json) {
+        # Add timestamp right before publishing
+        $output_1fede_payload{'timestamp'} = sprintf("%.6f", Time::HiRes::time());
+        
+        # Create the final JSON with timestamp included
+        my $publish_json_string = $json->encode({ # Encode the hash reference
+            map { $_ => $output_1fede_payload{$_} } sort keys %output_1fede_payload # Sort keys
+        });
+        
         # JSON has changed, publish it
         
         # Use instance from the payload, not driver_index
         my $output_topic = "$output_topic_base/" . $output_1fede_payload{'instance'};
         if ($debug) {
             print "${color_green}Publishing 1FEDE status for driver $driver_index to $output_topic:${color_reset}\n";
-            print "${color_cyan}$new_json_string${color_reset}\n";
+            print "${color_cyan}$publish_json_string${color_reset}\n";
         }
         
         print "${color_green}======= PUBLISHING WINDOW_SHADE_CONTROL_STATUS ========${color_reset}\n";
         print "${color_blue}Topic: $output_topic${color_reset}\n";
-        print "${color_cyan}Payload: $new_json_string${color_reset}\n";
+        print "${color_cyan}Payload: $publish_json_string${color_reset}\n";
         
         eval {
             # Use retain => 1 so the last state is available on broker/client restarts
-            $mqtt->retain($output_topic => $new_json_string);
+            $mqtt->retain($output_topic => $publish_json_string);
             print "${color_green}Successfully published to $output_topic${color_reset}\n";
         };
         if ($@) {
             warn "Failed to publish WINDOW_SHADE_CONTROL_STATUS to $output_topic: $@\n";
         }
         
-        # Update the last published JSON for this driver_index
-        $last_published_json{$driver_index} = $new_json_string;
+        # Update the last published comparison JSON for this driver_index
+        $last_comparison_jsons{$driver_index} = $comparison_json_string;
     } else {
         # JSON has not changed, do not publish
         # print "${color_yellow}Status for driver $driver_index is unchanged, skipping publish.${color_reset}\n" if $debug;
