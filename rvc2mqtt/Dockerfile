@@ -61,6 +61,7 @@ COPY THERMOSTAT_COMMAND_1_TEMP.sh /coachproxy/rv-c/
 COPY mqtt2rvc.pl /coachproxy/rv-c/
 COPY mqtt_monitor.pl /coachproxy/rv-c/
 COPY test_lights.pl /coachproxy/rv-c/
+COPY map_window_shade.pl /coachproxy/rv-c/
 
 # Set execute permissions
 RUN chmod +x /coachproxy/rv-c/*.pl /coachproxy/rv-c/*.sh && \
