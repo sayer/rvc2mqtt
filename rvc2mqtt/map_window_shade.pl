@@ -236,7 +236,7 @@ sub process_shade_status {
     if (exists $shade_data->{'DC_COMPONENT_DRIVER_STATUS_6'}) {
         my $status6 = $shade_data->{'DC_COMPONENT_DRIVER_STATUS_6'};
         
-        # Map motor duty
+        # Map motor duty - will be overridden to 0 if inactive
         if (defined $status6->{'pwm_duty'} && $status6->{'pwm_duty'} ne 'n/a') {
             $output_1fede_payload{'motor duty'} = $status6->{'pwm_duty'};
         } elsif (defined $status6->{'pwm_duty definition'} && $status6->{'pwm_duty definition'} ne 'not_applicable') {
@@ -334,6 +334,11 @@ sub process_shade_status {
                 $output_1fede_payload{'forward status definition'} = "inactive";
                 $output_1fede_payload{'reverse status'} = "00"; # "00" for inactive
                 $output_1fede_payload{'reverse status definition'} = "inactive";
+                
+                # When inactive, motor status and duty should be appropriately set
+                $output_1fede_payload{'motor duty'} = 0;
+                $output_1fede_payload{'motor status'} = "00"; # "00" for inactive
+                $output_1fede_payload{'motor status definition'} = "inactive";
                 
                 # When inactive, use the last movement direction from our stored data
                 if (exists $last_movement_commands{$driver_index}) {
