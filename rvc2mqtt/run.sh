@@ -44,9 +44,14 @@ echo "starting mqtt2rvc..."
 /coachproxy/rv-c/mqtt2rvc.pl --debug  &
 MQTT2RVC_PID=$!
 
+# Start map_window_shade in the background
+echo "starting map_window_shade..."
+/coachproxy/rv-c/map_window_shade.pl --debug &
+MAP_WINDOW_SHADE_PID=$!
+
 # Function to clean up processes
 cleanup() {
-    kill $HEALTHCHECK_PID 2>/dev/null
+    kill $HEALTHCHECK_PID $RVC2MQTT_PID $MQTT_RVC_SET_PID $MQTT2RVC_PID $MAP_WINDOW_SHADE_PID 2>/dev/null
     exit 0
 }
 
@@ -92,5 +97,13 @@ while true; do
     /coachproxy/rv-c/mqtt2rvc.pl --debug  &
     MQTT2RVC_PID=$!
     echo "MQTT2RVC restarted with PID $MQTT2RVC_PID"
+  fi
+  
+  if ! kill -0 $MAP_WINDOW_SHADE_PID 2>/dev/null; then
+    echo "MAP_WINDOW_SHADE process exited. Restarting in 5 seconds..."
+    sleep 5
+    /coachproxy/rv-c/map_window_shade.pl --debug &
+    MAP_WINDOW_SHADE_PID=$!
+    echo "MAP_WINDOW_SHADE restarted with PID $MAP_WINDOW_SHADE_PID"
   fi
 done

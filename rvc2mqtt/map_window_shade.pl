@@ -454,8 +454,8 @@ sub process_shade_status {
         print "${color_cyan}Payload: $publish_json_string${color_reset}\n";
         
         eval {
-            # Use retain => 1 so the last state is available on broker/client restarts
-            $mqtt->retain($output_topic => $publish_json_string);
+            # Publish without the retain flag
+            $mqtt->publish($output_topic => $publish_json_string);
             print "${color_green}Successfully published to $output_topic${color_reset}\n";
         };
         if ($@) {
