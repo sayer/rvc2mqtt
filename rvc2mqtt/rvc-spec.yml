@@ -4015,11 +4015,20 @@ API_VERSION: 1
         4: stop
         5: toggle
         6: memory off
-        17: ramp brightness
+        7: Save Scene
+        11: ramp brightness
+        12: ramp toggle
+        13: ramp up
+        14: ramp down
+        15: ramp up/down
+        16: ramp up/down toggle
+        17: not in Specification
         18: ramp toggle
         19: ramp up
         20: ramp down
         21: ramp up/down
+        31: flash
+        32: flash momentarily
         33: lock
         34: unlock
         49: flash
@@ -7824,3 +7833,284 @@ EF00:
         0: inactive
         1: active
 # (Removed duplicate 16F00 entry inserted above. The original 16F00 entry at line 7488 remains as the canonical definition.)
+1FDBC:
+  name: DC_LIGHTING_CONTROLLER_COMMAND_1
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+      values:
+        0: invalid
+        1-250: valid
+        255: applies to all light instances
+    - byte: 1
+      bit: 0-3
+      name: color fade mode
+      type: bit4
+      values:
+        0000: solid color mode, no fading
+        0001: red fade mode - red color fades on/off
+        0010: green fade mode - green color fades on/off
+        0011: blue fade mode - blue color fades on/off
+        0100: 4 color fade mode - color fades between 4 preset colors (white, blue, red, green)
+        0111: 7 color fade mode - color fades between 7 preset colors (yellow, white, cyan, blue, red, purple, green)
+        1000: custom color fade mode - color fades between user selected colors of tables 6.24.14b
+        1111: enabled status is unavailable or not supported
+    - byte: 1
+      bit: 4-5
+      name: chasing color mode
+      type: bit2
+      values:
+        00: chasing mode disabled
+        01: chasing mode enabled
+        11: enabled status is unavailable or not supported
+    - byte: 1
+      bit: 6-7
+      name: color temperature mode
+      type: bit2
+      values:
+        00: color temperature mode disabled
+        01: color temperature enabled
+        11: enabled status is unavailable or not supported
+    - byte: 2
+      name: fade speed
+      type: uint8
+      unit: ms
+      values:
+        0: no fading
+        1-250: change fade value every 1-250ms
+    - byte: 3
+      name: fade type
+      type: uint8
+      values:
+        0: blend one RGB color into the next
+        1: dim RGB colors to 20% brightness then jump to next color
+    - byte: 4-5
+      name: color temperature setting
+      type: uint16
+      unit: °k
+
+1FDBB:
+  name: DC_LIGHTING_CONTROLLER_COMMAND_2
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+      values:
+        0: invalid
+        1-250: valid
+        255: applies to all light instances
+    - byte: 1
+      name: chasing pattern
+      type: uint8
+      values:
+        00: dots
+        01: stripes
+        02: custom stripes
+        03: rainbow
+        04: comet
+        05: stacking
+        06: rainbow dots
+        07: wave
+        08: wiping
+    - byte: 2
+      name: chasing speed
+      type: uint8
+      unit: pct
+      values:
+        0: chasing stopped
+    - byte: 3
+      name: chasing direction
+      type: uint8
+      values:
+        0: fade not moving
+        1: fade away from controller
+        2: fade toward controller
+    - byte: 4
+      name: chasing color width
+      type: uint8
+      unit: pct
+      values:
+        0: invalid
+        1-100: percent of the max length of the color
+
+1FDBA:
+  name: DC_LIGHTING_CONTROLLER_COMMAND_3
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+      values:
+        0: invalid
+        1-250: valid
+        255: applies to all light instances
+    - byte: 1-2
+      name: min color temperature
+      type: uint16
+      unit: °k
+    - byte: 3-4
+      name: max color temperature
+      type: uint16
+      unit: °k
+    - byte: 5
+      bit: 0-1
+      name: color temperature min/max switch
+      type: bit2
+      values:
+        00: set green as max color temperature
+        01: set red as max color temperature
+        11: enable status is unavailable or not supported
+
+1FDB9:
+  name: DC_LIGHTING_CONTROLLER_COMMAND_4
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+      values:
+        0: invalid
+        1-250: valid
+        255: applies to all light instances
+    - byte: 1
+      bit: 0-1
+      name: timer action
+      type: bit2
+      values:
+        00: turn off when timer expires
+        01: turn on when timer expires
+        11: enable status is unavailable or not supported
+    - byte: 1
+      bit: 2-3
+      name: timer go
+      type: bit2
+      values:
+        00: timer activated and running
+        01: timer deactivated
+        11: enable status is unavailable or not supported
+    - byte: 2-3
+      name: timer value
+      type: uint16
+      unit: sec
+
+1FDB8:
+  name: DC_LIGHTING_CONTROLLER_STATUS_5
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+      values:
+        0: invalid
+        1-250: valid
+        255: applies to all light instances
+    - byte: 1
+      bit: 0-1
+      name: external input enable - light off
+      type: bit2
+      values:
+        00: disable using external input line
+        01: enable using external input line
+        11: enable status is unavailable or not supported
+    - byte: 2
+      bit: 0-1
+      name: save
+      type: bit2
+      values:
+        00: value when save complete
+        01: save settings to memory
+        11: enable status is unavailable or not supported
+    - byte: 2
+      bit: 2-3
+      name: set to default
+      type: bit2
+      values:
+        00: value when set defaults is complete
+        01: set default values
+        11: enable status is unavailable or not supported
+    - byte: 3
+      bit: 0-1
+      name: auto tx enable
+      type: bit2
+      values:
+        00: disabled auto transmit
+        01: enable auto transmit when value changes
+        11: enable status is unavailable or not supported
+    - byte: 4
+      bit: 0-1
+      name: unlock output type
+      type: bit2
+      values:
+        00: locked
+        01: unlocked
+        11: enable status is unavailable or not supported
+    - byte: 4
+      bit: 2-3
+      name: unlock argb type
+      type: bit2
+      values:
+        00: locked
+        01: unlocked
+        11: enable status is unavailable or not supported
+    - byte: 5
+      name: output control type
+      type: uint8
+      values:
+        0: RGB output control
+        1: RGBW output control
+        2: ARGB output control
+        3: RGB color temperature tuning control
+        4: RGBW color temperature tuning control
+        5: single output PWM control
+        6: relay control
+    - byte: 6
+      bit: 0-1
+      name: argb type - ws2812b
+      type: bit2
+      values:
+        00: ws2812 disabled
+        01: ws2812 enabled
+        11: enabled status is unavailable or not supported
+    - byte: 7
+      bit: 0-1
+      name: external input line status
+      type: bit2
+      values:
+        00: external line deactivated
+        01: external line activated
+        11: enable status is unavailable or not supported
+
+1FDB7:
+  name: DC_LIGHTING_CONTROLLER_STATUS_6
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+      values:
+        0: invalid
+        1-250: valid
+        255: applies to all light instances
+    - byte: 1
+      name: cell index nub
+      type: uint8
+      values:
+        0: invalid
+        1-250: cell number for red, green, and blue values
+    - byte: 2
+      bit: 0-1
+      name: cell enable
+      type: bit2
+      values:
+        00: disable cell
+        01: enable cell in custom color fade
+        11: enable status is unavailable or not supported
+    - byte: 3
+      name: cell-red color
+      type: uint8
+      unit: pct
+    - byte: 4
+      name: cell-green color
+      type: uint8
+      unit: pct
+    - byte: 5
+      name: cell-blue color
+      type: uint8
+      unit: pct
