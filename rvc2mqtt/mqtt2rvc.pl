@@ -414,6 +414,69 @@ sub process_mqtt_message {
     print "Final WATER_PUMP_COMMAND data: $data\n" if $debug;
     $apply_standard_formatting = 0;  # Skip standard formatting since we have a custom format
   }
+  # Special handling for DC_DIMMER_COMMAND_2 - always set interlock to "00"
+  elsif ($dgn eq "1FEDB") {
+    # Print JSON payload for debugging
+    print "DC_DIMMER_COMMAND_2 JSON payload: " if $debug;
+    if ($debug) {
+      foreach my $key (sort keys %$json) {
+        print "$key => " . (defined $json->{$key} ? $json->{$key} : "undef") . ", ";
+      }
+      print "\n";
+    }
+    
+    # Extract bytes from data string
+    my @bytes = unpack("(A2)*", $data);
+    
+    # Ensure we have at least 6 bytes
+    while (scalar(@bytes) < 6) {
+      push(@bytes, "FF");
+    }
+    
+    # Set interlock to "00" (no interlock active) in byte 5, bits 0-1
+    # First get the current value of byte 5
+    my $byte_value = hex($bytes[5]);
+    
+    # Clear bits 0-1 (set to 0)
+    $byte_value &= ~0x03;  # 0x03 is the mask for bits 0-1
+    
+    # Update byte 5 with the new value
+    $bytes[5] = sprintf("%02X", $byte_value);
+    
+    # Rebuild data string
+    $data = join('', @bytes);
+    
+    print "Fixed DC_DIMMER_COMMAND_2 - Set interlock to 00 (no interlock active)\n" if $debug;
+    print "Final DC_DIMMER_COMMAND_2 data: $data\n" if $debug;
+    
+    # Apply standard formatting for other fields
+    my $original_data = $data;
+    $data = format_rvc_message($dgn, $data, $json);
+    
+    # Override byte 5 again to ensure interlock remains "00"
+    @bytes = unpack("(A2)*", $data);
+    $byte_value = hex($bytes[5]);
+    $byte_value &= ~0x03;  # Clear bits 0-1
+    $bytes[5] = sprintf("%02X", $byte_value);
+    $data = join('', @bytes);
+    
+    print "Applied standard RVC formatting for DGN $dgn\n" if $debug;
+    print "  Original data: $original_data\n" if $debug;
+    print "  Formatted data: $data\n" if $debug;
+    
+    # Special debug for light commands
+    if ($debug) {
+      print "  DC_DIMMER_COMMAND_2 - This is a light control command\n";
+      print "  Instance: " . substr($data, 0, 2) . "\n";
+      print "  Group: " . substr($data, 2, 2) . "\n";
+      print "  Level: " . substr($data, 4, 2) . "\n";
+      print "  Command: " . substr($data, 6, 2) . "\n";
+      print "  Duration: " . substr($data, 8, 2) . "\n";
+      print "  Interlock: 00 (hardcoded to no interlock active)\n";
+    }
+    
+    $apply_standard_formatting = 0;  # Skip additional standard formatting
+  }
   
   # Apply standard RVC formatting if needed (set undefined bytes to FF)
   if ($apply_standard_formatting) {
