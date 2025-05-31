@@ -1013,6 +1013,9 @@ sub send_can_message {
   # Execute the command
   system($cmd);
   
+  # Add a 0.5 second delay after sending the CAN command
+  sleep(0.5);
+  
   if ($? != 0) {
     print "Error sending CAN message: $?\n";
   }
