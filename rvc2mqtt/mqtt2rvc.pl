@@ -433,15 +433,9 @@ sub process_mqtt_message {
       push(@bytes, "FF");
     }
     
-    # Set interlock to "00" (no interlock active) in byte 5, bits 0-1
-    # First get the current value of byte 5
-    my $byte_value = hex($bytes[5]);
-    
-    # Clear bits 0-1 (set to 0)
-    $byte_value &= ~0x03;  # 0x03 is the mask for bits 0-1
-    
-    # Update byte 5 with the new value
-    $bytes[5] = sprintf("%02X", $byte_value);
+    # Set all bits in byte 5 to 0 (no interlock active)
+    # This prevents the device from being locked by undefined bits
+    $bytes[5] = "00";
     
     # Rebuild data string
     $data = join('', @bytes);
@@ -453,11 +447,9 @@ sub process_mqtt_message {
     my $original_data = $data;
     $data = format_rvc_message($dgn, $data, $json);
     
-    # Override byte 5 again to ensure interlock remains "00"
+    # Override byte 5 again to ensure it remains "00"
     @bytes = unpack("(A2)*", $data);
-    $byte_value = hex($bytes[5]);
-    $byte_value &= ~0x03;  # Clear bits 0-1
-    $bytes[5] = sprintf("%02X", $byte_value);
+    $bytes[5] = "00";
     $data = join('', @bytes);
     
     print "Applied standard RVC formatting for DGN $dgn\n" if $debug;
