@@ -433,6 +433,12 @@ sub process_mqtt_message {
       push(@bytes, "FF");
     }
     
+    # Set group (byte 1) to FF if it's missing in the JSON
+    if (!defined $json->{'group'}) {
+      print "  Group parameter missing, setting to FF (all groups)\n" if $debug;
+      $bytes[1] = "FF";
+    }
+    
     # Set all bits in byte 5 to 0 (no interlock active)
     # This prevents the device from being locked by undefined bits
     $bytes[5] = "00";
