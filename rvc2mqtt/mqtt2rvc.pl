@@ -475,6 +475,75 @@ sub process_mqtt_message {
     
     $apply_standard_formatting = 0;  # Skip additional standard formatting
   }
+  # Special handling for ROOF_FAN_COMMAND_1 - validate bit field values
+  elsif ($dgn eq "1FEA6") {
+    # Print JSON payload for debugging
+    print "ROOF_FAN_COMMAND_1 JSON payload: " if $debug;
+    if ($debug) {
+      foreach my $key (sort keys %$json) {
+        print "$key => " . (defined $json->{$key} ? $json->{$key} : "undef") . ", ";
+      }
+      print "\n";
+    }
+    
+    # Extract bytes from data string
+    my @bytes = unpack("(A2)*", $data);
+    
+    # Ensure we have at least 8 bytes
+    while (scalar(@bytes) < 8) {
+      push(@bytes, "FF");
+    }
+    
+    # Validate and correct bit field values in byte 1
+    my $byte1_value = hex($bytes[1]);
+    
+    # Extract individual bit fields from byte 1
+    my $system_status = $byte1_value & 0x03;        # bits 0-1
+    my $fan_mode = ($byte1_value >> 2) & 0x03;      # bits 2-3
+    my $speed_mode = ($byte1_value >> 4) & 0x03;    # bits 4-5
+    my $light = ($byte1_value >> 6) & 0x03;         # bits 6-7
+    
+    print "  Original byte 1 bit fields: System Status=$system_status, Fan Mode=$fan_mode, Speed Mode=$speed_mode, Light=$light\n" if $debug;
+    
+    # Validate and correct each field according to RVC spec
+    # System Status: 0=Off, 1=On, 2-3=undefined (set to 3 for undefined)
+    if ($system_status > 1) {
+      print "  Warning: Invalid System Status value $system_status, setting to undefined (3)\n" if $debug;
+      $system_status = 3;  # Set to undefined
+    }
+    
+    # Fan Mode: 0=Auto, 1=Force On, 2-3=undefined (set to 3 for undefined)
+    if ($fan_mode > 1) {
+      print "  Warning: Invalid Fan Mode value $fan_mode, setting to undefined (3)\n" if $debug;
+      $fan_mode = 3;  # Set to undefined
+    }
+    
+    # Speed Mode: 0=Auto (Variable), 1=Manual, 2-3=undefined (set to 3 for undefined)
+    if ($speed_mode > 1) {
+      print "  Warning: Invalid Speed Mode value $speed_mode, setting to undefined (3)\n" if $debug;
+      $speed_mode = 3;  # Set to undefined
+    }
+    
+    # Light: 0=Off, 1=On, 2-3=undefined (set to 3 for undefined)
+    if ($light > 1) {
+      print "  Warning: Invalid Light value $light, setting to undefined (3)\n" if $debug;
+      $light = 3;  # Set to undefined
+    }
+    
+    # Reconstruct byte 1 with corrected values
+    $byte1_value = $system_status | ($fan_mode << 2) | ($speed_mode << 4) | ($light << 6);
+    $bytes[1] = sprintf("%02X", $byte1_value);
+    
+    print "  Corrected byte 1 bit fields: System Status=$system_status, Fan Mode=$fan_mode, Speed Mode=$speed_mode, Light=$light\n" if $debug;
+    print "  New byte 1 value: " . sprintf("%02X (%08b)", $byte1_value, $byte1_value) . "\n" if $debug;
+    
+    # Rebuild data string
+    $data = join('', @bytes);
+    
+    print "Fixed ROOF_FAN_COMMAND_1 - Corrected invalid bit field values\n" if $debug;
+    print "Final ROOF_FAN_COMMAND_1 data: $data\n" if $debug;
+    $apply_standard_formatting = 0;  # Skip standard formatting since we have a custom format
+  }
   
   # Apply standard RVC formatting if needed (set undefined bytes to FF)
   if ($apply_standard_formatting) {
