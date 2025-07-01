@@ -550,7 +550,7 @@ sub process_mqtt_message {
       $bytes[2] = $fan_speed;
     }
     
-    # Byte 3: Wind Direction Switch and Dome Position - start with undefined (0xFF)
+    # Byte 3: Start with all undefined bits (0xFF) then set valid values
     my $byte3 = 0xFF;
     
     # Wind Direction Switch (bits 0-1): 0=Air Out, 1=Air In, leave as 11 if undefined/invalid
@@ -559,10 +559,32 @@ sub process_mqtt_message {
       # Clear bits 0-1 and set the valid value
       $byte3 &= 0xFC;  # Clear bits 0-1
       $byte3 |= ($wind_dir & 0x03);  # Set the valid value
+      print "  Wind Direction Switch: $wind_dir (valid)\n" if $debug;
+    } else {
+      print "  Wind Direction Switch: undefined (bits 0-1 remain 11)\n" if $debug;
     }
     
-    # Dome Position (bits 2-5): deprecated, leave as 1111 (undefined)
-    # Rain Sensor (bits 6-7): deprecated, leave as 11 (undefined)
+    # Dome Position (bits 2-5): Process if present in JSON, even though deprecated
+    my $dome_pos = $json->{'Dome Position [Deprecated]'};
+    if (defined $dome_pos && $dome_pos >= 0 && $dome_pos <= 15) {
+      # Clear bits 2-5 and set the valid value
+      $byte3 &= 0xC3;  # Clear bits 2-5 (11000011)
+      $byte3 |= (($dome_pos & 0x0F) << 2);  # Set the valid value
+      print "  Dome Position: $dome_pos (valid)\n" if $debug;
+    } else {
+      print "  Dome Position: undefined (bits 2-5 remain 1111)\n" if $debug;
+    }
+    
+    # Rain Sensor (bits 6-7): Process if present in JSON, even though deprecated
+    my $rain_sensor = $json->{'Rain Sensor [Deprecated]'};
+    if (defined $rain_sensor && $rain_sensor >= 0 && $rain_sensor <= 3) {
+      # Clear bits 6-7 and set the valid value
+      $byte3 &= 0x3F;  # Clear bits 6-7 (00111111)
+      $byte3 |= (($rain_sensor & 0x03) << 6);  # Set the valid value
+      print "  Rain Sensor: $rain_sensor (valid)\n" if $debug;
+    } else {
+      print "  Rain Sensor: undefined (bits 6-7 remain 11)\n" if $debug;
+    }
     
     $bytes[3] = $byte3;
     
