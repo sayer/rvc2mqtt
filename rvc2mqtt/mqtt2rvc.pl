@@ -540,14 +540,15 @@ sub process_mqtt_message {
     
     $bytes[1] = $byte1;
     
-    # Byte 2: Fan Speed Setting (0-100%)
+    # Byte 2: Fan Speed Setting - use provided value as-is
     my $fan_speed = $json->{'Fan Speed Setting'} || 0;
     if ($fan_speed eq 'n/a') {
       $bytes[2] = 0xFF;  # n/a value
     } else {
-      $fan_speed = $fan_speed * 2;  # Convert percentage to RVC format (0-200)
-      $fan_speed = 254 if ($fan_speed > 254);  # Cap at max valid value
+      # Use the provided fan speed value directly without conversion
+      $fan_speed = 255 if ($fan_speed > 255);  # Cap at uint8 max
       $bytes[2] = $fan_speed;
+      print "  Fan Speed Setting: $fan_speed (direct value)\n" if $debug;
     }
     
     # Byte 3: Start with all undefined bits (0xFF) then set valid values
