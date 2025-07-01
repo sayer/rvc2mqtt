@@ -474,10 +474,110 @@ sub process_mqtt_message {
     }
     $apply_standard_formatting = 0;  # Skip additional standard formatting
   }
-  # Special handling for ROOF_FAN_COMMAND_1 - skip standard formatting to preserve bit values
+  # Special handling for ROOF_FAN_COMMAND_1 - build data packet manually
   elsif ($dgn eq "1FEA6") {
-    print "ROOF_FAN_COMMAND_1 - Skipping standard RVC formatting to preserve bit field values\n" if $debug;
-    $apply_standard_formatting = 0;  # Skip standard formatting that corrupts bit fields
+    print "ROOF_FAN_COMMAND_1 JSON payload: " if $debug;
+    if ($debug) {
+      foreach my $key (sort keys %$json) {
+        print "$key => " . (defined $json->{$key} ? $json->{$key} : "undef") . ", ";
+      }
+      print "\n";
+    }
+    
+    # Build ROOF_FAN_COMMAND_1 data packet manually to avoid bit field corruption
+    my @bytes = (0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF);
+    
+    # Byte 0: Instance
+    $bytes[0] = $json->{instance} || 1;
+    
+    # Byte 1: Start with all undefined bits set (0xFF = 11111111)
+    # Then clear and set only the bits that have valid values
+    my $byte1 = 0xFF;  # Start with all bits set to 1 (undefined state)
+    
+    # System Status (bits 0-1): 0=Off, 1=On, leave as 11 if undefined/invalid
+    my $system_status = $json->{'System Status'};
+    if (defined $system_status && ($system_status == 0 || $system_status == 1)) {
+      # Clear bits 0-1 and set the valid value
+      $byte1 &= 0xFC;  # Clear bits 0-1 (11111100)
+      $byte1 |= ($system_status & 0x03);  # Set the valid value
+      print "  System Status: $system_status (valid)\n" if $debug;
+    } else {
+      print "  System Status: undefined (bits 0-1 remain 11)\n" if $debug;
+    }
+    
+    # Fan Mode (bits 2-3): 0=Auto, 1=Force On, leave as 11 if undefined/invalid
+    my $fan_mode = $json->{'Fan Mode'};
+    if (defined $fan_mode && ($fan_mode == 0 || $fan_mode == 1)) {
+      # Clear bits 2-3 and set the valid value
+      $byte1 &= 0xF3;  # Clear bits 2-3 (11110011)
+      $byte1 |= (($fan_mode & 0x03) << 2);  # Set the valid value
+      print "  Fan Mode: $fan_mode (valid)\n" if $debug;
+    } else {
+      print "  Fan Mode: undefined (bits 2-3 remain 11)\n" if $debug;
+    }
+    
+    # Speed Mode (bits 4-5): 0=Auto (Variable), 1=Manual, leave as 11 if undefined/invalid
+    my $speed_mode = $json->{'Speed Mode'};
+    if (defined $speed_mode && ($speed_mode == 0 || $speed_mode == 1)) {
+      # Clear bits 4-5 and set the valid value
+      $byte1 &= 0xCF;  # Clear bits 4-5 (11001111)
+      $byte1 |= (($speed_mode & 0x03) << 4);  # Set the valid value
+      print "  Speed Mode: $speed_mode (valid)\n" if $debug;
+    } else {
+      print "  Speed Mode: undefined (bits 4-5 remain 11)\n" if $debug;
+    }
+    
+    # Light (bits 6-7): 0=Off, 1=On, leave as 11 if undefined/invalid
+    my $light = $json->{'Light'};
+    if (defined $light && ($light == 0 || $light == 1)) {
+      # Clear bits 6-7 and set the valid value
+      $byte1 &= 0x3F;  # Clear bits 6-7 (00111111)
+      $byte1 |= (($light & 0x03) << 6);  # Set the valid value
+      print "  Light: $light (valid)\n" if $debug;
+    } else {
+      print "  Light: undefined (bits 6-7 remain 11)\n" if $debug;
+    }
+    
+    $bytes[1] = $byte1;
+    
+    # Byte 2: Fan Speed Setting (0-100%)
+    my $fan_speed = $json->{'Fan Speed Setting'} || 0;
+    if ($fan_speed eq 'n/a') {
+      $bytes[2] = 0xFF;  # n/a value
+    } else {
+      $fan_speed = $fan_speed * 2;  # Convert percentage to RVC format (0-200)
+      $fan_speed = 254 if ($fan_speed > 254);  # Cap at max valid value
+      $bytes[2] = $fan_speed;
+    }
+    
+    # Byte 3: Wind Direction Switch and Dome Position - start with undefined (0xFF)
+    my $byte3 = 0xFF;
+    
+    # Wind Direction Switch (bits 0-1): 0=Air Out, 1=Air In, leave as 11 if undefined/invalid
+    my $wind_dir = $json->{'Wind Direction Switch'};
+    if (defined $wind_dir && ($wind_dir == 0 || $wind_dir == 1)) {
+      # Clear bits 0-1 and set the valid value
+      $byte3 &= 0xFC;  # Clear bits 0-1
+      $byte3 |= ($wind_dir & 0x03);  # Set the valid value
+    }
+    
+    # Dome Position (bits 2-5): deprecated, leave as 1111 (undefined)
+    # Rain Sensor (bits 6-7): deprecated, leave as 11 (undefined)
+    
+    $bytes[3] = $byte3;
+    
+    # Bytes 4-7: Temperature fields - set to n/a (0xFFFF for uint16)
+    # These are typically not used in commands, set to undefined
+    
+    # Convert to hex string
+    $data = sprintf("%02X%02X%02X%02X%02X%02X%02X%02X", @bytes);
+    
+    print "Built ROOF_FAN_COMMAND_1 data manually:\n" if $debug;
+    print "  System Status: $system_status, Fan Mode: $fan_mode, Speed Mode: $speed_mode, Light: $light\n" if $debug;
+    print "  Byte 1: " . sprintf("%02X (%08b)", $byte1, $byte1) . "\n" if $debug;
+    print "  Final data: $data\n" if $debug;
+    
+    $apply_standard_formatting = 0;  # Skip standard formatting since we built it manually
   }
   
   # Apply standard RVC formatting if needed (set undefined bytes to FF)
