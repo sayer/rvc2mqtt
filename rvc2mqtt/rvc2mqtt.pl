@@ -188,15 +188,11 @@ sub decode() {
         my $key = "$value";
         $value_def = $values->{$key} if ($values->{$key});
         
-        # Also try formatted strings (00, 01, 0000, 0001, etc.) for bit values
+        # For bit fields, prioritize binary formats over decimal formats
         if ($value_def eq 'undefined' && $value < 16) {
-          # Try 2-digit format (00, 01, etc.)
-          $key = sprintf("%02d", $value);
-          $value_def = $values->{$key} if ($values->{$key});
-          
-          # Try 4-digit format (0000, 0001, etc.) if 2-digit didn't work
-          if ($value_def eq 'undefined') {
-            $key = sprintf("%04d", $value);
+          # Try binary format (0000, 0001, 0010, etc.) for 4-bit values first
+          if ($value < 16) {
+            $key = sprintf("%04b", $value);
             $value_def = $values->{$key} if ($values->{$key});
           }
           
@@ -206,10 +202,17 @@ sub decode() {
             $value_def = $values->{$key} if ($values->{$key});
           }
           
-          # Try binary format (0000, 0001, 0010, etc.) for 4-bit values
-          if ($value_def eq 'undefined' && $value < 16) {
-            $key = sprintf("%04b", $value);
+          # Only try decimal formats if binary formats don't match
+          if ($value_def eq 'undefined') {
+            # Try 2-digit decimal format (00, 01, etc.)
+            $key = sprintf("%02d", $value);
             $value_def = $values->{$key} if ($values->{$key});
+            
+            # Try 4-digit decimal format (0000, 0001, etc.)
+            if ($value_def eq 'undefined') {
+              $key = sprintf("%04d", $value);
+              $value_def = $values->{$key} if ($values->{$key});
+            }
           }
         }
       }
