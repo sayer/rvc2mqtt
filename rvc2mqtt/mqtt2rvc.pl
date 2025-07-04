@@ -474,6 +474,88 @@ sub process_mqtt_message {
     }
     $apply_standard_formatting = 0;  # Skip additional standard formatting
   }
+  # Special handling for THERMOSTAT_COMMAND_1 - fix operating mode bit field corruption
+  elsif ($dgn eq "1FEF9") {
+    print "THERMOSTAT_COMMAND_1 JSON payload: " if $debug;
+    if ($debug) {
+      foreach my $key (sort keys %$json) {
+        print "$key => " . (defined $json->{$key} ? $json->{$key} : "undef") . ", ";
+      }
+      print "\n";
+    }
+    
+    # Build THERMOSTAT_COMMAND_1 data packet manually to avoid bit field corruption
+    my @bytes = (0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF);
+    
+    # Byte 0: Instance
+    $bytes[0] = $json->{instance} || 164;
+    
+    # Byte 1: Build bit fields manually
+    my $byte1 = 0xFF;  # Start with all undefined bits set
+    
+    # Operating mode (bits 0-3)
+    if (defined $json->{'operating mode'}) {
+      my $op_mode = $json->{'operating mode'};
+      # Clear bits 0-3 and set the operating mode
+      $byte1 &= 0xF0;  # Clear lower 4 bits
+      $byte1 |= ($op_mode & 0x0F);  # Set operating mode in lower 4 bits
+      print "  Set operating mode to $op_mode\n" if $debug;
+    }
+    
+    # Fan mode (bits 4-5)
+    if (defined $json->{'fan mode'}) {
+      my $fan_mode = $json->{'fan mode'};
+      # Clear bits 4-5 and set the fan mode
+      $byte1 &= 0xCF;  # Clear bits 4-5
+      $byte1 |= (($fan_mode & 0x03) << 4);  # Set fan mode in bits 4-5
+      print "  Set fan mode to $fan_mode\n" if $debug;
+    }
+    
+    # Schedule mode (bits 6-7)
+    if (defined $json->{'schedule mode'}) {
+      my $sched_mode = $json->{'schedule mode'};
+      # Clear bits 6-7 and set the schedule mode
+      $byte1 &= 0x3F;  # Clear bits 6-7
+      $byte1 |= (($sched_mode & 0x03) << 6);  # Set schedule mode in bits 6-7
+      print "  Set schedule mode to $sched_mode\n" if $debug;
+    }
+    
+    $bytes[1] = $byte1;
+    
+    # Byte 2: Fan speed
+    if (defined $json->{'fan speed'}) {
+      $bytes[2] = $json->{'fan speed'} * 2;  # Convert percentage to protocol format
+    }
+    
+    # Bytes 3-4: Setpoint temp heat (uint16, LSB first)
+    if (defined $json->{'setpoint temp heat'}) {
+      my $temp_encoded = int(($json->{'setpoint temp heat'} + 273) / 0.03125);
+      $bytes[3] = $temp_encoded & 0xFF;        # LSB
+      $bytes[4] = ($temp_encoded >> 8) & 0xFF; # MSB
+    }
+    
+    # Bytes 5-6: Setpoint temp cool (uint16, LSB first)
+    if (defined $json->{'setpoint temp cool'}) {
+      my $temp_encoded = int(($json->{'setpoint temp cool'} + 273) / 0.03125);
+      $bytes[5] = $temp_encoded & 0xFF;        # LSB
+      $bytes[6] = ($temp_encoded >> 8) & 0xFF; # MSB
+    }
+    
+    # Convert to hex string
+    $data = '';
+    foreach my $byte (@bytes) {
+      $data .= sprintf("%02X", $byte);
+    }
+    
+    print "Fixed THERMOSTAT_COMMAND_1 data: $data\n" if $debug;
+    print "  Byte 0 (instance): " . sprintf("%02X", $bytes[0]) . "\n" if $debug;
+    print "  Byte 1 (modes): " . sprintf("%02X (%08b)", $bytes[1], $bytes[1]) . "\n" if $debug;
+    print "  Byte 2 (fan speed): " . sprintf("%02X", $bytes[2]) . "\n" if $debug;
+    print "  Bytes 3-4 (heat temp): " . sprintf("%02X%02X", $bytes[3], $bytes[4]) . "\n" if $debug;
+    print "  Bytes 5-6 (cool temp): " . sprintf("%02X%02X", $bytes[5], $bytes[6]) . "\n" if $debug;
+    
+    $apply_standard_formatting = 0;  # Skip standard formatting since we built it manually
+  }
   # Special handling for ROOF_FAN_COMMAND_1 - build data packet manually
   elsif ($dgn eq "1FEA6") {
     print "ROOF_FAN_COMMAND_1 JSON payload: " if $debug;
