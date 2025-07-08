@@ -188,22 +188,36 @@ sub decode() {
         my $key = "$value";
         $value_def = $values->{$key} if ($values->{$key});
         
-        # For bit fields, prioritize binary formats over decimal formats
-        if ($value_def eq 'undefined' && $value < 16) {
-          # Try binary format (0000, 0001, 0010, etc.) for 4-bit values first
-          if ($value < 16) {
-            $key = sprintf("%04b", $value);
-            $value_def = $values->{$key} if ($values->{$key});
+        # If still undefined, try different formats based on the parameter type
+        if ($value_def eq 'undefined') {
+          # For simple bit types, try basic formats first
+          if ($type eq 'bit' || $type eq 'uint2' || $type eq 'bit2') {
+            # Try 2-digit decimal format (00, 01, etc.) for bit2/uint2 types
+            if ($type eq 'bit2' || $type eq 'uint2') {
+              $key = sprintf("%02d", $value);
+              $value_def = $values->{$key} if ($values->{$key});
+            }
+            
+            # Try binary format (00, 01, 10, 11) for 2-bit values
+            if ($value_def eq 'undefined' && $value < 4) {
+              $key = sprintf("%02b", $value);
+              $value_def = $values->{$key} if ($values->{$key});
+            }
           }
-          
-          # Try binary format (00, 01, 10, 11) for 2-bit values
-          if ($value_def eq 'undefined' && $value < 4) {
-            $key = sprintf("%02b", $value);
+          # For 4-bit types, try 4-bit formats
+          elsif ($type eq 'bit4' || $type eq 'uint4') {
+            # Try 4-digit decimal format first
+            $key = sprintf("%04d", $value);
             $value_def = $values->{$key} if ($values->{$key});
+            
+            # Try binary format (0000, 0001, 0010, etc.) for 4-bit values
+            if ($value_def eq 'undefined' && $value < 16) {
+              $key = sprintf("%04b", $value);
+              $value_def = $values->{$key} if ($values->{$key});
+            }
           }
-          
-          # Only try decimal formats if binary formats don't match
-          if ($value_def eq 'undefined') {
+          # For other types, try general formats
+          else {
             # Try 2-digit decimal format (00, 01, etc.)
             $key = sprintf("%02d", $value);
             $value_def = $values->{$key} if ($values->{$key});
@@ -211,6 +225,17 @@ sub decode() {
             # Try 4-digit decimal format (0000, 0001, etc.)
             if ($value_def eq 'undefined') {
               $key = sprintf("%04d", $value);
+              $value_def = $values->{$key} if ($values->{$key});
+            }
+            
+            # Try binary formats as last resort
+            if ($value_def eq 'undefined' && $value < 4) {
+              $key = sprintf("%02b", $value);
+              $value_def = $values->{$key} if ($values->{$key});
+            }
+            
+            if ($value_def eq 'undefined' && $value < 16) {
+              $key = sprintf("%04b", $value);
               $value_def = $values->{$key} if ($values->{$key});
             }
           }
