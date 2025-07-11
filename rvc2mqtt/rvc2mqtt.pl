@@ -156,8 +156,8 @@ sub decode() {
       my $bits = get_bits($bytes, $parameter->{bit});
       $value = $bits;
 
-      # Convert from binary to decimal if the data type requires it
-      if (substr($type, 0, 4) eq 'uint') {
+      # Convert from binary to decimal for all bit field types
+      if (substr($type, 0, 4) eq 'uint' || $type eq 'bit' || $type eq 'bit2' || $type eq 'bit4') {
         $value = oct('0b' . $bits);
       }
     }
