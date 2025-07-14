@@ -60,11 +60,8 @@ trap cleanup SIGTERM SIGINT
 
 # Monitor and restart any process that exits
 while true; do
-  # Wait for any process to exit
-  wait -n
-  EXIT_STATUS=$?
-  
-  echo "A process has exited with status $EXIT_STATUS"
+  # Check each process individually instead of using wait -n
+  # This prevents race conditions where multiple processes exit quickly
   
   # Check which process exited and restart it
   if ! kill -0 $HEALTHCHECK_PID 2>/dev/null; then
@@ -106,4 +103,7 @@ while true; do
     MAP_WINDOW_SHADE_PID=$!
     echo "MAP_WINDOW_SHADE restarted with PID $MAP_WINDOW_SHADE_PID"
   fi
+  
+  # Sleep briefly to prevent excessive CPU usage
+  sleep 1
 done

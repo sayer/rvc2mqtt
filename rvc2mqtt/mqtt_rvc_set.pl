@@ -29,6 +29,16 @@ if ($username) {
     print "Using MQTT authentication with username: $username\n" if $debug;
 }
 
+# Add signal handlers to catch exits
+$SIG{TERM} = sub { 
+    print "mqtt_rvc_set received TERM signal, shutting down gracefully\n";
+    exit 0; 
+};
+$SIG{INT} = sub { 
+    print "mqtt_rvc_set received INT signal, shutting down gracefully\n";
+    exit 0; 
+};
+
 # Create MQTT client
 my $mqtt_options = {
     host => $broker,
@@ -51,11 +61,32 @@ my $subscription = $mqtt->subscribe(
         my ($topic, $message) = @_;
         print "Received message: $message on topic $topic\n";
         my @topics = split('/', $topic);
+        
+        # Check if we have enough topic parts
+        if (scalar(@topics) < 2) {
+            print "Invalid topic format: $topic (need at least 2 parts)\n";
+            return;
+        }
+        
         my $script = "/coachproxy/rv-c/$topics[1].sh";
+        
+        # Check if script exists before executing
+        if (! -f $script) {
+            print "Script not found: $script\n";
+            return;
+        }
+        
+        # Check if script is executable
+        if (! -x $script) {
+            print "Script not executable: $script\n";
+            return;
+        }
+        
         my $exit_code = system($script, $topic, $message);
         if ($exit_code != 0) {
-          print "Script execution failed with exit code $exit_code.\n";
-}
+            print "Script execution failed with exit code $exit_code.\n";
+            # Don't exit the process, just log the error
+        }
     },
     qos => 0,
     on_success => sub {
@@ -64,7 +95,10 @@ my $subscription = $mqtt->subscribe(
     on_error => sub {
         my $error = shift;
         print "Failed to subscribe to topic $topic: $error\n";
-        $cv->send;
+        # Don't exit immediately, try to reconnect
+        print "Attempting to reconnect in 10 seconds...\n";
+        sleep 10;
+        # The AnyEvent loop will continue, and the MQTT client should reconnect
     },
 );
 
