@@ -5,6 +5,7 @@ use warnings;
 use AnyEvent;
 use AnyEvent::MQTT;
 use Getopt::Long qw(GetOptions);
+use POSIX qw(strftime);
 
 # Default values
 my $broker = 'localhost';
@@ -39,10 +40,16 @@ $SIG{INT} = sub {
     exit 0; 
 };
 
+# Reap child processes to prevent zombies
+$SIG{CHLD} = sub {
+    while ((waitpid(-1, WNOHANG)) > 0) {}
+};
+
 # Create MQTT client
 my $mqtt_options = {
     host => $broker,
     port => $port,
+    keep_alive_timer => 60,  # Add keepalive to detect disconnections
 };
 
 # Add authentication if provided
@@ -51,15 +58,61 @@ if ($username) {
     $mqtt_options->{password} = $password;
 }
 
-my $mqtt = AnyEvent::MQTT->new(%$mqtt_options);
+my $mqtt;
+my $connected = 0;
+my $reconnect_timer;
 
-my $cv = AnyEvent->condvar;
+sub create_mqtt_connection {
+    print "Creating MQTT connection to $broker:$port\n" if $debug;
+    
+    # Cancel any existing reconnect timer
+    undef $reconnect_timer if $reconnect_timer;
+    
+    eval {
+        $mqtt = AnyEvent::MQTT->new(%$mqtt_options);
+        setup_subscription();
+    };
+    
+    if ($@) {
+        print "Failed to create MQTT connection: $@\n";
+        schedule_reconnect();
+    }
+}
 
-my $subscription = $mqtt->subscribe(
-    topic => $topic,
-    callback => sub {
+sub schedule_reconnect {
+    return if $reconnect_timer;  # Already scheduled
+    
+    print "Scheduling reconnection in 10 seconds...\n";
+    
+    $reconnect_timer = AnyEvent->timer(
+        after => 10,
+        cb => sub {
+            undef $reconnect_timer;
+            create_mqtt_connection();
+        },
+    );
+}
+
+# Track last message time for monitoring
+my $lastmsg_file = "/var/run/mqtt_rvc_set.lastmsg";
+
+sub update_lastmsg_time {
+    if (open(my $fh, '>', $lastmsg_file)) {
+        print $fh time();
+        close($fh);
+    }
+}
+
+sub setup_subscription {
+    $mqtt->subscribe(
+        topic => $topic,
+        callback => sub {
         my ($topic, $message) = @_;
-        print "Received message: $message on topic $topic\n";
+        my $timestamp = strftime("%Y-%m-%d %H:%M:%S", localtime);
+        print "[$timestamp] Received message: $message on topic $topic\n";
+        
+        # Update last message time for monitoring
+        update_lastmsg_time();
         my @topics = split('/', $topic);
         
         # Check if we have enough topic parts
@@ -82,26 +135,55 @@ my $subscription = $mqtt->subscribe(
             return;
         }
         
-        my $exit_code = system($script, $topic, $message);
-        if ($exit_code != 0) {
-            print "Script execution failed with exit code $exit_code.\n";
-            # Don't exit the process, just log the error
+        # Execute in background to avoid blocking
+        my $pid = fork();
+        if (!defined $pid) {
+            print "[$timestamp] Failed to fork: $!\n";
+            return;
         }
-    },
-    qos => 0,
-    on_success => sub {
-        print "Connected to MQTT broker and subscribed to topic $topic\n";
-    },
-    on_error => sub {
-        my $error = shift;
-        print "Failed to subscribe to topic $topic: $error\n";
-        # Don't exit immediately, try to reconnect
-        print "Attempting to reconnect in 10 seconds...\n";
-        sleep 10;
-        # The AnyEvent loop will continue, and the MQTT client should reconnect
-    },
+        
+        if ($pid == 0) {
+            # Child process
+            my $exit_code = system($script, $topic, $message);
+            if ($exit_code != 0) {
+                print "[$timestamp] Script execution failed with exit code $exit_code.\n";
+            }
+            exit($exit_code >> 8);
+        }
+        # Parent continues without waiting
+        },
+        qos => 1,  # Use QoS 1 for better reliability
+        on_success => sub {
+            print "Connected to MQTT broker and subscribed to topic $topic\n";
+            $connected = 1;
+        },
+        on_error => sub {
+            my $error = shift;
+            my $timestamp = strftime("%Y-%m-%d %H:%M:%S", localtime);
+            print "[$timestamp] Failed to subscribe to topic $topic: $error\n";
+            $connected = 0;
+            schedule_reconnect();
+        },
+    );
+}
+
+# Main event loop
+my $cv = AnyEvent->condvar;
+
+# Create a periodic timer to log status
+my $status_timer = AnyEvent->timer(
+    after => 60,
+    interval => 60,
+    cb => sub {
+        my $timestamp = strftime("%Y-%m-%d %H:%M:%S", localtime);
+        print "[$timestamp] mqtt_rvc_set is alive and monitoring $topic\n";
+        print "[$timestamp] Connected: " . ($connected ? "YES" : "NO") . "\n" if $debug;
+    }
 );
 
+# Start the connection
+create_mqtt_connection();
+
+# Run the event loop
 $cv->recv;
 ``
-
