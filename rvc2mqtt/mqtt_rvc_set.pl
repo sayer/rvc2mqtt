@@ -5,7 +5,7 @@ use warnings;
 use AnyEvent;
 use AnyEvent::MQTT;
 use Getopt::Long qw(GetOptions);
-use POSIX qw(strftime);
+use POSIX qw(strftime WNOHANG);
 
 # Default values
 my $broker = 'localhost';
