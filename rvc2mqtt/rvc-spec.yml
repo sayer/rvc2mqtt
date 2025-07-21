@@ -2265,28 +2265,28 @@ API_VERSION: 1
     - byte: 0
       bit: 0-1
       name: temperature shutdown switch
-      type: uint8
+      type: uint2
       values:
         0: temperature shutdown not active
         1: temperature shutdown active
     - byte: 0
       bit: 2-3
       name: oil pressure shutdown switch
-      type: uint8
+      type: uint2
       values:
         0: oil pressure shutdown not active
         1: oil pressure shutdown active
     - byte: 0
       bit: 4-5
       name: oil level shutdown switch
-      type: uint8
+      type: uint2
       values:
         0: oil level switch not active
         1: low oil level detected
     - byte: 0
       bit: 6-7
       name: caution light
-      type: uint8
+      type: uint2
       values:
         0: caution light off
         1: caution light on
