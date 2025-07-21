@@ -2283,6 +2283,7 @@ API_VERSION: 1
       values:
         0: oil level switch not active
         1: low oil level detected
+        11: Unknown state
     - byte: 0
       bit: 6-7
       name: caution light
