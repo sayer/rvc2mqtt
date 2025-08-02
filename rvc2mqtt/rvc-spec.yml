@@ -1769,7 +1769,52 @@ API_VERSION: 1
 
 1FEF9:
   name: THERMOSTAT_COMMAND_1
-  alias: 1FFE2
+  parameters:
+  - byte: 0
+    name: instance
+    type: uint8
+    comment: Corresponds to "Zones" in user terminology.
+  - byte: 1
+    bit: 0-3
+    name: operating mode
+    type: bit4
+    values:
+      0000: off
+      0001: cool
+      0010: heat
+      0011: auto
+      0100: fan only
+      0101: aux heat
+      0110: window defrost
+  - byte: 1
+    bit: 4-5
+    name: fan mode
+    type: bit2
+    values:
+      00: auto
+      01: on
+    comment: This forces the fan to be on all the time, but allows heat and cool to turn on and off according to the Operating Mode.
+  - byte: 1
+    bit: 6-7
+    name: schedule mode
+    type: bit2
+    values:
+      00: disabled
+      01: enabled
+    comment: If enabled, the set point will change according to programmed scheduled.
+  - byte: 2
+    name: fan speed
+    type: uint8
+    unit: Pct
+  - byte: 3-4
+    name: setpoint temp heat
+    type: uint16
+    unit: Deg C
+  - byte: 5-6
+    name: setpoint temp cool
+    type: uint16
+    unit: Deg C
+
 
 1FEF8:
   name: THERMOSTAT_COMMAND_2
@@ -3989,7 +4034,35 @@ API_VERSION: 1
 
 1FFB9:
   name: DC_DIMMER_COMMAND
-  alias: 1FFBB
+  parameters:
+    - byte: 0
+      name: instance
+      type: uint8
+    - byte: 1
+      name: master brightness
+      type: uint8
+      unit: Pct
+    - byte: 2
+      name: red brightness
+      type: uint8
+      unit: Pct
+    - byte: 3
+      name: green brightness
+      type: uint8
+      unit: Pct
+    - byte: 4
+      name: blue brightness
+      type: uint8
+      unit: Pct
+    - byte: 5
+      bit: 0-3
+      name: on duration
+      type: uint8
+    - byte: 5
+      bit: 4-7
+      name: off duration
+      type: uint8
+
 
 1FEDB:
   name: DC_DIMMER_COMMAND_2
