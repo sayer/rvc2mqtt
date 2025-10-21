@@ -24,6 +24,7 @@ use JSON;
 use Switch;
 use Scalar::Util qw(looks_like_number);
 
+my $json = JSON->new->utf8->canonical;
 my $debug;
 GetOptions(
   'debug' => \$debug,
@@ -79,15 +80,88 @@ sub processPacket {
     my %result = decode($dgn, $data);
     if (%result) {
       $result{timestamp} = $pkttime;
-      my $result_json = JSON->new->utf8->canonical->encode(\%result);
+      my $result_json = $json->encode(\%result);
       my $topic = "RVC/$result{name}";
       if (defined($result{instance})) {
         $topic .= '/' . $result{instance};
       }
-      publish $topic => $result_json if (!$debug);
+      if (!$debug) {
+        publish $topic => $result_json;
+        publish_synthetic_dimmer_status(\%result);
+      }
       printf("%4d-%02d-%02d %02d:%02d:%02d.%05d %s %s %s %s\n", $year, $mon, $mday, $hour, $min, $sec, $partsec, $src, $data, $topic, $result_json);
     }
 	}
+}
+
+sub publish_synthetic_dimmer_status {
+  my ($result_ref) = @_;
+  return unless $result_ref;
+
+  my %result = %{$result_ref};
+
+  return unless $result{name} && $result{name} eq 'DC_COMPONENT_DRIVER_STATUS_1';
+  return unless defined $result{driver_index};
+  return unless looks_like_number($result{driver_index});
+  return unless defined $result{'output_status'} && looks_like_number($result{'output_status'});
+
+  my $instance = int($result{driver_index}) & 0xFF;
+  my $is_on = int($result{'output_status'}) == 1;
+  my $brightness = $is_on ? 100 : 0;
+  my $load_status_value = $is_on ? '01' : '00';
+  my $load_status_definition = $is_on ? 'operating status is non-zero or flashing' : 'operating status is zero';
+  my $data = build_synthetic_dimmer_data($instance, $brightness, $is_on);
+
+  my %payload = (
+    dgn => '1FEDA',
+    data => $data,
+    name => 'DC_DIMMER_STATUS_3',
+    instance => $instance,
+    group => '11111111',
+    'operating status (brightness)' => $brightness,
+    'lock status' => '00',
+    'lock status definition' => 'load is unlocked',
+    'overcurrent status' => '11',
+    'overcurrent status definition' => 'overcurrent status is unavailable or not supported',
+    'override status' => '11',
+    'override status definition' => 'override status is unavailable or not supported',
+    'enable status' => '11',
+    'enable status definition' => 'enable status is unavailable or not supported',
+    'interlock status' => '00',
+    'interlock status definition' => 'interlock command is not active',
+    'delay/duration' => 255,
+    'last command' => 5,
+    'last command definition' => 'toggle',
+    'load status' => $load_status_value,
+    'load status definition' => $load_status_definition,
+    timestamp => $result{timestamp},
+  );
+
+  publish "RVC/DC_DIMMER_STATUS_3/$instance" => $json->encode(\%payload);
+}
+
+sub build_synthetic_dimmer_data {
+  my ($instance, $brightness, $is_on) = @_;
+
+  $instance = 0 unless defined $instance && looks_like_number($instance);
+  $instance = int($instance) & 0xFF;
+
+  $brightness = 0 unless defined $brightness && looks_like_number($brightness);
+  $brightness = 0 if $brightness < 0;
+  $brightness = 100 if $brightness > 100;
+  my $scaled_brightness = int($brightness * 2);
+  $scaled_brightness = 255 if $scaled_brightness > 255;
+
+  my $byte0 = $instance;
+  my $byte1 = 0xFF;
+  my $byte2 = $scaled_brightness;
+  my $byte3 = 0xFC;
+  my $byte4 = 0xFF;
+  my $byte5 = 0x05;
+  my $byte6 = $is_on ? 0x04 : 0x00;
+  my $byte7 = 0xFF;
+
+  return sprintf("%02X%02X%02X%02X%02X%02X%02X%02X", $byte0, $byte1, $byte2, $byte3, $byte4, $byte5, $byte6, $byte7);
 }
 
 
