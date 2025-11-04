@@ -40,6 +40,7 @@ GetOptions(
 print "Loading RV-C specification from $spec_file\n" if $debug;
 my $yaml = YAML::Tiny->read($spec_file);
 our $encoders = $yaml->[0];
+my $json_encoder = JSON->new->utf8->canonical;
 
 # Map of known DGNs to their names for reverse lookup
 my %dgn_map;
@@ -53,7 +54,7 @@ foreach my $dgn (keys %$encoders) {
 
 # Create MQTT client using Net::MQTT::Simple
 print "Connecting to MQTT broker at $mqtt_server:$mqtt_port\n" if $debug;
-my $mqtt = Net::MQTT::Simple->new("$mqtt_server:$mqtt_port");
+our $mqtt = Net::MQTT::Simple->new("$mqtt_server:$mqtt_port");
 
 # Set up authentication if username is provided
 if ($mqtt_user) {
@@ -161,6 +162,11 @@ sub process_mqtt_message {
     push(@parameters, @{$encoder->{parameters}});
   }
   
+  # Perform command-specific normalization before encoding
+  if (defined $dgn && $dgn eq "1FEDB") {
+    normalize_dimmer_command($json);
+  }
+
   # Build the data packet
   my $data = build_data_packet(\@parameters, $json, $instance);
   
@@ -713,7 +719,11 @@ sub process_mqtt_message {
   
   # Send to CAN bus
   send_can_message($dgn, $data);
-  
+
+  if ($dgn eq "1FEDB") {
+    publish_dimmer_command_feedback($data, $json);
+  }
+
   print "Sent message to CAN: DGN=$dgn, Data=$data\n" if $debug;
 }
 
@@ -869,6 +879,190 @@ sub build_data_packet {
 # --------------------------------------------------------------
 # Format RV-C message according to the specification
 # --------------------------------------------------------------
+sub normalize_dimmer_command {
+  my ($json) = @_;
+  return unless $json && ref $json eq 'HASH';
+
+  my $level_source;
+  $level_source = $json->{'desired level'}      if exists $json->{'desired level'};
+  $level_source = $json->{'desired level pct'}  if !defined $level_source && exists $json->{'desired level pct'};
+  $level_source = $json->{'brightness_pct'}     if !defined $level_source && exists $json->{'brightness_pct'};
+
+  if (defined $level_source) {
+    $json->{'desired level'} = normalize_dimmer_level($level_source);
+    return;
+  }
+
+  my $command_value = extract_dimmer_command($json);
+  if (defined $command_value) {
+    if ($command_value == 0) {
+      $json->{'desired level'} = normalize_dimmer_level(100);
+    } elsif ($command_value == 3) {
+      $json->{'desired level'} = normalize_dimmer_level(0);
+    }
+  }
+}
+
+sub publish_dimmer_command_feedback {
+  my ($data, $json) = @_;
+  return unless $mqtt;
+
+  my $instance = defined $json->{instance} ? int($json->{instance}) : hex(substr($data, 0, 2));
+  my $raw_level = hex(substr($data, 4, 2));
+  $raw_level = 0   if $raw_level < 0;
+  $raw_level = 255 if $raw_level > 255;
+
+  my $brightness_pct = $raw_level > 200 ? 100 : int(($raw_level / 2) + 0.5);
+  my $is_on = $brightness_pct > 0 ? 1 : 0;
+  my $command_value = extract_dimmer_command($json);
+  $command_value = defined $command_value ? $command_value : hex(substr($data, 6, 2));
+
+  my %payload = (
+    dgn => '1FEDA',
+    data => build_synthetic_dimmer_data($instance, $brightness_pct, $is_on),
+    name => 'DC_DIMMER_STATUS_3',
+    instance => $instance,
+    group => '11111111',
+    'operating status (brightness)' => $brightness_pct,
+    'lock status' => '00',
+    'lock status definition' => 'load is unlocked',
+    'overcurrent status' => '11',
+    'overcurrent status definition' => 'overcurrent status is unavailable or not supported',
+    'override status' => '11',
+    'override status definition' => 'override status is unavailable or not supported',
+    'enable status' => '11',
+    'enable status definition' => 'enable status is unavailable or not supported',
+    'interlock status' => '00',
+    'interlock status definition' => 'interlock command is not active',
+    'delay/duration' => 255,
+    'last command' => $command_value,
+    'last command definition' => describe_dimmer_command($command_value),
+    'load status' => $is_on ? '01' : '00',
+    'load status definition' => $is_on ? 'operating status is non-zero or flashing' : 'operating status is zero',
+    timestamp => time(),
+    source => 'mqtt2rvc',
+  );
+
+  eval {
+    $mqtt->publish("RVC/DC_DIMMER_STATUS_3/$instance", $json_encoder->encode(\%payload));
+  };
+  print "Failed to publish inferred dimmer status: $@\n" if $@ && $debug;
+
+  my %debug_payload = (
+    instance => $instance,
+    raw_level => $raw_level,
+    brightness_pct => $brightness_pct,
+    command => $command_value,
+    source => 'mqtt2rvc',
+  );
+  $debug_payload{payload} = $json if $debug;
+
+  eval {
+    $mqtt->publish("RVC/DC_DIMMER_COMMAND_2/$instance/debug", $json_encoder->encode(\%debug_payload));
+  };
+  print "Failed to publish dimmer debug payload: $@\n" if $@ && $debug;
+}
+
+sub normalize_dimmer_level {
+  my ($value) = @_;
+  die "Desired level is undefined" unless defined $value;
+
+  if (!looks_like_number($value)) {
+    if ($value =~ /^\s*([-+]?[0-9]*\.?[0-9]+)\s*%?\s*$/) {
+      $value = $1;
+    } else {
+      die "Desired level must be numeric (received '$value')";
+    }
+  }
+
+  my $numeric = 0 + $value;
+  if ($numeric < 0) {
+    die "Desired level must be >= 0 (received $numeric)";
+  }
+
+  if ($numeric <= 100) {
+    return int(($numeric * 2) + 0.5);
+  }
+
+  if ($numeric <= 200) {
+    return int($numeric + 0.5);
+  }
+
+  die "Desired level must be 0-100 (percentage) or 0-200 (raw). Received $numeric";
+}
+
+sub build_synthetic_dimmer_data {
+  my ($instance, $brightness_pct, $is_on) = @_;
+
+  $instance = 0 unless defined $instance;
+  $brightness_pct = 0 unless defined $brightness_pct;
+  $brightness_pct = 0 if $brightness_pct < 0;
+  $brightness_pct = 100 if $brightness_pct > 100;
+
+  my $scaled_brightness = int($brightness_pct * 2);
+  $scaled_brightness = 255 if $scaled_brightness > 255;
+
+  my $byte0 = int($instance) & 0xFF;
+  my $byte1 = 0xFF;
+  my $byte2 = $scaled_brightness;
+  my $byte3 = 0xFC;
+  my $byte4 = 0xFF;
+  my $byte5 = 0x05;
+  my $byte6 = $is_on ? 0x04 : 0x00;
+  my $byte7 = 0xFF;
+
+  return sprintf("%02X%02X%02X%02X%02X%02X%02X%02X",
+    $byte0, $byte1, $byte2, $byte3, $byte4, $byte5, $byte6, $byte7);
+}
+
+sub extract_dimmer_command {
+  my ($json) = @_;
+  return unless $json && ref $json eq 'HASH';
+
+  my $command = $json->{'command'};
+  if (defined $command) {
+    if (looks_like_number($command)) {
+      return int($command + 0);
+    }
+
+    my $mapped = command_text_to_value($command);
+    return $mapped if defined $mapped;
+  }
+
+  if (exists $json->{'command definition'}) {
+    my $mapped = command_text_to_value($json->{'command definition'});
+    return $mapped if defined $mapped;
+  }
+
+  return;
+}
+
+sub describe_dimmer_command {
+  my ($command_value) = @_;
+  return 'set brightness' if defined $command_value && $command_value == 0;
+  return 'off' if defined $command_value && $command_value == 3;
+  return 'toggle' if defined $command_value && $command_value == 5;
+  return defined $command_value ? "command $command_value" : 'unknown';
+}
+
+sub command_text_to_value {
+  my ($text) = @_;
+  return unless defined $text;
+
+  my $normalized = lc($text);
+  $normalized =~ s/\s+//g;
+  $normalized =~ s/[()]+//g;
+
+  return 0 if $normalized eq 'setbrightness'
+           || $normalized eq 'setlevel'
+           || $normalized eq 'setleveldelay'
+           || $normalized eq 'on';
+
+  return 3 if $normalized eq 'off' || $normalized eq 'offdelay';
+
+  return;
+}
+
 sub format_rvc_message {
   my ($dgn, $data, $json) = @_;
   
