@@ -883,13 +883,35 @@ sub normalize_dimmer_command {
   my ($json) = @_;
   return unless $json && ref $json eq 'HASH';
 
-  my $level_source;
-  $level_source = $json->{'desired level'}      if exists $json->{'desired level'};
-  $level_source = $json->{'desired level pct'}  if !defined $level_source && exists $json->{'desired level pct'};
-  $level_source = $json->{'brightness_pct'}     if !defined $level_source && exists $json->{'brightness_pct'};
+  # Treat percent fields as authoritative; do not scale them
+  if (exists $json->{'brightness_pct'}) {
+    my $pct = 0 + $json->{'brightness_pct'};
+    $pct = 0   if $pct < 0;
+    $pct = 100 if $pct > 100;
+    $json->{'desired level'}     = int($pct + 0.5);
+    $json->{'desired level pct'} = int($pct + 0.5);
+    return;
+  }
 
-  if (defined $level_source) {
-    $json->{'desired level'} = normalize_dimmer_level($level_source);
+  if (exists $json->{'desired level pct'}) {
+    my $pct = 0 + $json->{'desired level pct'};
+    $pct = 0   if $pct < 0;
+    $pct = 100 if $pct > 100;
+    $json->{'desired level'}     = int($pct + 0.5);
+    $json->{'desired level pct'} = int($pct + 0.5);
+    return;
+  }
+
+  if (exists $json->{'desired level'}) {
+    my $pct_or_raw = 0 + $json->{'desired level'};
+    # If the caller sent raw (>100), clamp to raw range; else treat as percent
+    if ($pct_or_raw > 100) {
+      $pct_or_raw = 200 if $pct_or_raw > 200;
+      $json->{'desired level'} = int($pct_or_raw + 0.5);
+    } else {
+      $json->{'desired level'}     = int($pct_or_raw + 0.5);
+      $json->{'desired level pct'} = int($pct_or_raw + 0.5);
+    }
     return;
   }
 
