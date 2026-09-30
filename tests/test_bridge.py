@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class BridgeTests(unittest.TestCase):
     def test_sandbox_rejects_three_argument_process_pipes(self):
+        """Ensure both process-pipe directions fail before launching a child."""
         # true is harmless if the regression reappears; never probe with a
         # hardware utility. Both Perl pipe directions must fail closed.
         for mode in ("-|", "|-"):
@@ -24,6 +25,7 @@ class BridgeTests(unittest.TestCase):
                 self.assertIn("Unexpected process pipe", result.stderr)
 
     def run_bridge(self, script, *, messages=(), frames=""):
+        """Run a production entrypoint offline and return its MQTT/CAN trace."""
         with tempfile.TemporaryDirectory() as directory:
             trace = Path(directory) / "events.jsonl"
             env = os.environ | {
@@ -43,6 +45,7 @@ class BridgeTests(unittest.TestCase):
             return [json.loads(line) for line in trace.read_text().splitlines()] if trace.exists() else []
 
     def test_light_command_is_not_confirmed_telemetry(self):
+        """Keep on, off, and toggle requests out of confirmed light telemetry."""
         events = self.run_bridge("mqtt2rvc.pl", messages=[{
             "topic": "RVC/DC_DIMMER_COMMAND_2/30/set",
             "payload": json.dumps({"instance": 30, "desired level": level, "command": command}),
@@ -54,6 +57,7 @@ class BridgeTests(unittest.TestCase):
         self.assertTrue(all(e["payload"]["confirmed"] is False for e in diagnostics))
 
     def test_native_panel_updates_keep_each_light_independent(self):
+        """Preserve per-instance brightness when replaying panel status frames."""
         events = self.run_bridge("rvc2mqtt.pl", frames=(
             "(1750000000.000000) can0 19FEDA42 [8] 1E FF C8 FC FF 00 FF FF\n"
             "(1750000001.000000) can0 19FEDA42 [8] 1B FF 00 FC FF 03 FF FF\n"
@@ -67,6 +71,7 @@ class BridgeTests(unittest.TestCase):
         ])
 
     def test_driver_status_accepts_only_known_on_off(self):
+        """Synthesize light state only for defined driver output values 0 and 1."""
         for status in range(4):
             with self.subTest(status=status):
                 events = self.run_bridge("rvc2mqtt.pl", frames=(
@@ -78,6 +83,7 @@ class BridgeTests(unittest.TestCase):
                     self.assertEqual(lights[0]["payload"]["operating status (brightness)"], status * 100)
 
     def test_generator_start_stop_encoding(self):
+        """Check HA start/stop payloads encode correctly without actuating CAN."""
         for command in (0, 1):
             with self.subTest(command=command):
                 events = self.run_bridge("mqtt2rvc.pl", messages=[{
