@@ -10,6 +10,19 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class BridgeTests(unittest.TestCase):
+    def test_sandbox_rejects_three_argument_process_pipes(self):
+        # true is harmless if the regression reappears; never probe with a
+        # hardware utility. Both Perl pipe directions must fail closed.
+        for mode in ("-|", "|-"):
+            with self.subTest(mode=mode):
+                result = subprocess.run(
+                    ["perl", "-I", str(ROOT / "tests/lib"), "-MBridgeSandbox",
+                     "-e", f"open my $pipe, '{mode}', '/usr/bin/true' or die $!; close $pipe;"],
+                    stdin=subprocess.DEVNULL, text=True, capture_output=True, timeout=60,
+                )
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("Unexpected process pipe", result.stderr)
+
     def run_bridge(self, script, *, messages=(), frames=""):
         with tempfile.TemporaryDirectory() as directory:
             trace = Path(directory) / "events.jsonl"

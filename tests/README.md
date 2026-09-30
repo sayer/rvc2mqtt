@@ -22,6 +22,9 @@ encoding. Fixture results establish bridge behavior only; they do not establish
 physical circuit mapping, real generator starting, delivery latency, or telemetry
 freshness. There is no configured UI suite in this bridge repository.
 
+The harness also checks that three-argument process pipes fail closed in both
+directions. Its regression probe uses only `/usr/bin/true`, never a hardware tool.
+
 Do not run `rvc2mqtt/test_lights.pl` as an automated unit test: its default mode
 actuates lights, pumps, and locks. `mqtt_test.sh` and the appliance procedures in
 `MQTT_TESTING.md` also require a separately supervised hardware session.

@@ -28,7 +28,7 @@ BEGIN {
       my $handle = caller() . '::' . $_[0];
       return CORE::open(*{$handle}, '<', \$ENV{RVC_TEST_FRAMES});
     }
-    die 'Unexpected process pipe' if @_ == 2 && $_[1] =~ /\|/;
+    die 'Unexpected process pipe' if $_[1] =~ /\|/;
     return @_ == 2 ? CORE::open($_[0], $_[1]) : CORE::open($_[0], $_[1], $_[2]);
   };
 }
