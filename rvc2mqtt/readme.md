@@ -11,9 +11,20 @@ This integration connects to the MQTT broker used by the RV-C system, allowing H
 * Track power status (AC/DC availability)
 * Synchronize date and time between systems
 * Create automations based on RV-C data
-* Always publish DC dimmer status topics, synthesizing `DC_DIMMER_STATUS_3` updates from `DC_COMPONENT_DRIVER_STATUS_1` frames so light entities behave consistently across coach model years
+* Publish observed DC dimmer status, synthesizing `DC_DIMMER_STATUS_3` updates from valid on/off `DC_COMPONENT_DRIVER_STATUS_1` frames
 
 The synthetic dimmer status publish path targets coaches that only broadcast `DC_COMPONENT_DRIVER_STATUS_1`; platforms that already emit `DC_DIMMER_STATUS_3` have not been observed to send the driver-status variant, so the bridge does not overwrite genuine dimmer payloads. If you see hardware reporting both PGNs simultaneously, please capture a trace and open an issue so we can add a guard-rail.
+
+Only received CAN telemetry produces `DC_DIMMER_STATUS_3`. Sending a light command
+does not prove the device accepted it. The command bridge publishes diagnostics to
+`RVC/DC_DIMMER_COMMAND_2/<instance>/debug` with `confirmed: false`; it no longer
+publishes an inferred light state. Driver output status values other than 0 (off)
+and 1 (on) do not replace the last observed state with a fabricated OFF.
+
+This does not provide startup synchronization or stale-state detection. Status
+topics remain non-retained; a newly connected consumer must await device telemetry.
+HA entities configured as optimistic may still display requested state. Hardware
+mapping and telemetry freshness require separate verification on each coach.
 
 ## Components
 
