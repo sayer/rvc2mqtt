@@ -721,7 +721,7 @@ sub process_mqtt_message {
   send_can_message($dgn, $data);
 
   if ($dgn eq "1FEDB") {
-    publish_dimmer_command_feedback($data, $json);
+    publish_dimmer_command_diagnostic($data, $json);
   }
 
   print "Sent message to CAN: DGN=$dgn, Data=$data\n" if $debug;
@@ -925,7 +925,7 @@ sub normalize_dimmer_command {
   }
 }
 
-sub publish_dimmer_command_feedback {
+sub publish_dimmer_command_diagnostic {
   my ($data, $json) = @_;
   return unless $mqtt;
 
@@ -935,47 +935,18 @@ sub publish_dimmer_command_feedback {
   $raw_level = 255 if $raw_level > 255;
 
   my $brightness_pct = $raw_level > 200 ? 100 : int(($raw_level / 2) + 0.5);
-  my $is_on = $brightness_pct > 0 ? 1 : 0;
   my $command_value = extract_dimmer_command($json);
   $command_value = defined $command_value ? $command_value : hex(substr($data, 6, 2));
 
-  my %payload = (
-    dgn => '1FEDA',
-    data => build_synthetic_dimmer_data($instance, $brightness_pct, $is_on),
-    name => 'DC_DIMMER_STATUS_3',
-    instance => $instance,
-    group => '11111111',
-    'operating status (brightness)' => $brightness_pct,
-    'lock status' => '00',
-    'lock status definition' => 'load is unlocked',
-    'overcurrent status' => '11',
-    'overcurrent status definition' => 'overcurrent status is unavailable or not supported',
-    'override status' => '11',
-    'override status definition' => 'override status is unavailable or not supported',
-    'enable status' => '11',
-    'enable status definition' => 'enable status is unavailable or not supported',
-    'interlock status' => '00',
-    'interlock status definition' => 'interlock command is not active',
-    'delay/duration' => 255,
-    'last command' => $command_value,
-    'last command definition' => describe_dimmer_command($command_value),
-    'load status' => $is_on ? '01' : '00',
-    'load status definition' => $is_on ? 'operating status is non-zero or flashing' : 'operating status is zero',
-    timestamp => time(),
-    source => 'mqtt2rvc',
-  );
-
-  eval {
-    $mqtt->publish("RVC/DC_DIMMER_STATUS_3/$instance", $json_encoder->encode(\%payload));
-  };
-  print "Failed to publish inferred dimmer status: $@\n" if $@ && $debug;
-
+  # Sending a command is not a device acknowledgment. Only the receive
+  # bridge may publish DC_DIMMER_STATUS_3 from observed CAN status frames.
   my %debug_payload = (
     instance => $instance,
     raw_level => $raw_level,
     brightness_pct => $brightness_pct,
     command => $command_value,
     source => 'mqtt2rvc',
+    confirmed => JSON::false,
   );
   $debug_payload{payload} = $json if $debug;
 

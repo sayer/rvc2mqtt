@@ -104,6 +104,8 @@ sub publish_synthetic_dimmer_status {
   return unless defined $result{driver_index};
   return unless looks_like_number($result{driver_index});
   return unless defined $result{'output_status'} && looks_like_number($result{'output_status'});
+  # Reserved/unavailable states must not be synthesized as a confirmed OFF.
+  return unless $result{'output_status'} == 0 || $result{'output_status'} == 1;
 
   my $instance = int($result{driver_index}) & 0xFF;
   my $is_on = int($result{'output_status'}) == 1;
